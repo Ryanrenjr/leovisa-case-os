@@ -9,8 +9,18 @@ export default async function ClientsPage() {
   });
 
   return (
-    <main className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-4xl font-bold mb-8">Clients</h1>
+    <main className="min-h-screen p-8">
+      <div className="flex items-center justify-between mb-8">
+  <h1 className="text-4xl font-bold">Clients</h1>
+
+  <Link
+    href="/clients/new"
+    className="rounded-lg bg-white text-black px-4 py-2 font-medium"
+  >
+    New Client
+  </Link>
+</div>
+
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
         <table className="w-full text-left">

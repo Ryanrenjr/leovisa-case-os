@@ -14,7 +14,17 @@ export default async function CasesPage() {
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-4xl font-bold mb-8">Cases</h1>
+      <div className="flex items-center justify-between mb-8">
+  <h1 className="text-4xl font-bold">Cases</h1>
+
+  <Link
+    href="/cases/new"
+    className="rounded-lg bg-white text-black px-4 py-2 font-medium"
+  >
+    New Case
+  </Link>
+</div>
+
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
         <table className="w-full text-left">
