@@ -18,11 +18,13 @@ type Consultant = {
 type NewCaseFormProps = {
   clients: Client[];
   consultants: Consultant[];
+  preselectedClientId?: string;
 };
 
 export default function NewCaseForm({
   clients,
   consultants,
+  preselectedClientId = "",
 }: NewCaseFormProps) {
   const [clientKeyword, setClientKeyword] = useState("");
 
@@ -70,7 +72,7 @@ export default function NewCaseForm({
               <label className="block text-sm text-white/70 mb-2">Client</label>
               <select
                 name="clientId"
-                defaultValue=""
+                defaultValue={preselectedClientId}
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
               >
                 <option value="" disabled>

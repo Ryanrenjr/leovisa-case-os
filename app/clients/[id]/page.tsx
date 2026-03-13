@@ -13,16 +13,28 @@ export default async function ClientDetailPage({
 }: ClientDetailPageProps) {
   const { id } = await params;
 
-  const client = await prisma.client.findUnique({
-    where: { id },
-    include: {
-      cases: {
-        orderBy: {
-          createdAt: "desc",
-        },
+const client = await prisma.client.findUnique({
+  where: { id },
+  include: {
+    cases: {
+      orderBy: {
+        createdAt: "desc",
       },
     },
-  });
+  },
+});
+
+const auditLogs = await prisma.auditLog.findMany({
+  where: {
+    relatedEntityType: "client",
+    relatedEntityId: id,
+  },
+  orderBy: {
+    createdAt: "desc",
+  },
+  take: 5,
+});
+
 
   if (!client) {
     notFound();
@@ -39,6 +51,16 @@ export default async function ClientDetailPage({
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8">
         <h1 className="text-4xl font-bold mb-6">{client.chineseName}</h1>
+
+        <div className="mb-6">
+  <Link
+    href={`/cases/new?clientId=${client.id}`}
+    className="inline-block rounded-lg bg-white text-black px-4 py-2 font-medium"
+  >
+    Create Case for This Client
+  </Link>
+</div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
@@ -107,6 +129,34 @@ export default async function ClientDetailPage({
           </div>
         )}
       </div>
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-8 mt-8">
+  <h2 className="text-2xl font-semibold mb-6">Recent Audit Logs</h2>
+
+  {auditLogs.length === 0 ? (
+    <p className="text-white/60">No audit logs yet.</p>
+  ) : (
+    <div className="space-y-4">
+      {auditLogs.map((log) => (
+        <div
+          key={log.id}
+          className="rounded-xl border border-white/10 bg-black/30 p-4"
+        >
+          <p className="font-medium">{log.actionType}</p>
+          <p className="text-sm text-white/60 mt-1">
+            Actor: {log.actorType}
+          </p>
+          <p className="text-sm text-white/60 mt-1">
+            Success: {log.success ? "Yes" : "No"}
+          </p>
+          <p className="text-sm text-white/40 mt-1">
+            {new Date(log.createdAt).toLocaleString()}
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
     </main>
   );
 }

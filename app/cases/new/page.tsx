@@ -1,7 +1,18 @@
 import { prisma } from "../../../lib/prisma";
 import NewCaseForm from "./NewCaseForm";
 
-export default async function NewCasePage() {
+type NewCasePageProps = {
+  searchParams: Promise<{
+    clientId?: string;
+  }>;
+};
+
+export default async function NewCasePage({
+  searchParams,
+}: NewCasePageProps) {
+  const params = await searchParams;
+  const preselectedClientId = params.clientId?.trim() || "";
+
   const clients = await prisma.client.findMany({
     orderBy: {
       createdAt: "desc",
@@ -26,5 +37,11 @@ export default async function NewCasePage() {
     },
   });
 
-  return <NewCaseForm clients={clients} consultants={consultants} />;
+  return (
+    <NewCaseForm
+      clients={clients}
+      consultants={consultants}
+      preselectedClientId={preselectedClientId}
+    />
+  );
 }

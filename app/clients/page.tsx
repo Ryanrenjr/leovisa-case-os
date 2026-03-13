@@ -1,8 +1,55 @@
 import Link from "next/link";
 import { prisma } from "../../lib/prisma";
 
-export default async function ClientsPage() {
+type ClientsPageProps = {
+  searchParams: Promise<{
+    q?: string;
+  }>;
+};
+
+export default async function ClientsPage({
+  searchParams,
+}: ClientsPageProps) {
+  const params = await searchParams;
+  const q = params.q?.trim() || "";
+
   const clients = await prisma.client.findMany({
+    where: q
+      ? {
+          OR: [
+            {
+              chineseName: {
+                contains: q,
+              },
+            },
+            {
+              englishName: {
+                contains: q,
+              },
+            },
+            {
+              email: {
+                contains: q,
+              },
+            },
+            {
+              phone: {
+                contains: q,
+              },
+            },
+            {
+              nationality: {
+                contains: q,
+              },
+            },
+            {
+              clientCode: {
+                contains: q,
+              },
+            },
+          ],
+        }
+      : {},
     orderBy: {
       createdAt: "desc",
     },
@@ -11,16 +58,50 @@ export default async function ClientsPage() {
   return (
     <main className="min-h-screen p-8">
       <div className="flex items-center justify-between mb-8">
-  <h1 className="text-4xl font-bold">Clients</h1>
+        <h1 className="text-4xl font-bold">Clients</h1>
 
-  <Link
-    href="/clients/new"
-    className="rounded-lg bg-white text-black px-4 py-2 font-medium"
-  >
-    New Client
-  </Link>
-</div>
+        <Link
+          href="/clients/new"
+          className="rounded-lg bg-white text-black px-4 py-2 font-medium"
+        >
+          New Client
+        </Link>
+      </div>
 
+      <form
+        method="GET"
+        className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6"
+      >
+        <label className="block text-sm text-white/70 mb-2">Search</label>
+
+        <div className="flex gap-3">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder="Search by name, email, phone, nationality, client code"
+            className="flex-1 rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+          />
+
+          <button
+            type="submit"
+            className="rounded-lg bg-white text-black px-5 py-3 font-medium"
+          >
+            Search
+          </button>
+
+          <Link
+            href="/clients"
+            className="rounded-lg border border-white/10 px-5 py-3 text-white/80"
+          >
+            Reset
+          </Link>
+        </div>
+      </form>
+
+      <div className="mb-4 text-sm text-white/60">
+        {clients.length} client(s) found
+      </div>
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
         <table className="w-full text-left">

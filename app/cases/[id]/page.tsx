@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "../../../lib/prisma";
+import { updateCaseStatus } from "./actions";
 
 type CaseDetailPageProps = {
   params: Promise<{
@@ -49,9 +50,15 @@ export default async function CaseDetailPage({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-white/50 mb-1">Client</p>
-            <p>{caseItem.client.chineseName}</p>
+          <p className="text-white/50 mb-1">Client</p>
+         <Link
+             href={`/clients/${caseItem.client.id}`}
+             className="underline underline-offset-4"
+        >
+           {caseItem.client.chineseName}
+           </Link>
           </div>
+
 
           <div>
             <p className="text-white/50 mb-1">English Name</p>
@@ -120,6 +127,71 @@ export default async function CaseDetailPage({
           </h2>
         </div>
       </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8">
+  <h2 className="text-2xl font-semibold mb-6">Update Case Status</h2>
+
+  <form action={updateCaseStatus} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <input type="hidden" name="caseId" value={caseItem.id} />
+
+    <div>
+      <label className="block text-sm text-white/70 mb-2">Status</label>
+      <select
+        name="status"
+        defaultValue={caseItem.status}
+        className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+      >
+        <option value="new">new</option>
+        <option value="intake_pending">intake_pending</option>
+        <option value="documents_collecting">documents_collecting</option>
+        <option value="documents_received">documents_received</option>
+        <option value="under_review">under_review</option>
+        <option value="contract_pending">contract_pending</option>
+        <option value="contract_sent">contract_sent</option>
+        <option value="signed">signed</option>
+        <option value="completed">completed</option>
+        <option value="archived">archived</option>
+      </select>
+    </div>
+
+    <div>
+      <label className="block text-sm text-white/70 mb-2">Contract Status</label>
+      <select
+        name="contractStatus"
+        defaultValue={caseItem.contractStatus}
+        className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+      >
+        <option value="not_started">not_started</option>
+        <option value="generated">generated</option>
+        <option value="sent">sent</option>
+        <option value="signed">signed</option>
+        <option value="superseded">superseded</option>
+      </select>
+    </div>
+
+    <div>
+      <label className="block text-sm text-white/70 mb-2">Intake Status</label>
+      <select
+        name="intakeStatus"
+        defaultValue={caseItem.intakeStatus}
+        className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+      >
+        <option value="pending">pending</option>
+        <option value="received">received</option>
+      </select>
+    </div>
+
+    <div className="md:col-span-3 pt-2">
+      <button
+        type="submit"
+        className="rounded-lg bg-white text-black px-6 py-3 font-medium"
+      >
+        Save Status
+      </button>
+    </div>
+  </form>
+</div>
+
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
         <h2 className="text-2xl font-semibold mb-6">Recent Audit Logs</h2>

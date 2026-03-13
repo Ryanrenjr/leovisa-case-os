@@ -37,17 +37,34 @@ export async function createClient(formData: FormData) {
   const clientCode = `CLI-${String(nextNumber).padStart(4, "0")}`;
 
   const client = await prisma.client.create({
-    data: {
-      clientCode,
-      chineseName,
-      englishName,
-      email: email || null,
-      phone: phone || null,
-      wechat: wechat || null,
-      nationality: nationality || null,
-      notes: notes || null,
-    },
-  });
+  data: {
+    clientCode,
+    chineseName,
+    englishName,
+    email: email || null,
+    phone: phone || null,
+    wechat: wechat || null,
+    nationality: nationality || null,
+    notes: notes || null,
+  },
+});
 
-  redirect(`/clients/${client.id}`);
+await prisma.auditLog.create({
+  data: {
+    relatedEntityType: "client",
+    relatedEntityId: client.id,
+    actionType: "create_client",
+    actorType: "user",
+    success: true,
+    newValue: {
+      clientCode: client.clientCode,
+      chineseName: client.chineseName,
+      englishName: client.englishName,
+      nationality: client.nationality,
+    },
+  },
+});
+
+redirect(`/clients/${client.id}`);
+
 }
