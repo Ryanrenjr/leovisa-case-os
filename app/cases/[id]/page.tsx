@@ -2,6 +2,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "../../../lib/prisma";
 import { updateCaseStatus } from "./actions";
+import { generateUploadLink } from "./upload-actions";
+import UploadLinkActions from "./UploadLinkActions";
+import {
+  deactivateUploadLink,
+  deleteUploadLink,
+} from "./upload-link-actions";
+import { deleteDocument } from "./document-actions";
+import DocumentsSection from "./DocumentsSection";
+import UploadLinksSection from "./UploadLinksSection";
+import SubmissionsSection from "./SubmissionsSection";
 
 type CaseDetailPageProps = {
   params: Promise<{
@@ -19,7 +29,15 @@ export default async function CaseDetailPage({
     include: {
       client: true,
       assignedConsultant: true,
-      documents: true,
+      documents: {
+  orderBy: {
+    createdAt: "desc",
+  },
+  include: {
+    submission: true,
+  },
+},
+
       contracts: true,
       submissionLinks: true,
       documentSubmissions: true,
@@ -102,31 +120,12 @@ export default async function CaseDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-white/60 mb-2">Documents</p>
-          <h2 className="text-3xl font-semibold">{caseItem.documents.length}</h2>
-        </div>
+      <DocumentsSection
+        caseId={caseItem.id}
+        documents={caseItem.documents}
+        onDeleteAction={deleteDocument}
+      />
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-white/60 mb-2">Contracts</p>
-          <h2 className="text-3xl font-semibold">{caseItem.contracts.length}</h2>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-white/60 mb-2">Upload Links</p>
-          <h2 className="text-3xl font-semibold">
-            {caseItem.submissionLinks.length}
-          </h2>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-white/60 mb-2">Submissions</p>
-          <h2 className="text-3xl font-semibold">
-            {caseItem.documentSubmissions.length}
-          </h2>
-        </div>
-      </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8">
   <h2 className="text-2xl font-semibold mb-6">Update Case Status</h2>
@@ -191,6 +190,96 @@ export default async function CaseDetailPage({
     </div>
   </form>
 </div>
+
+<UploadLinksSection
+  caseId={caseItem.id}
+  links={caseItem.submissionLinks}
+  onGenerateAction={generateUploadLink}
+  onDeactivateAction={deactivateUploadLink}
+  onDeleteAction={deleteUploadLink}
+/>
+
+<SubmissionsSection submissions={caseItem.documentSubmissions} />
+
+<div className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8">
+  <h2 className="text-2xl font-semibold mb-6">Documents</h2>
+
+  {caseItem.documents.length === 0 ? (
+    <p className="text-white/60">No documents yet.</p>
+  ) : (
+    <div className="space-y-4">
+      {caseItem.documents.map((document) => (
+        <div
+          key={document.id}
+          className="rounded-xl border border-white/10 bg-black/30 p-4"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-white/50 mb-1">Original Filename</p>
+              <p className="break-all">{document.originalFilename}</p>
+            </div>
+
+            <div>
+              <p className="text-white/50 mb-1">Saved Filename</p>
+              <p className="break-all">{document.normalizedFilename ?? "-"}</p>
+            </div>
+
+            <div>
+              <p className="text-white/50 mb-1">Document Type</p>
+              <p>{document.docType}</p>
+            </div>
+
+            <div>
+              <p className="text-white/50 mb-1">MIME Type</p>
+              <p>{document.mimeType ?? "-"}</p>
+            </div>
+
+            <div>
+              <p className="text-white/50 mb-1">File Size</p>
+              <p>
+                {document.fileSize
+                  ? `${Number(document.fileSize).toLocaleString()} bytes`
+                  : "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-white/50 mb-1">Review Status</p>
+              <p>{document.reviewStatus}</p>
+            </div>
+
+            <div>
+              <p className="text-white/50 mb-1">Storage Provider</p>
+              <p>{document.storageProvider}</p>
+            </div>
+
+            <div>
+              <p className="text-white/50 mb-1">Uploaded At</p>
+              <p>{new Date(document.createdAt).toLocaleString()}</p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-white/50 mb-1 text-sm">File Link</p>
+            {document.storageUrl ? (
+              <a
+                href={document.storageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-4 break-all"
+              >
+                {document.storageUrl}
+              </a>
+            ) : (
+              <p>-</p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
 
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-8">

@@ -3,7 +3,7 @@ import { createClient } from "./actions";
 
 export default function NewClientPage() {
   return (
-    <main className="min-h-screen p-8">
+    <main className="min-h-screen bg-black text-white p-8">
       <div className="mb-6">
         <Link
           href="/clients"
