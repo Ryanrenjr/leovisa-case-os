@@ -38,15 +38,19 @@ export default async function ClientDetailPage({
   }
 
   const totalCases = client.cases.length;
-  const activeCases = client.cases.filter(
-    (item) => item.status !== "completed" && item.status !== "archived"
-  ).length;
-  const completedCases = client.cases.filter(
-    (item) => item.status === "completed"
-  ).length;
-  const archivedCases = client.cases.filter(
-    (item) => item.status === "archived"
-  ).length;
+
+const activeCases = client.cases.filter(
+  (item: { status: string }) =>
+    item.status !== "completed" && item.status !== "archived"
+).length;
+
+const completedCases = client.cases.filter(
+  (item: { status: string }) => item.status === "completed"
+).length;
+
+const archivedCases = client.cases.filter(
+  (item: { status: string }) => item.status === "archived"
+).length;
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
