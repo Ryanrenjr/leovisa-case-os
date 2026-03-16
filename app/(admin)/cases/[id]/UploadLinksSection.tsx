@@ -1,6 +1,8 @@
 "use client";
 
 import UploadLinkActions from "./UploadLinkActions";
+import { useState } from "react";
+import StatusBadge from "@/components/StatusBadge";
 
 type SubmissionLinkItem = {
   id: string;
@@ -26,11 +28,16 @@ export default function UploadLinksSection({
   onDeactivateAction,
   onDeleteAction,
 }: UploadLinksSectionProps) {
+  const [expanded, setExpanded] = useState(false);
+
   const hasMore = links.length > 3;
-  const visibleLinks = hasMore ? links.slice(0, 3) : links;
+  const visibleLinks = expanded ? links : links.slice(0, 3);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8">
+    <div
+  id="upload-links-section"
+  className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8"
+>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold">Upload Links</h2>
 
@@ -101,7 +108,7 @@ export default function UploadLinksSection({
               <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-white/50 mb-1">Status</p>
-                  <p>{link.status}</p>
+                  <StatusBadge value={link.status} />
                 </div>
 
                 <div>
@@ -126,15 +133,16 @@ export default function UploadLinksSection({
       )}
 
       {hasMore && (
-        <div className="mt-6">
-          <a
-            href="#"
-            className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
-          >
-            Showing first 3 only
-          </a>
-        </div>
-      )}
+  <div className="mt-6">
+    <button
+      type="button"
+      onClick={() => setExpanded((prev) => !prev)}
+      className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
+    >
+      {expanded ? "Show Less" : `Show More (${links.length - 3})`}
+    </button>
+  </div>
+)}
     </div>
   );
 }

@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import StatusBadge from "@/components/StatusBadge";
+
 type SubmissionItem = {
   id: string;
   submittedByName: string | null;
@@ -18,11 +21,16 @@ type SubmissionsSectionProps = {
 export default function SubmissionsSection({
   submissions,
 }: SubmissionsSectionProps) {
-  const visibleSubmissions = submissions.slice(0, 3);
-  const hasMore = submissions.length > 3;
+const [expanded, setExpanded] = useState(false);
+
+const hasMore = submissions.length > 3;
+const visibleSubmissions = expanded ? submissions : submissions.slice(0, 3);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8">
+    <div
+  id="submissions-section"
+  className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8"
+>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold">Submissions</h2>
         <p className="text-sm text-white/50">{submissions.length} submission(s)</p>
@@ -55,7 +63,7 @@ export default function SubmissionsSection({
 
                 <div>
                   <p className="text-white/50 mb-1">Status</p>
-                  <p>{submission.status}</p>
+                  <StatusBadge value={submission.status} />
                 </div>
 
                 <div>
@@ -79,12 +87,18 @@ export default function SubmissionsSection({
       )}
 
       {hasMore && (
-        <div className="mt-6">
-          <div className="rounded-lg border border-white/10 px-4 py-2 text-white/80 inline-block">
-            Showing first 3 only
-          </div>
-        </div>
-      )}
+  <div className="mt-6">
+    <button
+      type="button"
+      onClick={() => setExpanded((prev) => !prev)}
+      className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
+    >
+      {expanded
+        ? "Show Less"
+        : `Show More (${submissions.length - 3})`}
+    </button>
+  </div>
+)}
     </div>
   );
 }

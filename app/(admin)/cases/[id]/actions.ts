@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "../../../../lib/prisma";
 
 export async function updateCaseStatus(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
@@ -11,14 +11,13 @@ export async function updateCaseStatus(formData: FormData) {
   const intakeStatus = formData.get("intakeStatus")?.toString().trim() || "";
 
   if (!caseId || !status || !contractStatus || !intakeStatus) {
-    throw new Error("Missing required fields.");
+    throw new Error("Case ID, status, contract status, and intake status are required.");
   }
 
   const existingCase = await prisma.case.findUnique({
     where: { id: caseId },
     select: {
       id: true,
-      caseCode: true,
       status: true,
       contractStatus: true,
       intakeStatus: true,
@@ -29,7 +28,7 @@ export async function updateCaseStatus(formData: FormData) {
     throw new Error("Case not found.");
   }
 
-  const updatedCase = await prisma.case.update({
+  await prisma.case.update({
     where: { id: caseId },
     data: {
       status,
@@ -40,9 +39,9 @@ export async function updateCaseStatus(formData: FormData) {
 
   await prisma.auditLog.create({
     data: {
-      caseId: updatedCase.id,
+      caseId: existingCase.id,
       relatedEntityType: "case",
-      relatedEntityId: updatedCase.id,
+      relatedEntityId: existingCase.id,
       actionType: "update_case_status",
       actorType: "user",
       success: true,
@@ -52,12 +51,12 @@ export async function updateCaseStatus(formData: FormData) {
         intakeStatus: existingCase.intakeStatus,
       },
       newValue: {
-        status: updatedCase.status,
-        contractStatus: updatedCase.contractStatus,
-        intakeStatus: updatedCase.intakeStatus,
+        status,
+        contractStatus,
+        intakeStatus,
       },
     },
   });
 
-  redirect(`/cases/${updatedCase.id}`);
+  redirect(`/cases/${caseId}`);
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "../../../../lib/prisma";
 
 export async function deactivateUploadLink(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";

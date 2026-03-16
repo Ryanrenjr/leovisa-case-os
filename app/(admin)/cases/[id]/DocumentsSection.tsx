@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import StatusBadge from "@/components/StatusBadge";
 
 type DocumentItem = {
   id: string;
   originalFilename: string;
+  displayName: string | null;
   normalizedFilename: string | null;
   docType: string;
   mimeType: string | null;
@@ -22,12 +24,16 @@ type DocumentsSectionProps = {
   caseId: string;
   documents: DocumentItem[];
   onDeleteAction: (formData: FormData) => void;
+  onUpdateReviewStatusAction: (formData: FormData) => void;
+  onUpdateDisplayNameAction: (formData: FormData) => void;
 };
 
 export default function DocumentsSection({
   caseId,
   documents,
   onDeleteAction,
+  onUpdateReviewStatusAction,
+  onUpdateDisplayNameAction,
 }: DocumentsSectionProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -35,7 +41,10 @@ export default function DocumentsSection({
   const hasMore = documents.length > 3;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8">
+    <div
+      id="documents-section"
+      className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8"
+    >
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold">Documents</h2>
         <p className="text-sm text-white/50">{documents.length} file(s)</p>
@@ -53,11 +62,9 @@ export default function DocumentsSection({
               >
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div>
-                    <p className="text-white/50 text-sm mb-1">
-                      Original Filename
-                    </p>
+                    <p className="text-white/50 text-sm mb-1">Display Name</p>
                     <p className="font-medium break-all">
-                      {document.originalFilename}
+                      {document.displayName || document.originalFilename}
                     </p>
                   </div>
 
@@ -84,7 +91,6 @@ export default function DocumentsSection({
                         name="documentId"
                         value={document.id}
                       />
-
                       <button
                         type="submit"
                         className="inline-block rounded-lg border border-red-500/30 px-4 py-2 font-medium text-red-300 hover:bg-red-500/10"
@@ -96,6 +102,11 @@ export default function DocumentsSection({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-white/50 mb-1">Original Filename</p>
+                    <p className="break-all">{document.originalFilename}</p>
+                  </div>
+
                   <div>
                     <p className="text-white/50 mb-1">Saved Filename</p>
                     <p className="break-all">
@@ -124,7 +135,7 @@ export default function DocumentsSection({
 
                   <div>
                     <p className="text-white/50 mb-1">Review Status</p>
-                    <p>{document.reviewStatus}</p>
+                    <StatusBadge value={document.reviewStatus} />
                   </div>
 
                   <div>
@@ -141,6 +152,74 @@ export default function DocumentsSection({
                     <p className="text-white/50 mb-1">Submitted By</p>
                     <p>{document.submission?.submittedByName ?? "-"}</p>
                   </div>
+                </div>
+
+                <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-4">
+                  <p className="text-white/50 mb-3 text-sm">Display Name</p>
+
+                  <form action={onUpdateDisplayNameAction} className="space-y-3">
+                    <input type="hidden" name="caseId" value={caseId} />
+                    <input
+                      type="hidden"
+                      name="documentId"
+                      value={document.id}
+                    />
+
+                    <input
+                      type="text"
+                      name="displayName"
+                      defaultValue={document.displayName ?? ""}
+                      placeholder="Enter a clean display name"
+                      className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                    />
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-white/10 px-4 py-3 text-white/80 hover:bg-white/10"
+                      >
+                        Save Name
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-4">
+                  <p className="text-white/50 mb-3 text-sm">Review Action</p>
+
+                  <form
+                    action={onUpdateReviewStatusAction}
+                    className="space-y-3"
+                  >
+                    <input type="hidden" name="caseId" value={caseId} />
+                    <input
+                      type="hidden"
+                      name="documentId"
+                      value={document.id}
+                    />
+
+                    <select
+                      name="reviewStatus"
+                      defaultValue={document.reviewStatus}
+                      className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                    >
+                      <option value="uploaded">uploaded</option>
+                      <option value="approved">approved</option>
+                      <option value="rejected">rejected</option>
+                      <option value="needs_resubmission">
+                        needs_resubmission
+                      </option>
+                    </select>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-white/10 px-4 py-3 text-white/80 hover:bg-white/10"
+                      >
+                        Update Review Status
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             ))}

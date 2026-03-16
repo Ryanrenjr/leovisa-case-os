@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../../../lib/prisma";
 
 type CasesPageProps = {
   searchParams: Promise<{
     q?: string;
     status?: string;
     consultant?: string;
+    page?: string;
   }>;
 };
 
@@ -15,6 +16,10 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const q = params.q?.trim() || "";
   const status = params.status?.trim() || "";
   const consultant = params.consultant?.trim() || "";
+
+  const currentPage = Math.max(1, Number(params.page || "1"));
+  const pageSize = 10;
+  const skip = (currentPage - 1) * pageSize;
 
   const consultants = await prisma.user.findMany({
     where: {
@@ -29,56 +34,62 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     },
   });
 
+  const whereClause = {
+    AND: [
+      q
+        ? {
+            OR: [
+              {
+                caseCode: {
+                  contains: q,
+                },
+              },
+              {
+                serviceType: {
+                  contains: q,
+                },
+              },
+              {
+                country: {
+                  contains: q,
+                },
+              },
+              {
+                client: {
+                  chineseName: {
+                    contains: q,
+                  },
+                },
+              },
+              {
+                client: {
+                  englishName: {
+                    contains: q,
+                  },
+                },
+              },
+            ],
+          }
+        : {},
+      status
+        ? {
+            status,
+          }
+        : {},
+      consultant
+        ? {
+            assignedConsultantId: consultant,
+          }
+        : {},
+    ],
+  };
+
+  const totalCases = await prisma.case.count({
+    where: whereClause,
+  });
+
   const cases = await prisma.case.findMany({
-    where: {
-      AND: [
-        q
-          ? {
-              OR: [
-                {
-                  caseCode: {
-                    contains: q,
-                  },
-                },
-                {
-                  serviceType: {
-                    contains: q,
-                  },
-                },
-                {
-                  country: {
-                    contains: q,
-                  },
-                },
-                {
-                  client: {
-                    chineseName: {
-                      contains: q,
-                    },
-                  },
-                },
-                {
-                  client: {
-                    englishName: {
-                      contains: q,
-                    },
-                  },
-                },
-              ],
-            }
-          : {},
-        status
-          ? {
-              status,
-            }
-          : {},
-        consultant
-          ? {
-              assignedConsultantId: consultant,
-            }
-          : {},
-      ],
-    },
+    where: whereClause,
     include: {
       client: true,
       assignedConsultant: true,
@@ -86,7 +97,24 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     orderBy: {
       createdAt: "desc",
     },
+    skip,
+    take: pageSize,
   });
+
+  const totalPages = Math.max(1, Math.ceil(totalCases / pageSize));
+  const previousPage = currentPage > 1 ? currentPage - 1 : null;
+  const nextPage = currentPage < totalPages ? currentPage + 1 : null;
+
+  function buildCasesPageUrl(page: number) {
+    const search = new URLSearchParams();
+
+    if (q) search.set("q", q);
+    if (status) search.set("status", status);
+    if (consultant) search.set("consultant", consultant);
+    search.set("page", String(page));
+
+    return `/cases?${search.toString()}`;
+  }
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -171,7 +199,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       </form>
 
       <div className="mb-4 text-sm text-white/60">
-        {cases.length} case(s) found
+        {totalCases} case(s) found · Page {currentPage} of {totalPages}
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
@@ -212,6 +240,40 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-6 flex items-center justify-between">
+        <div className="text-sm text-white/50">
+          Showing {cases.length} item(s) on this page
+        </div>
+
+        <div className="flex gap-3">
+          {previousPage ? (
+            <Link
+              href={buildCasesPageUrl(previousPage)}
+              className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
+            >
+              Previous
+            </Link>
+          ) : (
+            <span className="rounded-lg border border-white/10 px-4 py-2 text-white/30">
+              Previous
+            </span>
+          )}
+
+          {nextPage ? (
+            <Link
+              href={buildCasesPageUrl(nextPage)}
+              className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
+            >
+              Next
+            </Link>
+          ) : (
+            <span className="rounded-lg border border-white/10 px-4 py-2 text-white/30">
+              Next
+            </span>
+          )}
+        </div>
       </div>
     </main>
   );

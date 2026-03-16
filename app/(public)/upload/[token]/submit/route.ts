@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "../../../../../lib/prisma";
 
 type RouteContext = {
   params: Promise<{

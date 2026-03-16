@@ -2,7 +2,7 @@
 
 import crypto from "crypto";
 import { redirect } from "next/navigation";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "../../../../lib/prisma";
 
 export async function generateUploadLink(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";

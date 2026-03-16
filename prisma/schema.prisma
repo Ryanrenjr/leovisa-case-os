@@ -100,6 +100,7 @@ model Document {
   normalizedFilename String?
   mimeType           String?
   fileSize           BigInt?
+  displayName        String?
   versionNo          Int      @default(1)
   storageProvider    String   @default("temp")
   storagePath        String?
