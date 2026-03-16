@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
+import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
 
 type SubmissionItem = {
   id: string;
@@ -15,11 +16,15 @@ type SubmissionItem = {
 };
 
 type SubmissionsSectionProps = {
+  caseId: string;
   submissions: SubmissionItem[];
+  onDeleteAction: (formData: FormData) => void;
 };
 
 export default function SubmissionsSection({
+  caseId,
   submissions,
+  onDeleteAction,
 }: SubmissionsSectionProps) {
 const [expanded, setExpanded] = useState(false);
 
@@ -42,10 +47,30 @@ const visibleSubmissions = expanded ? submissions : submissions.slice(0, 3);
         <div className="space-y-4">
           {visibleSubmissions.map((submission) => (
             <div
-              key={submission.id}
-              className="rounded-xl border border-white/10 bg-black/30 p-4"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+  key={submission.id}
+  className="rounded-xl border border-white/10 bg-black/30 p-4"
+>
+  <div className="flex items-start justify-between gap-4 mb-4">
+    <div>
+      <p className="text-white/50 text-sm mb-1">Submission</p>
+      <p className="font-medium">
+        {submission.submittedByName ?? "Unnamed Submission"}
+      </p>
+    </div>
+
+    <form action={onDeleteAction}>
+      <input type="hidden" name="caseId" value={caseId} />
+      <input type="hidden" name="submissionId" value={submission.id} />
+
+      <ConfirmSubmitButton
+        label="Delete Submission"
+        confirmMessage="Are you sure you want to delete this submission? Linked document records under this submission will also be removed."
+        className="rounded-lg border border-red-500/30 px-4 py-2 text-red-300 hover:bg-red-500/10"
+      />
+    </form>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-white/50 mb-1">Submitted By</p>
                   <p>{submission.submittedByName ?? "-"}</p>

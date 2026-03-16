@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
+import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
 
 type ContractItem = {
   id: string;
@@ -15,11 +16,15 @@ type ContractItem = {
 };
 
 type ContractsSectionProps = {
+  caseId: string;
   contracts: ContractItem[];
+  onDeleteAction: (formData: FormData) => void;
 };
 
 export default function ContractsSection({
+  caseId,
   contracts,
+  onDeleteAction,
 }: ContractsSectionProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -54,7 +59,7 @@ export default function ContractsSection({
                     </p>
                   </div>
 
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex gap-2">
                     {contract.fileUrl ? (
                       <a
                         href={contract.fileUrl}
@@ -69,6 +74,21 @@ export default function ContractsSection({
                         No File
                       </span>
                     )}
+
+                    <form action={onDeleteAction}>
+                      <input type="hidden" name="caseId" value={caseId} />
+                      <input
+                        type="hidden"
+                        name="contractId"
+                        value={contract.id}
+                      />
+
+                      <ConfirmSubmitButton
+                        label="Delete Contract"
+                        confirmMessage="Are you sure you want to delete this contract?"
+                        className="rounded-lg border border-red-500/30 px-4 py-2 text-red-300 hover:bg-red-500/10"
+                      />
+                    </form>
                   </div>
                 </div>
 

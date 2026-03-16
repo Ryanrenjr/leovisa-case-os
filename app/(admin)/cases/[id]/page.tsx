@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
-import { updateCaseStatus } from "./actions";
+import { updateCaseStatus, deleteCase } from "./actions";
 import { generateUploadLink } from "./upload-actions";
 import {
   deactivateUploadLink,
@@ -18,18 +18,26 @@ import SubmissionsSection from "./SubmissionsSection";
 import ContractsSection from "./ContractsSection";
 import AuditLogsSection from "./AuditLogsSection";
 import StatusBadge from "../../../../components/StatusBadge";
-
+import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
+import { deleteSubmission } from "./submission-actions";
+import { deleteContract } from "./contract-actions";
 
 type CaseDetailPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    deleteError?: string;
+  }>;
 };
 
 export default async function CaseDetailPage({
   params,
+  searchParams,
 }: CaseDetailPageProps) {
   const { id } = await params;
+  const query = await searchParams;
+  const deleteError = query.deleteError || "";
 
   const caseItem = await prisma.case.findUnique({
     where: { id },
@@ -72,10 +80,46 @@ export default async function CaseDetailPage({
         className="inline-block mb-6 text-sm text-white/70 underline underline-offset-4"
       >
         ← Back to Cases
+        {deleteError === "linked_data" && (
+  <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 mb-6">
+    <p className="text-red-300">
+      This case cannot be deleted because linked documents, submissions, upload links, or contracts exist.
+    </p>
+  </div>
+)}
       </Link>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8">
-        <h1 className="text-4xl font-bold mb-6">{caseItem.caseCode}</h1>
+        <div className="flex items-start justify-between gap-6 mb-6">
+  <h1 className="text-4xl font-bold">{caseItem.caseCode}</h1>
+
+  <div className="flex gap-3">
+    <Link
+      href={`/cases/${caseItem.id}/edit`}
+      className="rounded-lg border border-white/10 px-5 py-3 text-white/80 hover:bg-white/10"
+    >
+      Edit Case
+    </Link>
+
+    <div className="flex gap-3">
+  <Link
+    href={`/cases/${caseItem.id}/edit`}
+    className="rounded-lg border border-white/10 px-5 py-3 text-white/80 hover:bg-white/10"
+  >
+    Edit Case
+  </Link>
+
+  <form action={deleteCase}>
+  <input type="hidden" name="caseId" value={caseItem.id} />
+  <ConfirmSubmitButton
+    label="Delete Case"
+    confirmMessage="Are you sure you want to delete this case? This action cannot be undone."
+    className="rounded-lg border border-red-500/30 px-5 py-3 text-red-300 hover:bg-red-500/10"
+  />
+</form>
+</div>
+  </div>
+</div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
@@ -242,10 +286,17 @@ export default async function CaseDetailPage({
   onDeleteAction={deleteUploadLink}
 />
 
-<ContractsSection contracts={caseItem.contracts} />
+<ContractsSection
+  caseId={caseItem.id}
+  contracts={caseItem.contracts}
+  onDeleteAction={deleteContract}
+/>
 
-<SubmissionsSection submissions={caseItem.documentSubmissions} />
-
+<SubmissionsSection
+  caseId={caseItem.id}
+  submissions={caseItem.documentSubmissions}
+  onDeleteAction={deleteSubmission}
+/>
 <DocumentsSection
   caseId={caseItem.id}
   documents={caseItem.documents}

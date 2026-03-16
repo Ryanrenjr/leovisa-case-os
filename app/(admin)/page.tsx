@@ -1,169 +1,250 @@
 import Link from "next/link";
 import { prisma } from "../../lib/prisma";
-import StatusBadge from "../../components/StatusBadge";
+
+const PIPELINE_STATUSES = [
+  "new",
+  "intake_pending",
+  "documents_collecting",
+  "documents_received",
+  "under_review",
+  "contract_pending",
+  "contract_sent",
+  "signed",
+  "completed",
+] as const;
+
+const PIPELINE_LABELS: Record<(typeof PIPELINE_STATUSES)[number], string> = {
+  new: "New",
+  intake_pending: "Intake Pending",
+  documents_collecting: "Documents Collecting",
+  documents_received: "Documents Received",
+  under_review: "Under Review",
+  contract_pending: "Contract Pending",
+  contract_sent: "Contract Sent",
+  signed: "Signed",
+  completed: "Completed",
+};
+
+const BUSINESS_LINE_GROUPS = {
+  global_citizenship: {
+    label: "Global Citizenship",
+    matchers: [
+      "Greece Residency",
+      "Portugal Fund",
+      "Malta Residency",
+      "Hungary Residency",
+      "Japan Business Management",
+      "Turkey Citizenship",
+      "UAE Golden Visa",
+      "Cyprus Residency",
+      "Small Country Passport",
+    ],
+  },
+  uk_toc: {
+    label: "UK To C",
+    matchers: [
+      "Skilled Worker",
+      "Student and PSW",
+      "Spouse Visa",
+      "Visitor Visa",
+      "Innovator Founder",
+      "High Potential Individual",
+      "Global Talent",
+    ],
+  },
+  uk_tob: {
+    label: "UK To B",
+    matchers: [
+      "Sponsor License (General)",
+      "Sponsor License (Global Movement)",
+      "CoS Issue",
+      "Compliance Audit",
+      "Sole Rep Extension and Settlement",
+      "T1E Extension and Settlement",
+    ],
+  },
+} as const;
 
 export default async function Home() {
   const clientsCount = await prisma.client.count();
   const casesCount = await prisma.case.count();
-  const activeUploadLinksCount = await prisma.submissionLink.count({
+
+  const casesInProgressCount = await prisma.case.count({
     where: {
-      status: "active",
-    },
-  });
-  const pendingSubmissionsCount = await prisma.documentSubmission.count({
-    where: {
-      status: "submitted",
+      status: {
+        in: [
+          "new",
+          "intake_pending",
+          "documents_collecting",
+          "documents_received",
+          "under_review",
+          "contract_pending",
+          "contract_sent",
+          "signed",
+        ],
+      },
     },
   });
 
-  const recentCases = await prisma.case.findMany({
-    include: {
-      client: true,
-      assignedConsultant: true,
+  const completedCasesCount = await prisma.case.count({
+    where: {
+      status: "completed",
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 5,
   });
 
-  const recentAuditLogs = await prisma.auditLog.findMany({
-    orderBy: {
-      createdAt: "desc",
+  const allCases = await prisma.case.findMany({
+    select: {
+      status: true,
+      serviceType: true,
     },
-    take: 5,
   });
+
+  const pipelineData = PIPELINE_STATUSES.map((status) => {
+    const count = allCases.filter((item) => item.status === status).length;
+
+    return {
+      status,
+      label: PIPELINE_LABELS[status],
+      count,
+    };
+  });
+
+  const maxPipelineCount = Math.max(
+    ...pipelineData.map((item) => item.count),
+    1
+  );
+
+  const businessLineData = Object.entries(BUSINESS_LINE_GROUPS).map(
+    ([key, group]) => {
+      const count = allCases.filter((item) =>
+        group.matchers.some((matcher) => matcher === item.serviceType)
+      ).length;
+
+      return {
+        key,
+        label: group.label,
+        count,
+      };
+    }
+  );
+
+  const maxBusinessLineCount = Math.max(
+    ...businessLineData.map((item) => item.count),
+    1
+  );
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <div className="mb-10">
         <h1 className="text-4xl font-bold mb-3">Dashboard</h1>
         <p className="text-white/60">
-          Overview of clients, cases, uploads, and recent activity.
+          Overview of clients, cases, and business progress.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-  <Link
-    href="/clients"
-    className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
-  >
-    <p className="text-sm text-white/60 mb-2">Total Clients</p>
-    <h2 className="text-3xl font-semibold">{clientsCount}</h2>
-  </Link>
+        <Link
+          href="/clients"
+          className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
+        >
+          <p className="text-sm text-white/60 mb-2">Total Clients</p>
+          <h2 className="text-3xl font-semibold">{clientsCount}</h2>
+        </Link>
 
-  <Link
-    href="/cases"
-    className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
-  >
-    <p className="text-sm text-white/60 mb-2">Total Cases</p>
-    <h2 className="text-3xl font-semibold">{casesCount}</h2>
-  </Link>
+        <Link
+          href="/cases"
+          className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
+        >
+          <p className="text-sm text-white/60 mb-2">Total Cases</p>
+          <h2 className="text-3xl font-semibold">{casesCount}</h2>
+        </Link>
 
-  <Link
-    href="/cases"
-    className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
-  >
-    <p className="text-sm text-white/60 mb-2">Active Upload Links</p>
-    <h2 className="text-3xl font-semibold">{activeUploadLinksCount}</h2>
-  </Link>
+        <Link
+          href="/cases"
+          className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
+        >
+          <p className="text-sm text-white/60 mb-2">Cases In Progress</p>
+          <h2 className="text-3xl font-semibold">{casesInProgressCount}</h2>
+        </Link>
 
-  <Link
-    href="/cases"
-    className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
-  >
-    <p className="text-sm text-white/60 mb-2">Pending Submissions</p>
-    <h2 className="text-3xl font-semibold">{pendingSubmissionsCount}</h2>
-  </Link>
-</div>
+        <Link
+          href="/cases"
+          className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
+        >
+          <p className="text-sm text-white/60 mb-2">Completed Cases</p>
+          <h2 className="text-3xl font-semibold">{completedCasesCount}</h2>
+        </Link>
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">Recent Cases</h2>
+            <h2 className="text-2xl font-semibold">Case Pipeline Overview</h2>
             <Link
               href="/cases"
               className="text-sm text-white/70 underline underline-offset-4"
             >
-              View all
+              View cases
             </Link>
           </div>
 
-          {recentCases.length === 0 ? (
-            <p className="text-white/60">No cases yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {recentCases.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-xl border border-white/10 bg-black/30 p-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <Link
-                        href={`/cases/${item.id}`}
-                        className="font-medium underline underline-offset-4"
-                      >
-                        {item.caseCode}
-                      </Link>
-                      <p className="text-sm text-white/60 mt-2">
-                        {item.client.chineseName} / {item.client.englishName}
-                      </p>
-                      <p className="text-sm text-white/50 mt-1">
-                        {item.serviceType} · {item.country}
-                      </p>
-                    </div>
+          <div className="space-y-5">
+            {pipelineData.map((item) => {
+              const widthPercent =
+                item.count === 0 ? 0 : (item.count / maxPipelineCount) * 100;
 
-                    <div className="text-right text-sm text-white/50">
-                      <div>
-  <StatusBadge value={item.status} />
-</div>
-                      <p className="mt-2">
-                        {item.assignedConsultant?.name ?? "-"}
-                      </p>
-                    </div>
+              return (
+                <div key={item.status}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-white/80">{item.label}</p>
+                    <p className="text-sm text-white/50">{item.count}</p>
+                  </div>
+
+                  <div className="h-3 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-white/70"
+                      style={{ width: `${widthPercent}%` }}
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">Recent Audit Logs</h2>
+            <h2 className="text-2xl font-semibold">Business Line Breakdown</h2>
+            <Link
+              href="/cases"
+              className="text-sm text-white/70 underline underline-offset-4"
+            >
+              View cases
+            </Link>
           </div>
 
-          {recentAuditLogs.length === 0 ? (
-            <p className="text-white/60">No audit logs yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {recentAuditLogs.map((log) => {
-  const content = (
-    <div className="rounded-xl border border-white/10 bg-black/30 p-4 hover:bg-white/5">
-      <p className="font-medium">{log.actionType}</p>
-      <p className="text-sm text-white/60 mt-2">
-        Actor: {log.actorType}
-      </p>
-      <p className="text-sm text-white/60 mt-1">
-        Success: {log.success ? "Yes" : "No"}
-      </p>
-      <p className="text-sm text-white/40 mt-1">
-        {new Date(log.createdAt).toLocaleString()}
-      </p>
-    </div>
-  );
+          <div className="space-y-6">
+            {businessLineData.map((item) => {
+              const widthPercent =
+                item.count === 0 ? 0 : (item.count / maxBusinessLineCount) * 100;
 
-  return log.caseId ? (
-    <Link key={log.id} href={`/cases/${log.caseId}`} className="block">
-      {content}
-    </Link>
-  ) : (
-    <div key={log.id}>{content}</div>
-  );
-})}
-            </div>
-          )}
+              return (
+                <div key={item.key}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-white/80">{item.label}</p>
+                    <p className="text-sm text-white/50">{item.count}</p>
+                  </div>
+
+                  <div className="h-4 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-white/70"
+                      style={{ width: `${widthPercent}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </main>
