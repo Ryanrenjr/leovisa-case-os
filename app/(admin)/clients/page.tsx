@@ -142,25 +142,34 @@ export default async function ClientsPage({
           </thead>
 
           <tbody>
-            {clients.map((client) => (
-              <tr
-                key={client.id}
-                className="border-b border-white/10 last:border-b-0 hover:bg-white/5"
-              >
-                <td className="px-6 py-4">
-                  <Link
-                    href={`/clients/${client.id}`}
-                    className="font-medium underline underline-offset-4"
-                  >
-                    {client.chineseName}
-                  </Link>
-                </td>
-                <td className="px-6 py-4">{client.englishName}</td>
-                <td className="px-6 py-4">{client.email ?? "-"}</td>
-                <td className="px-6 py-4">{client.phone ?? "-"}</td>
-                <td className="px-6 py-4">{client.nationality ?? "-"}</td>
-              </tr>
-            ))}
+            {clients.map(
+  (client: {
+    id: string;
+    chineseName: string;
+    englishName: string | null;
+    email: string | null;
+    phone: string | null;
+    nationality: string | null;
+  }) => (
+    <tr
+      key={client.id}
+      className="border-b border-white/10 last:border-b-0 hover:bg-white/5"
+    >
+      <td className="px-6 py-4">
+        <Link
+          href={`/clients/${client.id}`}
+          className="font-medium underline underline-offset-4"
+        >
+          {client.chineseName}
+        </Link>
+      </td>
+      <td className="px-6 py-4">{client.englishName ?? "-"}</td>
+      <td className="px-6 py-4">{client.email ?? "-"}</td>
+      <td className="px-6 py-4">{client.phone ?? "-"}</td>
+      <td className="px-6 py-4">{client.nationality ?? "-"}</td>
+    </tr>
+  )
+)}
           </tbody>
         </table>
       </div>
