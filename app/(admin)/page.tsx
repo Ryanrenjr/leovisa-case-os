@@ -100,14 +100,16 @@ export default async function Home() {
   });
 
   const pipelineData = PIPELINE_STATUSES.map((status) => {
-    const count = allCases.filter((item) => item.status === status).length;
+  const count = allCases.filter(
+    (item: { status: string; serviceType: string }) => item.status === status
+  ).length;
 
-    return {
-      status,
-      label: PIPELINE_LABELS[status],
-      count,
-    };
-  });
+  return {
+    status,
+    label: PIPELINE_LABELS[status],
+    count,
+  };
+});
 
   const maxPipelineCount = Math.max(
     ...pipelineData.map((item) => item.count),
@@ -115,19 +117,18 @@ export default async function Home() {
   );
 
   const businessLineData = Object.entries(BUSINESS_LINE_GROUPS).map(
-    ([key, group]) => {
-      const count = allCases.filter((item) =>
-        group.matchers.some((matcher) => matcher === item.serviceType)
-      ).length;
+  ([key, group]) => {
+    const count = allCases.filter((item: { status: string; serviceType: string }) =>
+      group.matchers.some((matcher) => matcher === item.serviceType)
+    ).length;
 
-      return {
-        key,
-        label: group.label,
-        count,
-      };
-    }
-  );
-
+    return {
+      key,
+      label: group.label,
+      count,
+    };
+  }
+);
   const maxBusinessLineCount = Math.max(
     ...businessLineData.map((item) => item.count),
     1
