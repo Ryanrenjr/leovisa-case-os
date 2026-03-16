@@ -56,8 +56,8 @@ export async function deleteSubmission(formData: FormData) {
         remarks: existingSubmission.remarks,
         deletedDocumentCount: existingSubmission.documents.length,
         deletedDocumentNames: existingSubmission.documents.map(
-          (doc) => doc.originalFilename
-        ),
+  (doc: { originalFilename: string }) => doc.originalFilename
+),
       },
     },
   });
