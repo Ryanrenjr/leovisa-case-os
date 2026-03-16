@@ -172,29 +172,37 @@ const archivedCases = client.cases.filter(
           <p className="text-white/60">No cases yet.</p>
         ) : (
           <div className="space-y-4">
-            {client.cases.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-xl border border-white/10 bg-black/30 p-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <Link
-                      href={`/cases/${item.id}`}
-                      className="font-medium underline underline-offset-4 text-lg"
-                    >
-                      {item.caseCode}
-                    </Link>
+            {client.cases.map(
+  (item: {
+    id: string;
+    caseCode: string;
+    serviceType: string;
+    country: string;
+    status: string;
+  }) => (
+    <div
+      key={item.id}
+      className="rounded-xl border border-white/10 bg-black/30 p-4"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <Link
+            href={`/cases/${item.id}`}
+            className="font-medium underline underline-offset-4 text-lg"
+          >
+            {item.caseCode}
+          </Link>
 
-                    <p className="text-white/60 mt-2">
-                      {item.serviceType} · {item.country}
-                    </p>
-                  </div>
+          <p className="text-white/60 mt-2">
+            {item.serviceType} · {item.country}
+          </p>
+        </div>
 
-                  <StatusBadge value={item.status} />
-                </div>
-              </div>
-            ))}
+        <StatusBadge value={item.status} />
+      </div>
+    </div>
+  )
+)}
           </div>
         )}
       </div>
