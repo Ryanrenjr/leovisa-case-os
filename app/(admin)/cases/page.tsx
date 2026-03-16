@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "../../../lib/prisma";
+import StatusBadge from "../../../components/StatusBadge";
 
 type CasesPageProps = {
   searchParams: Promise<{
@@ -216,28 +217,40 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           </thead>
 
           <tbody>
-            {cases.map((item) => (
-              <tr
-                key={item.id}
-                className="border-b border-white/10 last:border-b-0 hover:bg-white/5"
-              >
-                <td className="px-6 py-4">
-                  <Link
-                    href={`/cases/${item.id}`}
-                    className="font-medium underline underline-offset-4"
-                  >
-                    {item.caseCode}
-                  </Link>
-                </td>
-                <td className="px-6 py-4">{item.client.chineseName}</td>
-                <td className="px-6 py-4">{item.serviceType}</td>
-                <td className="px-6 py-4">{item.country}</td>
-                <td className="px-6 py-4">{item.status}</td>
-                <td className="px-6 py-4">
-                  {item.assignedConsultant?.name ?? "-"}
-                </td>
-              </tr>
-            ))}
+            {cases.map(
+  (item: {
+    id: string;
+    caseCode: string;
+    serviceType: string;
+    country: string;
+    status: string;
+    client: { chineseName: string };
+    assignedConsultant: { name: string } | null;
+  }) => (
+    <tr
+      key={item.id}
+      className="border-b border-white/10 last:border-b-0 hover:bg-white/5"
+    >
+      <td className="px-6 py-4">
+        <Link
+          href={`/cases/${item.id}`}
+          className="font-medium underline underline-offset-4"
+        >
+          {item.caseCode}
+        </Link>
+      </td>
+      <td className="px-6 py-4">{item.client.chineseName}</td>
+      <td className="px-6 py-4">{item.serviceType}</td>
+      <td className="px-6 py-4">{item.country}</td>
+      <td className="px-6 py-4">
+        <StatusBadge value={item.status} />
+      </td>
+      <td className="px-6 py-4">
+        {item.assignedConsultant?.name ?? "-"}
+      </td>
+    </tr>
+  )
+)}
           </tbody>
         </table>
       </div>
