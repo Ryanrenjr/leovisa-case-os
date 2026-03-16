@@ -173,11 +173,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
           >
             <option value="">All consultants</option>
-            {consultants.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
+            {consultants.map((item: { id: string; name: string }) => (
+  <option key={item.id} value={item.id}>
+    {item.name}
+  </option>
+))}
           </select>
         </div>
 
