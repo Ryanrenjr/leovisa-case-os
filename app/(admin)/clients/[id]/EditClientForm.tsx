@@ -14,9 +14,13 @@ type EditClientFormProps = {
     nationality: string | null;
     notes: string | null;
   };
+  lang: "en" | "zh";
 };
 
-export default function EditClientForm({ client }: EditClientFormProps) {
+export default function EditClientForm({
+  client,
+  lang,
+}: EditClientFormProps) {
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <div className="mb-6">
@@ -24,15 +28,19 @@ export default function EditClientForm({ client }: EditClientFormProps) {
           href={`/clients/${client.id}`}
           className="inline-block text-sm text-white/70 underline underline-offset-4"
         >
-          ← Back to Client
+          {lang === "zh" ? "← 返回客户详情" : "← Back to Client"}
         </Link>
       </div>
 
       <div className="max-w-5xl rounded-2xl border border-white/10 bg-white/5 p-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-3">Edit Client</h1>
+          <h1 className="text-4xl font-bold mb-3">
+            {lang === "zh" ? "编辑客户" : "Edit Client"}
+          </h1>
           <p className="text-white/60">
-            Update client information in LeoVisa Case OS.
+            {lang === "zh"
+              ? "更新 LeoVisa Case OS 中的客户信息。"
+              : "Update client information in LeoVisa Case OS."}
           </p>
         </div>
 
@@ -40,12 +48,14 @@ export default function EditClientForm({ client }: EditClientFormProps) {
           <input type="hidden" name="clientId" value={client.id} />
 
           <div className="rounded-xl border border-white/10 bg-black/30 p-6">
-            <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              {lang === "zh" ? "基本信息" : "Basic Information"}
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm text-white/70 mb-2">
-                  Chinese Name
+                  {lang === "zh" ? "中文名" : "Chinese Name"}
                 </label>
                 <input
                   type="text"
@@ -58,7 +68,7 @@ export default function EditClientForm({ client }: EditClientFormProps) {
 
               <div>
                 <label className="block text-sm text-white/70 mb-2">
-                  English Name
+                  {lang === "zh" ? "英文名" : "English Name"}
                 </label>
                 <input
                   type="text"
@@ -70,7 +80,7 @@ export default function EditClientForm({ client }: EditClientFormProps) {
 
               <div>
                 <label className="block text-sm text-white/70 mb-2">
-                  Email
+                  {lang === "zh" ? "邮箱" : "Email"}
                 </label>
                 <input
                   type="email"
@@ -82,7 +92,7 @@ export default function EditClientForm({ client }: EditClientFormProps) {
 
               <div>
                 <label className="block text-sm text-white/70 mb-2">
-                  Phone
+                  {lang === "zh" ? "电话" : "Phone"}
                 </label>
                 <input
                   type="text"
@@ -106,7 +116,7 @@ export default function EditClientForm({ client }: EditClientFormProps) {
 
               <div>
                 <label className="block text-sm text-white/70 mb-2">
-                  Nationality
+                  {lang === "zh" ? "国籍" : "Nationality"}
                 </label>
                 <input
                   type="text"
@@ -119,18 +129,22 @@ export default function EditClientForm({ client }: EditClientFormProps) {
           </div>
 
           <div className="rounded-xl border border-white/10 bg-black/30 p-6">
-            <h2 className="text-xl font-semibold mb-4">Internal Information</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              {lang === "zh" ? "内部信息" : "Internal Information"}
+            </h2>
 
             <div>
               <label className="block text-sm text-white/70 mb-2">
-                Notes
+                {lang === "zh" ? "备注" : "Notes"}
               </label>
               <textarea
                 name="notes"
                 rows={5}
                 defaultValue={client.notes ?? ""}
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
-                placeholder="Add internal notes..."
+                placeholder={
+                  lang === "zh" ? "添加内部备注..." : "Add internal notes..."
+                }
               />
             </div>
           </div>
@@ -140,14 +154,14 @@ export default function EditClientForm({ client }: EditClientFormProps) {
               type="submit"
               className="rounded-lg bg-white text-black px-6 py-3 font-medium"
             >
-              Save Changes
+              {lang === "zh" ? "保存修改" : "Save Changes"}
             </button>
 
             <Link
               href={`/clients/${client.id}`}
               className="rounded-lg border border-white/10 px-6 py-3 text-white/80 hover:bg-white/10"
             >
-              Cancel
+              {lang === "zh" ? "取消" : "Cancel"}
             </Link>
           </div>
         </form>

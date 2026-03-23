@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { prisma } from "../../../../../lib/prisma";
+import { getLangFromCookie } from "../../../../../lib/i18n";
 import EditClientForm from "../EditClientForm";
 
 type EditClientPageProps = {
@@ -12,6 +14,9 @@ export default async function EditClientPage({
   params,
 }: EditClientPageProps) {
   const { id } = await params;
+
+  const cookieStore = await cookies();
+  const lang = getLangFromCookie(cookieStore.get("lang")?.value);
 
   const client = await prisma.client.findUnique({
     where: { id },
@@ -31,5 +36,5 @@ export default async function EditClientPage({
     notFound();
   }
 
-  return <EditClientForm client={client} />;
+  return <EditClientForm client={client} lang={lang} />;
 }

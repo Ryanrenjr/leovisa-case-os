@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { prisma } from "../../../../lib/prisma";
+import { getLangFromCookie } from "../../../../lib/i18n";
 import NewCaseForm from "./NewCaseForm";
 
 type NewCasePageProps = {
@@ -12,6 +14,9 @@ export default async function NewCasePage({
 }: NewCasePageProps) {
   const params = await searchParams;
   const preselectedClientId = params.clientId?.trim() || "";
+
+  const cookieStore = await cookies();
+  const lang = getLangFromCookie(cookieStore.get("lang")?.value);
 
   const clients = await prisma.client.findMany({
     orderBy: {
@@ -42,6 +47,7 @@ export default async function NewCasePage({
       clients={clients}
       consultants={consultants}
       preselectedClientId={preselectedClientId}
+      lang={lang}
     />
   );
 }

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { prisma } from "../../../../lib/prisma";
+import { getLangFromCookie } from "../../../../lib/i18n";
 import StatusBadge from "../../../../components/StatusBadge";
 import { deleteClient } from "./actions";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
@@ -22,6 +24,9 @@ export default async function ClientDetailPage({
   const query = await searchParams;
   const deleteError = query.deleteError || "";
 
+  const cookieStore = await cookies();
+  const lang = getLangFromCookie(cookieStore.get("lang")?.value);
+
   const client = await prisma.client.findUnique({
     where: { id },
     include: {
@@ -39,18 +44,18 @@ export default async function ClientDetailPage({
 
   const totalCases = client.cases.length;
 
-const activeCases = client.cases.filter(
-  (item: { status: string }) =>
-    item.status !== "completed" && item.status !== "archived"
-).length;
+  const activeCases = client.cases.filter(
+    (item: { status: string }) =>
+      item.status !== "completed" && item.status !== "archived"
+  ).length;
 
-const completedCases = client.cases.filter(
-  (item: { status: string }) => item.status === "completed"
-).length;
+  const completedCases = client.cases.filter(
+    (item: { status: string }) => item.status === "completed"
+  ).length;
 
-const archivedCases = client.cases.filter(
-  (item: { status: string }) => item.status === "archived"
-).length;
+  const archivedCases = client.cases.filter(
+    (item: { status: string }) => item.status === "archived"
+  ).length;
 
   return (
     <main className="min-h-screen bg-black text-white p-8">
@@ -58,13 +63,15 @@ const archivedCases = client.cases.filter(
         href="/clients"
         className="inline-block mb-6 text-sm text-white/70 underline underline-offset-4"
       >
-        ← Back to Clients
+        {lang === "zh" ? "← 返回客户列表" : "← Back to Clients"}
       </Link>
 
       {deleteError === "linked_cases" && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 mb-6">
           <p className="text-red-300">
-            This client cannot be deleted because linked cases exist.
+            {lang === "zh"
+              ? "该客户暂时不能删除，因为仍有关联案件。"
+              : "This client cannot be deleted because linked cases exist."}
           </p>
         </div>
       )}
@@ -81,40 +88,52 @@ const archivedCases = client.cases.filter(
               href={`/clients/${client.id}/edit`}
               className="rounded-lg border border-white/10 px-5 py-3 text-white/80 hover:bg-white/10"
             >
-              Edit Client
+              {lang === "zh" ? "编辑客户" : "Edit Client"}
             </Link>
 
             <Link
               href={`/cases/new?clientId=${client.id}`}
               className="rounded-lg bg-white text-black px-5 py-3 font-medium"
             >
-              Create Case for This Client
+              {lang === "zh"
+                ? "为该客户创建案件"
+                : "Create Case for This Client"}
             </Link>
 
             <form action={deleteClient}>
-  <input type="hidden" name="clientId" value={client.id} />
-  <ConfirmSubmitButton
-    label="Delete Client"
-    confirmMessage="Are you sure you want to delete this client? This action cannot be undone."
-    className="rounded-lg border border-red-500/30 px-5 py-3 text-red-300 hover:bg-red-500/10"
-  />
-</form>
+              <input type="hidden" name="clientId" value={client.id} />
+              <ConfirmSubmitButton
+                label={lang === "zh" ? "删除客户" : "Delete Client"}
+                confirmMessage={
+                  lang === "zh"
+                    ? "确认要删除这个客户吗？此操作无法撤销。"
+                    : "Are you sure you want to delete this client? This action cannot be undone."
+                }
+                className="rounded-lg border border-red-500/30 px-5 py-3 text-red-300 hover:bg-red-500/10"
+              />
+            </form>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
           <div>
-            <p className="text-white/50 mb-1">English Name</p>
+            <p className="text-white/50 mb-1">
+              {lang === "zh" ? "英文名" : "English Name"}
+            </p>
             <p>{client.englishName ?? "-"}</p>
           </div>
 
           <div>
-            <p className="text-white/50 mb-1">Email</p>
+            <p className="text-white/50 mb-1">
+              {lang === "zh" ? "邮箱" : "Email"}
+            </p>
             <p>{client.email ?? "-"}</p>
           </div>
 
           <div>
-            <p className="text-white/50 mb-1">Phone</p>
+            <p className="text-white/50 mb-1">
+              {lang === "zh" ? "电话" : "Phone"}
+            </p>
             <p>{client.phone ?? "-"}</p>
           </div>
 
@@ -124,85 +143,105 @@ const archivedCases = client.cases.filter(
           </div>
 
           <div>
-            <p className="text-white/50 mb-1">Nationality</p>
+            <p className="text-white/50 mb-1">
+              {lang === "zh" ? "国籍" : "Nationality"}
+            </p>
             <p>{client.nationality ?? "-"}</p>
           </div>
 
           <div>
-            <p className="text-white/50 mb-1">Client Code</p>
+            <p className="text-white/50 mb-1">
+              {lang === "zh" ? "客户编号" : "Client Code"}
+            </p>
             <p>{client.clientCode ?? "-"}</p>
           </div>
         </div>
 
         <div className="mt-6">
-          <p className="text-white/50 mb-1 text-sm">Notes</p>
+          <p className="text-white/50 mb-1 text-sm">
+            {lang === "zh" ? "备注" : "Notes"}
+          </p>
           <p>{client.notes ?? "-"}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-white/60 mb-2">Total Cases</p>
+          <p className="text-sm text-white/60 mb-2">
+            {lang === "zh" ? "案件总数" : "Total Cases"}
+          </p>
           <h2 className="text-3xl font-semibold">{totalCases}</h2>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-white/60 mb-2">Active Cases</p>
+          <p className="text-sm text-white/60 mb-2">
+            {lang === "zh" ? "进行中案件" : "Active Cases"}
+          </p>
           <h2 className="text-3xl font-semibold">{activeCases}</h2>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-white/60 mb-2">Completed Cases</p>
+          <p className="text-sm text-white/60 mb-2">
+            {lang === "zh" ? "已完成案件" : "Completed Cases"}
+          </p>
           <h2 className="text-3xl font-semibold">{completedCases}</h2>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm text-white/60 mb-2">Archived Cases</p>
+          <p className="text-sm text-white/60 mb-2">
+            {lang === "zh" ? "已归档案件" : "Archived Cases"}
+          </p>
           <h2 className="text-3xl font-semibold">{archivedCases}</h2>
         </div>
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold">Cases</h2>
-          <p className="text-sm text-white/50">{client.cases.length} case(s)</p>
-        </div>
-
-        {client.cases.length === 0 ? (
-          <p className="text-white/60">No cases yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {client.cases.map(
-  (item: {
-    id: string;
-    caseCode: string;
-    serviceType: string;
-    country: string;
-    status: string;
-  }) => (
-    <div
-      key={item.id}
-      className="rounded-xl border border-white/10 bg-black/30 p-4"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <Link
-            href={`/cases/${item.id}`}
-            className="font-medium underline underline-offset-4 text-lg"
-          >
-            {item.caseCode}
-          </Link>
-
-          <p className="text-white/60 mt-2">
-            {item.serviceType} · {item.country}
+          <h2 className="text-2xl font-semibold">
+            {lang === "zh" ? "案件" : "Cases"}
+          </h2>
+          <p className="text-sm text-white/50">
+            {client.cases.length} {lang === "zh" ? "个案件" : "case(s)"}
           </p>
         </div>
 
-        <StatusBadge value={item.status} />
-      </div>
-    </div>
-  )
-)}
+        {client.cases.length === 0 ? (
+          <p className="text-white/60">
+            {lang === "zh" ? "暂无案件。" : "No cases yet."}
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {client.cases.map(
+              (item: {
+                id: string;
+                caseCode: string;
+                serviceType: string;
+                country: string;
+                status: string;
+              }) => (
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-white/10 bg-black/30 p-4"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <Link
+                        href={`/cases/${item.id}`}
+                        className="font-medium underline underline-offset-4 text-lg"
+                      >
+                        {item.caseCode}
+                      </Link>
+
+                      <p className="text-white/60 mt-2">
+                        {item.serviceType} · {item.country}
+                      </p>
+                    </div>
+
+                    <StatusBadge value={item.status} lang={lang} />
+                  </div>
+                </div>
+              )
+            )}
           </div>
         )}
       </div>

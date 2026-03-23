@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { prisma } from "../../../../../lib/prisma";
+import { getLangFromCookie } from "../../../../../lib/i18n";
 import EditCaseForm from "../EditCaseForm";
 
 type EditCasePageProps = {
@@ -12,6 +14,9 @@ export default async function EditCasePage({
   params,
 }: EditCasePageProps) {
   const { id } = await params;
+
+  const cookieStore = await cookies();
+  const lang = getLangFromCookie(cookieStore.get("lang")?.value);
 
   const caseItem = await prisma.case.findUnique({
     where: { id },
@@ -61,6 +66,7 @@ export default async function EditCasePage({
       caseItem={caseItem}
       clients={clients}
       consultants={consultants}
+      lang={lang}
     />
   );
 }

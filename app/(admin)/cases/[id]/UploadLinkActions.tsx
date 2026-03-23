@@ -4,10 +4,12 @@ import { useState } from "react";
 
 type UploadLinkActionsProps = {
   token: string;
+  lang: "en" | "zh";
 };
 
 export default function UploadLinkActions({
   token,
+  lang,
 }: UploadLinkActionsProps) {
   const [copied, setCopied] = useState(false);
 
@@ -34,7 +36,7 @@ export default function UploadLinkActions({
         rel="noreferrer"
         className="inline-block rounded-lg bg-white text-black px-4 py-2 font-medium"
       >
-        Open Portal
+        {lang === "zh" ? "打开页面" : "Open Portal"}
       </a>
 
       <button
@@ -42,7 +44,13 @@ export default function UploadLinkActions({
         onClick={handleCopy}
         className="inline-block rounded-lg border border-white/10 px-4 py-2 font-medium text-white"
       >
-        {copied ? "Copied" : "Copy Link"}
+        {copied
+          ? lang === "zh"
+            ? "已复制"
+            : "Copied"
+          : lang === "zh"
+          ? "复制链接"
+          : "Copy Link"}
       </button>
     </div>
   );

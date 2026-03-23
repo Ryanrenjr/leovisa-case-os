@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { prisma } from "../../../lib/prisma";
 import StatusBadge from "../../../components/StatusBadge";
+import { getLangFromCookie, messages } from "../../../lib/i18n";
 
 type CasesPageProps = {
   searchParams: Promise<{
@@ -13,6 +15,10 @@ type CasesPageProps = {
 
 export default async function CasesPage({ searchParams }: CasesPageProps) {
   const params = await searchParams;
+
+  const cookieStore = await cookies();
+  const lang = getLangFromCookie(cookieStore.get("lang")?.value);
+  const t = messages[lang];
 
   const q = params.q?.trim() || "";
   const status = params.status?.trim() || "";
@@ -120,13 +126,13 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold">Cases</h1>
+        <h1 className="text-4xl font-bold">{t.cases.title}</h1>
 
         <Link
           href="/cases/new"
           className="rounded-lg bg-white text-black px-4 py-2 font-medium"
         >
-          New Case
+          {t.cases.newCase}
         </Link>
       </div>
 
@@ -135,24 +141,28 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
         className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 rounded-2xl border border-white/10 bg-white/5 p-6"
       >
         <div className="md:col-span-2">
-          <label className="block text-sm text-white/70 mb-2">Search</label>
+          <label className="block text-sm text-white/70 mb-2">
+            {t.common.search}
+          </label>
           <input
             type="text"
             name="q"
             defaultValue={q}
-            placeholder="Search by case code, client name, service type, country"
+            placeholder={t.cases.searchPlaceholder}
             className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm text-white/70 mb-2">Status</label>
+          <label className="block text-sm text-white/70 mb-2">
+            {t.common.status}
+          </label>
           <select
             name="status"
             defaultValue={status}
             className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
           >
-            <option value="">All statuses</option>
+            <option value="">{t.common.allStatuses}</option>
             <option value="new">new</option>
             <option value="intake_pending">intake_pending</option>
             <option value="documents_collecting">documents_collecting</option>
@@ -167,18 +177,20 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
         </div>
 
         <div>
-          <label className="block text-sm text-white/70 mb-2">Consultant</label>
+          <label className="block text-sm text-white/70 mb-2">
+            {t.common.consultant}
+          </label>
           <select
             name="consultant"
             defaultValue={consultant}
             className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
           >
-            <option value="">All consultants</option>
+            <option value="">{t.common.allConsultants}</option>
             {consultants.map((item: { id: string; name: string }) => (
-  <option key={item.id} value={item.id}>
-    {item.name}
-  </option>
-))}
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -187,77 +199,89 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             type="submit"
             className="rounded-lg bg-white text-black px-5 py-2 font-medium"
           >
-            Apply Filters
+            {t.common.applyFilters}
           </button>
 
           <Link
             href="/cases"
             className="rounded-lg border border-white/10 px-5 py-2 text-white/80"
           >
-            Reset
+            {t.common.reset}
           </Link>
         </div>
       </form>
 
       <div className="mb-4 text-sm text-white/60">
-        {totalCases} case(s) found · Page {currentPage} of {totalPages}
+        {totalCases} {t.cases.caseFound} · {t.common.page} {currentPage} {t.common.of} {totalPages}
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
         <table className="w-full text-left">
           <thead className="border-b border-white/10 bg-white/5">
             <tr>
-              <th className="px-6 py-4 text-sm text-white/70">Case Code</th>
-              <th className="px-6 py-4 text-sm text-white/70">Client</th>
-              <th className="px-6 py-4 text-sm text-white/70">Service Type</th>
-              <th className="px-6 py-4 text-sm text-white/70">Country</th>
-              <th className="px-6 py-4 text-sm text-white/70">Status</th>
-              <th className="px-6 py-4 text-sm text-white/70">Consultant</th>
+              <th className="px-6 py-4 text-sm text-white/70">
+                {t.cases.caseCode}
+              </th>
+              <th className="px-6 py-4 text-sm text-white/70">
+                {t.cases.client}
+              </th>
+              <th className="px-6 py-4 text-sm text-white/70">
+                {t.cases.serviceType}
+              </th>
+              <th className="px-6 py-4 text-sm text-white/70">
+                {t.cases.country}
+              </th>
+              <th className="px-6 py-4 text-sm text-white/70">
+                {t.common.status}
+              </th>
+              <th className="px-6 py-4 text-sm text-white/70">
+                {t.common.consultant}
+              </th>
             </tr>
           </thead>
 
           <tbody>
             {cases.map(
-  (item: {
-    id: string;
-    caseCode: string;
-    serviceType: string;
-    country: string;
-    status: string;
-    client: { chineseName: string };
-    assignedConsultant: { name: string } | null;
-  }) => (
-    <tr
-      key={item.id}
-      className="border-b border-white/10 last:border-b-0 hover:bg-white/5"
-    >
-      <td className="px-6 py-4">
-        <Link
-          href={`/cases/${item.id}`}
-          className="font-medium underline underline-offset-4"
-        >
-          {item.caseCode}
-        </Link>
-      </td>
-      <td className="px-6 py-4">{item.client.chineseName}</td>
-      <td className="px-6 py-4">{item.serviceType}</td>
-      <td className="px-6 py-4">{item.country}</td>
-      <td className="px-6 py-4">
-        <StatusBadge value={item.status} />
-      </td>
-      <td className="px-6 py-4">
-        {item.assignedConsultant?.name ?? "-"}
-      </td>
-    </tr>
-  )
-)}
+              (item: {
+                id: string;
+                caseCode: string;
+                serviceType: string;
+                country: string;
+                status: string;
+                client: { chineseName: string };
+                assignedConsultant: { name: string } | null;
+              }) => (
+                <tr
+                  key={item.id}
+                  className="border-b border-white/10 last:border-b-0 hover:bg-white/5"
+                >
+                  <td className="px-6 py-4">
+                    <Link
+                      href={`/cases/${item.id}`}
+                      className="font-medium underline underline-offset-4"
+                    >
+                      {item.caseCode}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4">{item.client.chineseName}</td>
+                  <td className="px-6 py-4">{item.serviceType}</td>
+                  <td className="px-6 py-4">{item.country}</td>
+                  <td className="px-6 py-4">
+                    <StatusBadge value={item.status} lang={lang}/>
+                  </td>
+                  <td className="px-6 py-4">
+                    {item.assignedConsultant?.name ?? t.common.unassigned}
+                  </td>
+                </tr>
+              )
+            )}
           </tbody>
         </table>
       </div>
 
       <div className="mt-6 flex items-center justify-between">
         <div className="text-sm text-white/50">
-          Showing {cases.length} item(s) on this page
+          {t.common.showing} {cases.length} {t.common.itemsOnThisPage}
         </div>
 
         <div className="flex gap-3">
@@ -266,11 +290,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               href={buildCasesPageUrl(previousPage)}
               className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
             >
-              Previous
+              {t.common.previous}
             </Link>
           ) : (
             <span className="rounded-lg border border-white/10 px-4 py-2 text-white/30">
-              Previous
+              {t.common.previous}
             </span>
           )}
 
@@ -279,11 +303,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               href={buildCasesPageUrl(nextPage)}
               className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
             >
-              Next
+              {t.common.next}
             </Link>
           ) : (
             <span className="rounded-lg border border-white/10 px-4 py-2 text-white/30">
-              Next
+              {t.common.next}
             </span>
           )}
         </div>

@@ -1,5 +1,9 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { prisma } from "../../lib/prisma";
+import { getLangFromCookie, messages } from "../../lib/i18n";
 
 const PIPELINE_STATUSES = [
   "new",
@@ -13,21 +17,8 @@ const PIPELINE_STATUSES = [
   "completed",
 ] as const;
 
-const PIPELINE_LABELS: Record<(typeof PIPELINE_STATUSES)[number], string> = {
-  new: "New",
-  intake_pending: "Intake Pending",
-  documents_collecting: "Documents Collecting",
-  documents_received: "Documents Received",
-  under_review: "Under Review",
-  contract_pending: "Contract Pending",
-  contract_sent: "Contract Sent",
-  signed: "Signed",
-  completed: "Completed",
-};
-
 const BUSINESS_LINE_GROUPS = {
   global_citizenship: {
-    label: "Global Citizenship",
     matchers: [
       "Greece Residency",
       "Portugal Fund",
@@ -41,7 +32,6 @@ const BUSINESS_LINE_GROUPS = {
     ],
   },
   uk_toc: {
-    label: "UK To C",
     matchers: [
       "Skilled Worker",
       "Student and PSW",
@@ -53,7 +43,6 @@ const BUSINESS_LINE_GROUPS = {
     ],
   },
   uk_tob: {
-    label: "UK To B",
     matchers: [
       "Sponsor License (General)",
       "Sponsor License (Global Movement)",
@@ -66,6 +55,10 @@ const BUSINESS_LINE_GROUPS = {
 } as const;
 
 export default async function Home() {
+  const cookieStore = await cookies();
+  const lang = getLangFromCookie(cookieStore.get("lang")?.value);
+  const t = messages[lang];
+
   const clientsCount = await prisma.client.count();
   const casesCount = await prisma.case.count();
 
@@ -100,16 +93,16 @@ export default async function Home() {
   });
 
   const pipelineData = PIPELINE_STATUSES.map((status) => {
-  const count = allCases.filter(
-    (item: { status: string; serviceType: string }) => item.status === status
-  ).length;
+    const count = allCases.filter(
+      (item: { status: string; serviceType: string }) => item.status === status
+    ).length;
 
-  return {
-    status,
-    label: PIPELINE_LABELS[status],
-    count,
-  };
-});
+    return {
+      status,
+      label: t.pipeline[status],
+      count,
+    };
+  });
 
   const maxPipelineCount = Math.max(
     ...pipelineData.map((item) => item.count),
@@ -117,18 +110,20 @@ export default async function Home() {
   );
 
   const businessLineData = Object.entries(BUSINESS_LINE_GROUPS).map(
-  ([key, group]) => {
-    const count = allCases.filter((item: { status: string; serviceType: string }) =>
-      group.matchers.some((matcher) => matcher === item.serviceType)
-    ).length;
+    ([key, group]) => {
+      const count = allCases.filter(
+        (item: { status: string; serviceType: string }) =>
+          group.matchers.some((matcher) => matcher === item.serviceType)
+      ).length;
 
-    return {
-      key,
-      label: group.label,
-      count,
-    };
-  }
-);
+      return {
+        key,
+        label: t.businessLine[key as keyof typeof t.businessLine],
+        count,
+      };
+    }
+  );
+
   const maxBusinessLineCount = Math.max(
     ...businessLineData.map((item) => item.count),
     1
@@ -137,10 +132,8 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-black text-white p-8">
       <div className="mb-10">
-        <h1 className="text-4xl font-bold mb-3">Dashboard</h1>
-        <p className="text-white/60">
-          Overview of clients, cases, and business progress.
-        </p>
+        <h1 className="text-4xl font-bold mb-3">{t.dashboard.title}</h1>
+        <p className="text-white/60">{t.dashboard.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
@@ -148,7 +141,9 @@ export default async function Home() {
           href="/clients"
           className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
         >
-          <p className="text-sm text-white/60 mb-2">Total Clients</p>
+          <p className="text-sm text-white/60 mb-2">
+            {t.dashboard.totalClients}
+          </p>
           <h2 className="text-3xl font-semibold">{clientsCount}</h2>
         </Link>
 
@@ -156,7 +151,7 @@ export default async function Home() {
           href="/cases"
           className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
         >
-          <p className="text-sm text-white/60 mb-2">Total Cases</p>
+          <p className="text-sm text-white/60 mb-2">{t.dashboard.totalCases}</p>
           <h2 className="text-3xl font-semibold">{casesCount}</h2>
         </Link>
 
@@ -164,7 +159,9 @@ export default async function Home() {
           href="/cases"
           className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
         >
-          <p className="text-sm text-white/60 mb-2">Cases In Progress</p>
+          <p className="text-sm text-white/60 mb-2">
+            {t.dashboard.casesInProgress}
+          </p>
           <h2 className="text-3xl font-semibold">{casesInProgressCount}</h2>
         </Link>
 
@@ -172,7 +169,9 @@ export default async function Home() {
           href="/cases"
           className="rounded-2xl border border-white/10 bg-white/5 p-6 block hover:bg-white/10"
         >
-          <p className="text-sm text-white/60 mb-2">Completed Cases</p>
+          <p className="text-sm text-white/60 mb-2">
+            {t.dashboard.completedCases}
+          </p>
           <h2 className="text-3xl font-semibold">{completedCasesCount}</h2>
         </Link>
       </div>
@@ -180,12 +179,14 @@ export default async function Home() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">Case Pipeline Overview</h2>
+            <h2 className="text-2xl font-semibold">
+              {t.dashboard.casePipelineOverview}
+            </h2>
             <Link
               href="/cases"
               className="text-sm text-white/70 underline underline-offset-4"
             >
-              View cases
+              {t.dashboard.viewCases}
             </Link>
           </div>
 
@@ -215,12 +216,14 @@ export default async function Home() {
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold">Business Line Breakdown</h2>
+            <h2 className="text-2xl font-semibold">
+              {t.dashboard.businessLineBreakdown}
+            </h2>
             <Link
               href="/cases"
               className="text-sm text-white/70 underline underline-offset-4"
             >
-              View cases
+              {t.dashboard.viewCases}
             </Link>
           </div>
 
