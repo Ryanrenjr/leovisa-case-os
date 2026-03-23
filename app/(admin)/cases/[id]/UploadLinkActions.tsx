@@ -34,7 +34,7 @@ export default function UploadLinkActions({
         href={`/upload/${token}`}
         target="_blank"
         rel="noreferrer"
-        className="inline-block rounded-lg bg-white text-black px-4 py-2 font-medium"
+        className="toss-primary-button px-4 py-2 text-sm font-semibold"
       >
         {lang === "zh" ? "打开页面" : "Open Portal"}
       </a>
@@ -42,7 +42,7 @@ export default function UploadLinkActions({
       <button
         type="button"
         onClick={handleCopy}
-        className="inline-block rounded-lg border border-white/10 px-4 py-2 font-medium text-white"
+        className="toss-secondary-button px-4 py-2 text-sm font-semibold"
       >
         {copied
           ? lang === "zh"

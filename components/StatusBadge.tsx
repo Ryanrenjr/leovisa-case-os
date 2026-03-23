@@ -74,7 +74,7 @@ function getBadgeClass(value: string) {
     case "signed":
     case "active":
     case "generated":
-      return "bg-green-500/15 text-green-300 border-green-500/20";
+      return "border border-[#d7f0df] bg-[#eefbf3] text-[#1f8f55]";
 
     case "under_review":
     case "documents_received":
@@ -83,14 +83,14 @@ function getBadgeClass(value: string) {
     case "uploaded":
     case "pending":
     case "sent":
-      return "bg-yellow-500/15 text-yellow-300 border-yellow-500/20";
+      return "border border-[#ffe7b8] bg-[#fff8e8] text-[#b78103]";
 
     case "rejected":
     case "archived":
     case "inactive":
     case "expired":
     case "superseded":
-      return "bg-red-500/15 text-red-300 border-red-500/20";
+      return "border border-[#ffd9de] bg-[#fff2f4] text-[#e5484d]";
 
     case "documents_collecting":
     case "intake_pending":
@@ -98,7 +98,7 @@ function getBadgeClass(value: string) {
     case "not_started":
     case "needs_resubmission":
     default:
-      return "bg-white/10 text-white/80 border-white/10";
+      return "border border-[#e5e8eb] bg-[#f7f8fa] text-[#6b7684]";
   }
 }
 
@@ -112,7 +112,7 @@ export default function StatusBadge({
 
   return (
     <span
-      className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${getBadgeClass(
+      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getBadgeClass(
         value
       )}`}
     >

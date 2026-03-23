@@ -40,15 +40,12 @@ export default function AuditLogsSection({
   const visibleLogs = expanded ? logs : logs.slice(0, 5);
 
   return (
-    <div
-      id="audit-logs-section"
-      className="rounded-2xl border border-white/10 bg-white/5 p-8"
-    >
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">
+    <div id="audit-logs-section" className="toss-card p-8">
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-[28px] font-bold tracking-[-0.02em] text-[#191f28]">
           {lang === "zh" ? "最近操作日志" : "Recent Audit Logs"}
         </h2>
-        <p className="text-sm text-white/50">
+        <p className="text-sm font-medium text-[#8b95a1]">
           {logs.length === 0
             ? lang === "zh"
               ? "暂无日志"
@@ -60,40 +57,39 @@ export default function AuditLogsSection({
       </div>
 
       {logs.length === 0 ? (
-        <p className="text-white/60">
+        <p className="text-[15px] text-[#8b95a1]">
           {lang === "zh" ? "暂无操作日志。" : "No audit logs yet."}
         </p>
       ) : (
         <>
           <div className="space-y-4">
             {visibleLogs.map((log) => (
-              <div
-                key={log.id}
-                className="rounded-xl border border-white/10 bg-black/30 p-4"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div key={log.id} className="toss-soft-card p-5">
+                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "操作" : "Action"}
                     </p>
-                    <p>{log.actionType}</p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {log.actionType}
+                    </p>
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "操作者" : "Actor"}
                     </p>
-                    <p>
+                    <p className="text-[15px] text-[#4e5968]">
                       {log.actorType}
                       {log.actorId ? ` (${log.actorId})` : ""}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "结果" : "Success"}
                     </p>
-                    <p>
+                    <p className="text-[15px] text-[#4e5968]">
                       {log.success
                         ? lang === "zh"
                           ? "成功"
@@ -105,28 +101,30 @@ export default function AuditLogsSection({
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "时间" : "Created At"}
                     </p>
-                    <p>{new Date(log.createdAt).toLocaleString()}</p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {new Date(log.createdAt).toLocaleString()}
+                    </p>
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <p className="text-white/50 mb-1 text-sm">
+                    <p className="toss-label mb-2 text-sm">
                       {lang === "zh" ? "修改前" : "Old Value"}
                     </p>
-                    <pre className="whitespace-pre-wrap break-all rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/80">
+                    <pre className="whitespace-pre-wrap break-all rounded-[20px] border border-[#eef1f4] bg-[#fafbfc] p-4 text-xs text-[#4e5968]">
                       {renderJsonValue(log.oldValue)}
                     </pre>
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1 text-sm">
+                    <p className="toss-label mb-2 text-sm">
                       {lang === "zh" ? "修改后" : "New Value"}
                     </p>
-                    <pre className="whitespace-pre-wrap break-all rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/80">
+                    <pre className="whitespace-pre-wrap break-all rounded-[20px] border border-[#eef1f4] bg-[#fafbfc] p-4 text-xs text-[#4e5968]">
                       {renderJsonValue(log.newValue)}
                     </pre>
                   </div>
@@ -140,7 +138,7 @@ export default function AuditLogsSection({
               <button
                 type="button"
                 onClick={() => setExpanded((prev) => !prev)}
-                className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
+                className="toss-secondary-button px-4 py-2 text-sm font-semibold"
               >
                 {expanded
                   ? lang === "zh"

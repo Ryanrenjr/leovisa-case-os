@@ -1,47 +1,45 @@
-import type { Lang } from "../lib/i18n";
+"use client";
 
 type LanguageSwitcherProps = {
-  currentLang: Lang;
+  currentLang: "en" | "zh";
   action: (formData: FormData) => void;
-  redirectTo: string;
+  redirectTo?: string;
 };
 
 export default function LanguageSwitcher({
   currentLang,
   action,
-  redirectTo,
+  redirectTo = "/",
 }: LanguageSwitcherProps) {
   return (
-    <div className="flex gap-2">
-      <form action={action}>
-        <input type="hidden" name="lang" value="en" />
-        <input type="hidden" name="redirectTo" value={redirectTo} />
-        <button
-          type="submit"
-          className={`rounded-lg border px-3 py-2 text-sm ${
-            currentLang === "en"
-              ? "border-white/20 bg-white text-black"
-              : "border-white/10 text-white/80 hover:bg-white/10"
-          }`}
-        >
-          English
-        </button>
-      </form>
+    <form action={action} className="flex gap-2">
+      <input type="hidden" name="redirectTo" value={redirectTo} />
 
-      <form action={action}>
-        <input type="hidden" name="lang" value="zh" />
-        <input type="hidden" name="redirectTo" value={redirectTo} />
-        <button
-          type="submit"
-          className={`rounded-lg border px-3 py-2 text-sm ${
-            currentLang === "zh"
-              ? "border-white/20 bg-white text-black"
-              : "border-white/10 text-white/80 hover:bg-white/10"
-          }`}
-        >
-          中文
-        </button>
-      </form>
-    </div>
+      <button
+        type="submit"
+        name="lang"
+        value="en"
+        className={`flex-1 rounded-[18px] px-4 py-3 text-[18px] font-semibold transition ${
+          currentLang === "en"
+            ? "bg-white text-[#111827] shadow-[0_2px_10px_rgba(15,23,42,0.08)]"
+            : "bg-transparent text-[#4b5563] hover:bg-white/80"
+        }`}
+      >
+        English
+      </button>
+
+      <button
+        type="submit"
+        name="lang"
+        value="zh"
+        className={`flex-1 rounded-[18px] px-4 py-3 text-[18px] font-semibold transition ${
+          currentLang === "zh"
+            ? "bg-white text-[#111827] shadow-[0_2px_10px_rgba(15,23,42,0.08)]"
+            : "bg-transparent text-[#4b5563] hover:bg-white/80"
+        }`}
+      >
+        中文
+      </button>
+    </form>
   );
 }

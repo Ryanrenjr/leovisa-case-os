@@ -88,142 +88,154 @@ export default async function ClientsPage({
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold">{t.clients.title}</h1>
-
-        <Link
-          href="/clients/new"
-          className="rounded-lg bg-white text-black px-4 py-2 font-medium"
-        >
-          {t.clients.newClient}
-        </Link>
-      </div>
-
-      <form
-        method="GET"
-        className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6"
-      >
-        <label className="block text-sm text-white/70 mb-2">
-          {t.common.search}
-        </label>
-
-        <div className="flex gap-3">
-          <input
-            type="text"
-            name="q"
-            defaultValue={q}
-            placeholder={t.clients.searchPlaceholder}
-            className="flex-1 rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
-          />
-
-          <button
-            type="submit"
-            className="rounded-lg bg-white text-black px-5 py-3 font-medium"
-          >
-            {t.common.search}
-          </button>
+    <main className="toss-page">
+      <div className="toss-container">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="toss-title">{t.clients.title}</h1>
+            <p className="toss-subtitle">
+              {lang === "zh"
+                ? "查看、搜索并管理客户资料。"
+                : "View, search, and manage client profiles."}
+            </p>
+          </div>
 
           <Link
-            href="/clients"
-            className="rounded-lg border border-white/10 px-5 py-3 text-white/80"
+            href="/clients/new"
+            className="toss-primary-button px-5 py-3 text-sm font-semibold"
           >
-            {t.common.reset}
+            {t.clients.newClient}
           </Link>
         </div>
-      </form>
 
-      <div className="mb-4 text-sm text-white/60">
-        {totalClients} {t.common.found} · {t.common.page} {currentPage}{" "}
-        {t.common.of} {totalPages}
-      </div>
+        <form method="GET" className="toss-card mb-8 p-6">
+          <label className="toss-label mb-3 block">{t.common.search}</label>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-        <table className="w-full text-left">
-          <thead className="border-b border-white/10 bg-white/5">
-            <tr>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.clients.chineseName}
-              </th>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.clients.englishName}
-              </th>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.clients.email}
-              </th>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.clients.phone}
-              </th>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.clients.nationality}
-              </th>
-            </tr>
-          </thead>
+          <div className="flex flex-col gap-3 md:flex-row">
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              placeholder={t.clients.searchPlaceholder}
+              className="flex-1 px-4 py-3"
+            />
 
-          <tbody>
-            {clients.map(
-              (client: {
-                id: string;
-                chineseName: string;
-                englishName: string | null;
-                email: string | null;
-                phone: string | null;
-                nationality: string | null;
-              }) => (
-                <tr
-                  key={client.id}
-                  className="border-b border-white/10 last:border-b-0 hover:bg-white/5"
-                >
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/clients/${client.id}`}
-                      className="font-medium underline underline-offset-4"
-                    >
-                      {client.chineseName}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4">{client.englishName ?? "-"}</td>
-                  <td className="px-6 py-4">{client.email ?? "-"}</td>
-                  <td className="px-6 py-4">{client.phone ?? "-"}</td>
-                  <td className="px-6 py-4">{client.nationality ?? "-"}</td>
-                </tr>
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
+            <button
+              type="submit"
+              className="toss-primary-button px-5 py-3 text-sm font-semibold"
+            >
+              {t.common.search}
+            </button>
 
-      <div className="mt-6 flex items-center justify-between">
-        <div className="text-sm text-white/50">
-          {t.common.showing} {clients.length} {t.common.itemsOnThisPage}
+            <Link
+              href="/clients"
+              className="toss-secondary-button px-5 py-3 text-sm font-semibold"
+            >
+              {t.common.reset}
+            </Link>
+          </div>
+        </form>
+
+        <div className="mb-4 text-sm font-medium text-[#8b95a1]">
+          {totalClients} {t.common.found} · {t.common.page} {currentPage}{" "}
+          {t.common.of} {totalPages}
         </div>
 
-        <div className="flex gap-3">
-          {previousPage ? (
-            <Link
-              href={buildClientsPageUrl(previousPage)}
-              className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
-            >
-              {t.common.previous}
-            </Link>
-          ) : (
-            <span className="rounded-lg border border-white/10 px-4 py-2 text-white/30">
-              {t.common.previous}
-            </span>
-          )}
+        <div className="toss-card overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-[#fafbfc]">
+              <tr className="border-b border-[#eef1f4]">
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.clients.chineseName}
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.clients.englishName}
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.clients.email}
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.clients.phone}
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.clients.nationality}
+                </th>
+              </tr>
+            </thead>
 
-          {nextPage ? (
-            <Link
-              href={buildClientsPageUrl(nextPage)}
-              className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
-            >
-              {t.common.next}
-            </Link>
-          ) : (
-            <span className="rounded-lg border border-white/10 px-4 py-2 text-white/30">
-              {t.common.next}
-            </span>
-          )}
+            <tbody>
+              {clients.map(
+                (client: {
+                  id: string;
+                  chineseName: string;
+                  englishName: string | null;
+                  email: string | null;
+                  phone: string | null;
+                  nationality: string | null;
+                }) => (
+                  <tr
+                    key={client.id}
+                    className="border-b border-[#f0f2f5] last:border-b-0 hover:bg-[#fafbfc]"
+                  >
+                    <td className="px-6 py-5 text-[15px] text-[#191f28]">
+                      <Link
+                        href={`/clients/${client.id}`}
+                        className="font-semibold text-[#191f28] hover:text-[#3182f6]"
+                      >
+                        {client.chineseName}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-5 text-[15px] text-[#4e5968]">
+                      {client.englishName ?? "-"}
+                    </td>
+                    <td className="px-6 py-5 text-[15px] text-[#4e5968]">
+                      {client.email ?? "-"}
+                    </td>
+                    <td className="px-6 py-5 text-[15px] text-[#4e5968]">
+                      {client.phone ?? "-"}
+                    </td>
+                    <td className="px-6 py-5 text-[15px] text-[#4e5968]">
+                      {client.nationality ?? "-"}
+                    </td>
+                  </tr>
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm font-medium text-[#8b95a1]">
+            {t.common.showing} {clients.length} {t.common.itemsOnThisPage}
+          </div>
+
+          <div className="flex gap-3">
+            {previousPage ? (
+              <Link
+                href={buildClientsPageUrl(previousPage)}
+                className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+              >
+                {t.common.previous}
+              </Link>
+            ) : (
+              <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
+                {t.common.previous}
+              </span>
+            )}
+
+            {nextPage ? (
+              <Link
+                href={buildClientsPageUrl(nextPage)}
+                className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+              >
+                {t.common.next}
+              </Link>
+            ) : (
+              <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
+                {t.common.next}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </main>

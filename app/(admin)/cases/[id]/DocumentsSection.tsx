@@ -43,37 +43,31 @@ export default function DocumentsSection({
   const hasMore = documents.length > 3;
 
   return (
-    <div
-      id="documents-section"
-      className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8"
-    >
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">
+    <div id="documents-section" className="toss-card mb-8 p-8">
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-[28px] font-bold tracking-[-0.02em] text-[#191f28]">
           {lang === "zh" ? "文件" : "Documents"}
         </h2>
-        <p className="text-sm text-white/50">
+        <p className="text-sm font-medium text-[#8b95a1]">
           {documents.length} {lang === "zh" ? "个文件" : "file(s)"}
         </p>
       </div>
 
       {documents.length === 0 ? (
-        <p className="text-white/60">
+        <p className="text-[15px] text-[#8b95a1]">
           {lang === "zh" ? "暂无文件。" : "No documents yet."}
         </p>
       ) : (
         <>
           <div className="space-y-4">
             {visibleDocuments.map((document) => (
-              <div
-                key={document.id}
-                className="rounded-xl border border-white/10 bg-black/30 p-4"
-              >
-                <div className="flex items-start justify-between gap-4 mb-4">
+              <div key={document.id} className="toss-soft-card p-5">
+                <div className="mb-5 flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-white/50 text-sm mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "显示名称" : "Display Name"}
                     </p>
-                    <p className="font-medium break-all">
+                    <p className="break-all text-[16px] font-semibold text-[#191f28]">
                       {document.displayName || document.originalFilename}
                     </p>
                   </div>
@@ -84,12 +78,12 @@ export default function DocumentsSection({
                         href={document.storageUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-block rounded-lg bg-white text-black px-4 py-2 font-medium"
+                        className="toss-primary-button px-4 py-2 text-sm font-semibold"
                       >
                         {lang === "zh" ? "打开" : "Open"}
                       </a>
                     ) : (
-                      <span className="inline-block rounded-lg border border-white/10 px-4 py-2 text-white/40">
+                      <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
                         {lang === "zh" ? "无文件" : "No File"}
                       </span>
                     )}
@@ -103,7 +97,7 @@ export default function DocumentsSection({
                       />
                       <button
                         type="submit"
-                        className="inline-block rounded-lg border border-red-500/30 px-4 py-2 font-medium text-red-300 hover:bg-red-500/10"
+                        className="toss-danger-button px-4 py-2 text-sm font-semibold"
                       >
                         {lang === "zh" ? "删除" : "Delete"}
                       </button>
@@ -111,40 +105,46 @@ export default function DocumentsSection({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "原始文件名" : "Original Filename"}
                     </p>
-                    <p className="break-all">{document.originalFilename}</p>
+                    <p className="break-all text-[15px] text-[#4e5968]">
+                      {document.originalFilename}
+                    </p>
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "保存文件名" : "Saved Filename"}
                     </p>
-                    <p className="break-all">
+                    <p className="break-all text-[15px] text-[#4e5968]">
                       {document.normalizedFilename ?? "-"}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "文件类型" : "Document Type"}
                     </p>
-                    <p>{document.docType}</p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {document.docType}
+                    </p>
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">MIME Type</p>
-                    <p>{document.mimeType ?? "-"}</p>
+                    <p className="toss-label mb-2">MIME Type</p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {document.mimeType ?? "-"}
+                    </p>
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "文件大小" : "File Size"}
                     </p>
-                    <p>
+                    <p className="text-[15px] text-[#4e5968]">
                       {document.fileSize
                         ? `${Number(document.fileSize).toLocaleString()} bytes`
                         : "-"}
@@ -152,36 +152,42 @@ export default function DocumentsSection({
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "审核状态" : "Review Status"}
                     </p>
                     <StatusBadge value={document.reviewStatus} lang={lang} />
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "上传时间" : "Uploaded At"}
                     </p>
-                    <p>{new Date(document.createdAt).toLocaleString()}</p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {new Date(document.createdAt).toLocaleString()}
+                    </p>
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "存储提供方" : "Storage Provider"}
                     </p>
-                    <p>{document.storageProvider}</p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {document.storageProvider}
+                    </p>
                   </div>
 
                   <div>
-                    <p className="text-white/50 mb-1">
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "提交人" : "Submitted By"}
                     </p>
-                    <p>{document.submission?.submittedByName ?? "-"}</p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {document.submission?.submittedByName ?? "-"}
+                    </p>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-4">
-                  <p className="text-white/50 mb-3 text-sm">
+                <div className="mt-5 rounded-[20px] border border-[#eef1f4] bg-[#fafbfc] p-4">
+                  <p className="toss-label mb-3">
                     {lang === "zh" ? "显示名称" : "Display Name"}
                   </p>
 
@@ -202,13 +208,13 @@ export default function DocumentsSection({
                           ? "输入一个更清晰的显示名称"
                           : "Enter a clean display name"
                       }
-                      className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                      className="w-full px-4 py-3"
                     />
 
                     <div className="flex justify-end">
                       <button
                         type="submit"
-                        className="rounded-lg border border-white/10 px-4 py-3 text-white/80 hover:bg-white/10"
+                        className="toss-secondary-button px-4 py-3 text-sm font-semibold"
                       >
                         {lang === "zh" ? "保存名称" : "Save Name"}
                       </button>
@@ -216,8 +222,8 @@ export default function DocumentsSection({
                   </form>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-4">
-                  <p className="text-white/50 mb-3 text-sm">
+                <div className="mt-4 rounded-[20px] border border-[#eef1f4] bg-[#fafbfc] p-4">
+                  <p className="toss-label mb-3">
                     {lang === "zh" ? "审核操作" : "Review Action"}
                   </p>
 
@@ -235,7 +241,7 @@ export default function DocumentsSection({
                     <select
                       name="reviewStatus"
                       defaultValue={document.reviewStatus}
-                      className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                      className="w-full px-4 py-3"
                     >
                       <option value="uploaded">uploaded</option>
                       <option value="approved">approved</option>
@@ -248,7 +254,7 @@ export default function DocumentsSection({
                     <div className="flex justify-end">
                       <button
                         type="submit"
-                        className="rounded-lg border border-white/10 px-4 py-3 text-white/80 hover:bg-white/10"
+                        className="toss-secondary-button px-4 py-3 text-sm font-semibold"
                       >
                         {lang === "zh"
                           ? "更新审核状态"
@@ -266,7 +272,7 @@ export default function DocumentsSection({
               <button
                 type="button"
                 onClick={() => setExpanded((prev) => !prev)}
-                className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
+                className="toss-secondary-button px-4 py-2 text-sm font-semibold"
               >
                 {expanded
                   ? lang === "zh"

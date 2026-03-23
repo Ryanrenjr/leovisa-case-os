@@ -36,12 +36,9 @@ export default function UploadLinksSection({
   const visibleLinks = expanded ? links : links.slice(0, 3);
 
   return (
-    <div
-      id="upload-links-section"
-      className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-8"
-    >
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">
+    <div id="upload-links-section" className="toss-card mb-8 p-8">
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-[28px] font-bold tracking-[-0.02em] text-[#191f28]">
           {lang === "zh" ? "上传链接" : "Upload Links"}
         </h2>
 
@@ -50,7 +47,7 @@ export default function UploadLinksSection({
 
           <button
             type="submit"
-            className="rounded-lg bg-white text-black px-6 py-3 font-medium"
+            className="toss-primary-button px-6 py-3 text-sm font-semibold"
           >
             {lang === "zh" ? "生成上传链接" : "Generate Upload Link"}
           </button>
@@ -58,22 +55,19 @@ export default function UploadLinksSection({
       </div>
 
       {links.length === 0 ? (
-        <p className="text-white/60">
+        <p className="text-[15px] text-[#8b95a1]">
           {lang === "zh" ? "暂无上传链接。" : "No upload links yet."}
         </p>
       ) : (
         <div className="space-y-4">
           {visibleLinks.map((link) => (
-            <div
-              key={link.id}
-              className="rounded-xl border border-white/10 bg-black/30 p-4"
-            >
-              <div className="flex items-start justify-between gap-4 mb-4">
+            <div key={link.id} className="toss-soft-card p-5">
+              <div className="mb-5 flex items-start justify-between gap-4">
                 <div className="space-y-2">
-                  <p className="text-sm text-white/50">
+                  <p className="toss-label">
                     {lang === "zh" ? "分享链接" : "Share URL"}
                   </p>
-                  <p className="font-medium break-all">
+                  <p className="break-all text-[15px] font-semibold text-[#191f28]">
                     {`http://localhost:3000/upload/${link.token}`}
                   </p>
                 </div>
@@ -88,13 +82,13 @@ export default function UploadLinksSection({
 
                       <button
                         type="submit"
-                        className="inline-block rounded-lg border border-red-500/30 px-4 py-2 font-medium text-red-300 hover:bg-red-500/10"
+                        className="toss-danger-button px-4 py-2 text-sm font-semibold"
                       >
                         {lang === "zh" ? "停用" : "Deactivate"}
                       </button>
                     </form>
                   ) : (
-                    <div className="rounded-lg border border-white/10 px-4 py-2 text-center text-white/40">
+                    <div className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
                       {lang === "zh" ? "已停用" : "Inactive"}
                     </div>
                   )}
@@ -105,7 +99,7 @@ export default function UploadLinksSection({
 
                     <button
                       type="submit"
-                      className="inline-block rounded-lg border border-white/10 px-4 py-2 font-medium text-white/70 hover:bg-white/10"
+                      className="toss-secondary-button px-4 py-2 text-sm font-semibold"
                     >
                       {lang === "zh" ? "删除链接" : "Delete Link"}
                     </button>
@@ -113,19 +107,19 @@ export default function UploadLinksSection({
                 </div>
               </div>
 
-              <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="mt-2 grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
                 <div>
-                  <p className="text-white/50 mb-1">
+                  <p className="toss-label mb-2">
                     {lang === "zh" ? "状态" : "Status"}
                   </p>
                   <StatusBadge value={link.status} lang={lang} />
                 </div>
 
                 <div>
-                  <p className="text-white/50 mb-1">
+                  <p className="toss-label mb-2">
                     {lang === "zh" ? "过期时间" : "Expires At"}
                   </p>
-                  <p>
+                  <p className="text-[15px] text-[#4e5968]">
                     {link.expiresAt
                       ? new Date(link.expiresAt).toLocaleString()
                       : "-"}
@@ -133,10 +127,10 @@ export default function UploadLinksSection({
                 </div>
 
                 <div>
-                  <p className="text-white/50 mb-1">
+                  <p className="toss-label mb-2">
                     {lang === "zh" ? "使用次数" : "Usage"}
                   </p>
-                  <p>
+                  <p className="text-[15px] text-[#4e5968]">
                     {link.currentUses} / {link.maxUses ?? "∞"}
                   </p>
                 </div>
@@ -151,7 +145,7 @@ export default function UploadLinksSection({
           <button
             type="button"
             onClick={() => setExpanded((prev) => !prev)}
-            className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
+            className="toss-secondary-button px-4 py-2 text-sm font-semibold"
           >
             {expanded
               ? lang === "zh"

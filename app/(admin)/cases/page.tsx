@@ -124,192 +124,202 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white p-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold">{t.cases.title}</h1>
-
-        <Link
-          href="/cases/new"
-          className="rounded-lg bg-white text-black px-4 py-2 font-medium"
-        >
-          {t.cases.newCase}
-        </Link>
-      </div>
-
-      <form
-        method="GET"
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 rounded-2xl border border-white/10 bg-white/5 p-6"
-      >
-        <div className="md:col-span-2">
-          <label className="block text-sm text-white/70 mb-2">
-            {t.common.search}
-          </label>
-          <input
-            type="text"
-            name="q"
-            defaultValue={q}
-            placeholder={t.cases.searchPlaceholder}
-            className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-white/70 mb-2">
-            {t.common.status}
-          </label>
-          <select
-            name="status"
-            defaultValue={status}
-            className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
-          >
-            <option value="">{t.common.allStatuses}</option>
-            <option value="new">new</option>
-            <option value="intake_pending">intake_pending</option>
-            <option value="documents_collecting">documents_collecting</option>
-            <option value="documents_received">documents_received</option>
-            <option value="under_review">under_review</option>
-            <option value="contract_pending">contract_pending</option>
-            <option value="contract_sent">contract_sent</option>
-            <option value="signed">signed</option>
-            <option value="completed">completed</option>
-            <option value="archived">archived</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm text-white/70 mb-2">
-            {t.common.consultant}
-          </label>
-          <select
-            name="consultant"
-            defaultValue={consultant}
-            className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
-          >
-            <option value="">{t.common.allConsultants}</option>
-            {consultants.map((item: { id: string; name: string }) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-4 flex gap-3 pt-2">
-          <button
-            type="submit"
-            className="rounded-lg bg-white text-black px-5 py-2 font-medium"
-          >
-            {t.common.applyFilters}
-          </button>
+    <main className="toss-page">
+      <div className="toss-container">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="toss-title">{t.cases.title}</h1>
+            <p className="toss-subtitle">
+              {lang === "zh"
+                ? "查看、筛选并管理所有案件。"
+                : "View, filter, and manage all cases."}
+            </p>
+          </div>
 
           <Link
-            href="/cases"
-            className="rounded-lg border border-white/10 px-5 py-2 text-white/80"
+            href="/cases/new"
+            className="toss-primary-button px-5 py-3 text-sm font-semibold"
           >
-            {t.common.reset}
+            {t.cases.newCase}
           </Link>
         </div>
-      </form>
 
-      <div className="mb-4 text-sm text-white/60">
-        {totalCases} {t.cases.caseFound} · {t.common.page} {currentPage} {t.common.of} {totalPages}
-      </div>
+        <form
+          method="GET"
+          className="toss-card mb-8 grid grid-cols-1 gap-4 p-6 md:grid-cols-4"
+        >
+          <div className="md:col-span-2">
+            <label className="toss-label mb-3 block">{t.common.search}</label>
+            <input
+              type="text"
+              name="q"
+              defaultValue={q}
+              placeholder={t.cases.searchPlaceholder}
+              className="w-full px-4 py-3"
+            />
+          </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-        <table className="w-full text-left">
-          <thead className="border-b border-white/10 bg-white/5">
-            <tr>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.cases.caseCode}
-              </th>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.cases.client}
-              </th>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.cases.serviceType}
-              </th>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.cases.country}
-              </th>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.common.status}
-              </th>
-              <th className="px-6 py-4 text-sm text-white/70">
-                {t.common.consultant}
-              </th>
-            </tr>
-          </thead>
+          <div>
+            <label className="toss-label mb-3 block">{t.common.status}</label>
+            <select
+              name="status"
+              defaultValue={status}
+              className="w-full px-4 py-3"
+            >
+              <option value="">{t.common.allStatuses}</option>
+              <option value="new">new</option>
+              <option value="intake_pending">intake_pending</option>
+              <option value="documents_collecting">documents_collecting</option>
+              <option value="documents_received">documents_received</option>
+              <option value="under_review">under_review</option>
+              <option value="contract_pending">contract_pending</option>
+              <option value="contract_sent">contract_sent</option>
+              <option value="signed">signed</option>
+              <option value="completed">completed</option>
+              <option value="archived">archived</option>
+            </select>
+          </div>
 
-          <tbody>
-            {cases.map(
-              (item: {
-                id: string;
-                caseCode: string;
-                serviceType: string;
-                country: string;
-                status: string;
-                client: { chineseName: string };
-                assignedConsultant: { name: string } | null;
-              }) => (
-                <tr
-                  key={item.id}
-                  className="border-b border-white/10 last:border-b-0 hover:bg-white/5"
-                >
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/cases/${item.id}`}
-                      className="font-medium underline underline-offset-4"
-                    >
-                      {item.caseCode}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4">{item.client.chineseName}</td>
-                  <td className="px-6 py-4">{item.serviceType}</td>
-                  <td className="px-6 py-4">{item.country}</td>
-                  <td className="px-6 py-4">
-                    <StatusBadge value={item.status} lang={lang}/>
-                  </td>
-                  <td className="px-6 py-4">
-                    {item.assignedConsultant?.name ?? t.common.unassigned}
-                  </td>
-                </tr>
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
+          <div>
+            <label className="toss-label mb-3 block">{t.common.consultant}</label>
+            <select
+              name="consultant"
+              defaultValue={consultant}
+              className="w-full px-4 py-3"
+            >
+              <option value="">{t.common.allConsultants}</option>
+              {consultants.map((item: { id: string; name: string }) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="mt-6 flex items-center justify-between">
-        <div className="text-sm text-white/50">
-          {t.common.showing} {cases.length} {t.common.itemsOnThisPage}
+          <div className="flex gap-3 pt-1 md:col-span-4">
+            <button
+              type="submit"
+              className="toss-primary-button px-5 py-3 text-sm font-semibold"
+            >
+              {t.common.applyFilters}
+            </button>
+
+            <Link
+              href="/cases"
+              className="toss-secondary-button px-5 py-3 text-sm font-semibold"
+            >
+              {t.common.reset}
+            </Link>
+          </div>
+        </form>
+
+        <div className="mb-4 text-sm font-medium text-[#8b95a1]">
+          {totalCases} {t.cases.caseFound} · {t.common.page} {currentPage}{" "}
+          {t.common.of} {totalPages}
         </div>
 
-        <div className="flex gap-3">
-          {previousPage ? (
-            <Link
-              href={buildCasesPageUrl(previousPage)}
-              className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
-            >
-              {t.common.previous}
-            </Link>
-          ) : (
-            <span className="rounded-lg border border-white/10 px-4 py-2 text-white/30">
-              {t.common.previous}
-            </span>
-          )}
+        <div className="toss-card overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-[#fafbfc]">
+              <tr className="border-b border-[#eef1f4]">
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.cases.caseCode}
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.cases.client}
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.cases.serviceType}
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.cases.country}
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.common.status}
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+                  {t.common.consultant}
+                </th>
+              </tr>
+            </thead>
 
-          {nextPage ? (
-            <Link
-              href={buildCasesPageUrl(nextPage)}
-              className="rounded-lg border border-white/10 px-4 py-2 text-white/80 hover:bg-white/10"
-            >
-              {t.common.next}
-            </Link>
-          ) : (
-            <span className="rounded-lg border border-white/10 px-4 py-2 text-white/30">
-              {t.common.next}
-            </span>
-          )}
+            <tbody>
+              {cases.map(
+                (item: {
+                  id: string;
+                  caseCode: string;
+                  serviceType: string;
+                  country: string;
+                  status: string;
+                  client: { chineseName: string };
+                  assignedConsultant: { name: string } | null;
+                }) => (
+                  <tr
+                    key={item.id}
+                    className="border-b border-[#f0f2f5] last:border-b-0 hover:bg-[#fafbfc]"
+                  >
+                    <td className="px-6 py-5 text-[15px] text-[#191f28]">
+                      <Link
+                        href={`/cases/${item.id}`}
+                        className="font-semibold text-[#191f28] hover:text-[#3182f6]"
+                      >
+                        {item.caseCode}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-5 text-[15px] text-[#4e5968]">
+                      {item.client.chineseName}
+                    </td>
+                    <td className="px-6 py-5 text-[15px] text-[#4e5968]">
+                      {item.serviceType}
+                    </td>
+                    <td className="px-6 py-5 text-[15px] text-[#4e5968]">
+                      {item.country}
+                    </td>
+                    <td className="px-6 py-5">
+                      <StatusBadge value={item.status} lang={lang} />
+                    </td>
+                    <td className="px-6 py-5 text-[15px] text-[#4e5968]">
+                      {item.assignedConsultant?.name ?? t.common.unassigned}
+                    </td>
+                  </tr>
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm font-medium text-[#8b95a1]">
+            {t.common.showing} {cases.length} {t.common.itemsOnThisPage}
+          </div>
+
+          <div className="flex gap-3">
+            {previousPage ? (
+              <Link
+                href={buildCasesPageUrl(previousPage)}
+                className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+              >
+                {t.common.previous}
+              </Link>
+            ) : (
+              <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
+                {t.common.previous}
+              </span>
+            )}
+
+            {nextPage ? (
+              <Link
+                href={buildCasesPageUrl(nextPage)}
+                className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+              >
+                {t.common.next}
+              </Link>
+            ) : (
+              <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
+                {t.common.next}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </main>

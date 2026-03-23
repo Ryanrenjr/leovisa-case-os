@@ -1,5 +1,12 @@
 export type Lang = "en" | "zh";
 
+export function getLangFromCookie(value?: string): Lang {
+  if (value === "zh") {
+    return "zh";
+  }
+  return "en";
+}
+
 export const messages = {
   en: {
     nav: {
@@ -223,7 +230,3 @@ export const messages = {
 },
   },
 } as const;
-
-export function getLangFromCookie(cookieValue?: string): Lang {
-  return cookieValue === "zh" ? "zh" : "en";
-}
