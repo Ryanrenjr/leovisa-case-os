@@ -22,144 +22,145 @@ export default function EditClientForm({
   lang,
 }: EditClientFormProps) {
   return (
-    <main className="min-h-screen bg-black text-white p-8">
-      <div className="mb-6">
-        <Link
-          href={`/clients/${client.id}`}
-          className="inline-block text-sm text-white/70 underline underline-offset-4"
-        >
-          {lang === "zh" ? "← 返回客户详情" : "← Back to Client"}
-        </Link>
-      </div>
-
-      <div className="max-w-5xl rounded-2xl border border-white/10 bg-white/5 p-8">
+    <main className="toss-page">
+      <div className="toss-container">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-3">
+          <Link
+            href={`/clients/${client.id}`}
+            className="mb-4 inline-flex items-center text-sm font-semibold text-[#6b7684] hover:text-[#3182f6]"
+          >
+            {lang === "zh" ? "← 返回客户详情" : "← Back to Client"}
+          </Link>
+
+          <h1 className="toss-title">
             {lang === "zh" ? "编辑客户" : "Edit Client"}
           </h1>
-          <p className="text-white/60">
+          <p className="toss-subtitle">
             {lang === "zh"
               ? "更新 LeoVisa Case OS 中的客户信息。"
               : "Update client information in LeoVisa Case OS."}
           </p>
         </div>
 
-        <form action={updateClient} className="space-y-8">
+        <form action={updateClient} className="space-y-6">
           <input type="hidden" name="clientId" value={client.id} />
 
-          <div className="rounded-xl border border-white/10 bg-black/30 p-6">
-            <h2 className="text-xl font-semibold mb-4">
+          <div className="toss-card p-7">
+            <h2 className="mb-6 text-[24px] font-bold tracking-[-0.02em] text-[#191f28]">
               {lang === "zh" ? "基本信息" : "Basic Information"}
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-2 block">
                   {lang === "zh" ? "中文名" : "Chinese Name"}
                 </label>
                 <input
                   type="text"
                   name="chineseName"
                   defaultValue={client.chineseName}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
                   required
+                  className="toss-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-2 block">
                   {lang === "zh" ? "英文名" : "English Name"}
                 </label>
                 <input
                   type="text"
                   name="englishName"
                   defaultValue={client.englishName ?? ""}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="toss-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-2 block">
                   {lang === "zh" ? "邮箱" : "Email"}
                 </label>
                 <input
                   type="email"
                   name="email"
                   defaultValue={client.email ?? ""}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="toss-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-2 block">
                   {lang === "zh" ? "电话" : "Phone"}
                 </label>
                 <input
                   type="text"
                   name="phone"
                   defaultValue={client.phone ?? ""}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="toss-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
-                  WeChat
-                </label>
+                <label className="toss-label mb-2 block">WeChat</label>
                 <input
                   type="text"
                   name="wechat"
                   defaultValue={client.wechat ?? ""}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="toss-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
-                  {lang === "zh" ? "国籍" : "Nationality"}
-                </label>
-                <input
-                  type="text"
-                  name="nationality"
-                  defaultValue={client.nationality ?? ""}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
-                />
-              </div>
+  <label className="toss-label mb-2 block">
+    {lang === "zh" ? "国籍" : "Nationality"}
+  </label>
+  <select
+    name="nationality"
+    defaultValue={client.nationality ?? ""}
+    className="toss-input"
+  >
+    <option value="">
+      {lang === "zh" ? "请选择国籍" : "Select nationality"}
+    </option>
+    <option value="Chinese">Chinese</option>
+    <option value="British">British</option>
+  </select>
+</div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/30 p-6">
-            <h2 className="text-xl font-semibold mb-4">
+          <div className="toss-card p-7">
+            <h2 className="mb-6 text-[24px] font-bold tracking-[-0.02em] text-[#191f28]">
               {lang === "zh" ? "内部信息" : "Internal Information"}
             </h2>
 
             <div>
-              <label className="block text-sm text-white/70 mb-2">
+              <label className="toss-label mb-2 block">
                 {lang === "zh" ? "备注" : "Notes"}
               </label>
               <textarea
                 name="notes"
-                rows={5}
+                rows={6}
                 defaultValue={client.notes ?? ""}
-                className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
                 placeholder={
-                  lang === "zh" ? "添加内部备注..." : "Add internal notes..."
+                  lang === "zh" ? "添加内部备注…" : "Add internal notes..."
                 }
+                className="toss-textarea"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center gap-3">
             <button
               type="submit"
-              className="rounded-lg bg-white text-black px-6 py-3 font-medium"
+              className="toss-primary-button px-6 py-3 text-sm font-semibold"
             >
               {lang === "zh" ? "保存修改" : "Save Changes"}
             </button>
 
             <Link
               href={`/clients/${client.id}`}
-              className="rounded-lg border border-white/10 px-6 py-3 text-white/80 hover:bg-white/10"
+              className="toss-secondary-button px-6 py-3 text-sm font-semibold"
             >
               {lang === "zh" ? "取消" : "Cancel"}
             </Link>

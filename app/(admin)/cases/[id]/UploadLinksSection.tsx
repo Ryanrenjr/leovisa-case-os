@@ -32,11 +32,17 @@ export default function UploadLinksSection({
 }: UploadLinksSectionProps) {
   const [expanded, setExpanded] = useState(false);
 
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
   const hasMore = links.length > 3;
   const visibleLinks = expanded ? links : links.slice(0, 3);
 
   return (
-    <div id="upload-links-section" className="toss-card mb-8 p-8">
+    <div
+      id="upload-links-section"
+      className="toss-card mb-8 p-8"
+    >
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-[28px] font-bold tracking-[-0.02em] text-[#191f28]">
           {lang === "zh" ? "上传链接" : "Upload Links"}
@@ -61,14 +67,17 @@ export default function UploadLinksSection({
       ) : (
         <div className="space-y-4">
           {visibleLinks.map((link) => (
-            <div key={link.id} className="toss-soft-card p-5">
+            <div
+              key={link.id}
+              className="toss-soft-card p-5"
+            >
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div className="space-y-2">
                   <p className="toss-label">
                     {lang === "zh" ? "分享链接" : "Share URL"}
                   </p>
                   <p className="break-all text-[15px] font-semibold text-[#191f28]">
-                    {`http://localhost:3000/upload/${link.token}`}
+                    {`${baseUrl}/upload/${link.token}`}
                   </p>
                 </div>
 

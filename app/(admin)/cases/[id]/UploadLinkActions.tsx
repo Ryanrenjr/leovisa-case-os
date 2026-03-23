@@ -13,7 +13,10 @@ export default function UploadLinkActions({
 }: UploadLinkActionsProps) {
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = `http://localhost:3000/upload/${token}`;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  const shareUrl = `${baseUrl}/upload/${token}`;
 
   async function handleCopy() {
     try {
