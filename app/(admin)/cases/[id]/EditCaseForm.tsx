@@ -59,46 +59,44 @@ export default function EditCaseForm({
   }, [clientKeyword, clients]);
 
   return (
-    <main className="min-h-screen bg-black text-white p-8">
-      <div className="mb-6">
-        <Link
-          href={`/cases/${caseItem.id}`}
-          className="inline-block text-sm text-white/70 underline underline-offset-4"
-        >
-          {lang === "zh" ? "← 返回案件详情" : "← Back to Case"}
-        </Link>
-      </div>
+    <main className="toss-page">
+      <div className="toss-container">
+        <div className="mb-6">
+          <Link
+            href={`/cases/${caseItem.id}`}
+            className="text-sm font-medium text-[#6b7684] hover:text-[#3182f6]"
+          >
+            {lang === "zh" ? "← 返回案件详情" : "← Back to Case"}
+          </Link>
+        </div>
 
-      <div className="max-w-5xl rounded-2xl border border-white/10 bg-white/5 p-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-3">
-            {lang === "zh" ? "编辑案件" : "Edit Case"}
-          </h1>
-          <p className="text-white/60">
+          <h1 className="toss-title">{lang === "zh" ? "编辑案件" : "Edit Case"}</h1>
+          <p className="toss-subtitle">
             {lang === "zh"
               ? "更新 LeoVisa Case OS 中的案件信息。"
               : "Update case information in LeoVisa Case OS."}
-          </p >
+          </p>
         </div>
 
         <form action={updateCase} className="space-y-8">
           <input type="hidden" name="caseId" value={caseItem.id} />
 
-          <div className="rounded-xl border border-white/10 bg-black/30 p-6">
-            <h2 className="text-xl font-semibold mb-4">
+          <div className="toss-card p-7">
+            <h2 className="mb-5 text-[24px] font-bold tracking-[-0.02em] text-[#191f28]">
               {lang === "zh" ? "客户选择" : "Client Selection"}
             </h2>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-3 block">
                   {lang === "zh" ? "搜索客户" : "Client Search"}
                 </label>
                 <input
                   type="text"
                   value={clientKeyword}
                   onChange={(e) => setClientKeyword(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="w-full px-4 py-3"
                   placeholder={
                     lang === "zh"
                       ? "按中文名或英文名搜索"
@@ -108,43 +106,43 @@ export default function EditCaseForm({
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-3 block">
                   {lang === "zh" ? "客户" : "Client"}
                 </label>
                 <select
                   name="clientId"
                   defaultValue={caseItem.clientId}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="w-full px-4 py-3"
                 >
                   {filteredClients.map((client) => (
                     <option key={client.id} value={client.id}>
-                      {client.chineseName} / {client.englishName}
+                      {client.chineseName} / {client.englishName ?? "-"}
                     </option>
                   ))}
                 </select>
 
-                <p className="text-xs text-white/50 mt-2">
+                <p className="mt-2 text-sm font-medium text-[#8b95a1]">
                   {filteredClients.length}{" "}
                   {lang === "zh" ? "位客户可选" : "client(s) found"}
-                </p >
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/30 p-6">
-            <h2 className="text-xl font-semibold mb-4">
+          <div className="toss-card p-7">
+            <h2 className="mb-5 text-[24px] font-bold tracking-[-0.02em] text-[#191f28]">
               {lang === "zh" ? "案件信息" : "Case Information"}
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-3 block">
                   {lang === "zh" ? "业务类型" : "Service Type"}
                 </label>
                 <select
                   name="serviceType"
                   defaultValue={caseItem.serviceType}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="w-full px-4 py-3"
                 >
                   {Object.entries(BUSINESS_LINE_LABELS).map(
                     ([businessLine, businessLabel]) => (
@@ -163,13 +161,13 @@ export default function EditCaseForm({
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-3 block">
                   {lang === "zh" ? "国家" : "Country"}
                 </label>
                 <select
                   name="country"
                   defaultValue={caseItem.country}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="w-full px-4 py-3"
                 >
                   <option value="Greece">Greece</option>
                   <option value="Portugal">Portugal</option>
@@ -185,13 +183,13 @@ export default function EditCaseForm({
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-3 block">
                   {lang === "zh" ? "顾问" : "Consultant"}
                 </label>
                 <select
                   name="assignedConsultantId"
                   defaultValue={caseItem.assignedConsultantId ?? ""}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="w-full px-4 py-3"
                 >
                   <option value="">
                     {lang === "zh" ? "未分配" : "Unassigned"}
@@ -205,13 +203,13 @@ export default function EditCaseForm({
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-3 block">
                   {lang === "zh" ? "状态" : "Status"}
                 </label>
                 <select
                   name="status"
                   defaultValue={caseItem.status}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="w-full px-4 py-3"
                 >
                   {CASE_STATUS_OPTIONS.map((item) => (
                     <option key={item.value} value={item.value}>
@@ -222,13 +220,13 @@ export default function EditCaseForm({
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-3 block">
                   {lang === "zh" ? "合同状态" : "Contract Status"}
                 </label>
                 <select
                   name="contractStatus"
                   defaultValue={caseItem.contractStatus}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="w-full px-4 py-3"
                 >
                   {CONTRACT_STATUS_OPTIONS.map((item) => (
                     <option key={item.value} value={item.value}>
@@ -239,13 +237,13 @@ export default function EditCaseForm({
               </div>
 
               <div>
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-3 block">
                   {lang === "zh" ? "信息收集状态" : "Intake Status"}
                 </label>
                 <select
                   name="intakeStatus"
                   defaultValue={caseItem.intakeStatus}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="w-full px-4 py-3"
                 >
                   {INTAKE_STATUS_OPTIONS.map((item) => (
                     <option key={item.value} value={item.value}>
@@ -256,31 +254,31 @@ export default function EditCaseForm({
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm text-white/70 mb-2">
+                <label className="toss-label mb-3 block">
                   {lang === "zh" ? "备注" : "Notes"}
                 </label>
                 <textarea
                   name="notes"
                   rows={5}
                   defaultValue={caseItem.notes ?? ""}
-                  className="w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none"
+                  className="w-full px-4 py-3"
                   placeholder={lang === "zh" ? "案件备注..." : "Case notes..."}
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center gap-3 pt-1">
             <button
               type="submit"
-              className="rounded-lg bg-white text-black px-6 py-3 font-medium"
+              className="toss-primary-button px-6 py-3 text-sm font-semibold"
             >
               {lang === "zh" ? "保存修改" : "Save Changes"}
             </button>
 
             <Link
               href={`/cases/${caseItem.id}`}
-              className="rounded-lg border border-white/10 px-6 py-3 text-white/80 hover:bg-white/10"
+              className="toss-secondary-button px-6 py-3 text-sm font-semibold"
             >
               {lang === "zh" ? "取消" : "Cancel"}
             </Link>
