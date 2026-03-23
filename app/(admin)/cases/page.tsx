@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "../../../lib/prisma";
 import StatusBadge from "../../../components/StatusBadge";
 import { getLangFromCookie, messages } from "../../../lib/i18n";
+import { CASE_STATUS_OPTIONS } from "../../../lib/status-options";
 
 type CasesPageProps = {
   searchParams: Promise<{
@@ -162,22 +163,17 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           <div>
             <label className="toss-label mb-3 block">{t.common.status}</label>
             <select
-              name="status"
-              defaultValue={status}
-              className="w-full px-4 py-3"
-            >
-              <option value="">{t.common.allStatuses}</option>
-              <option value="new">new</option>
-              <option value="intake_pending">intake_pending</option>
-              <option value="documents_collecting">documents_collecting</option>
-              <option value="documents_received">documents_received</option>
-              <option value="under_review">under_review</option>
-              <option value="contract_pending">contract_pending</option>
-              <option value="contract_sent">contract_sent</option>
-              <option value="signed">signed</option>
-              <option value="completed">completed</option>
-              <option value="archived">archived</option>
-            </select>
+  name="status"
+  defaultValue={status}
+  className="w-full px-4 py-3"
+>
+  <option value="">{t.common.allStatuses}</option>
+  {CASE_STATUS_OPTIONS.map((item) => (
+    <option key={item.value} value={item.value}>
+      {lang === "zh" ? item.zh : item.en}
+    </option>
+  ))}
+</select>
           </div>
 
           <div>
