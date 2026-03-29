@@ -1,6 +1,5 @@
-import fs from "fs/promises";
-import path from "path";
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { prisma } from "../../../../../lib/prisma";
 
 type RouteContext = {
@@ -15,16 +14,22 @@ type UploadItem = {
   file: File;
 };
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const bucketName = "client-documents";
+
 export async function POST(request: Request, context: RouteContext) {
   const { token } = await context.params;
   const formData = await request.formData();
 
-  if (!token) {
+  if (!token || !supabaseUrl || !supabaseServiceRoleKey) {
     return NextResponse.redirect(
       new URL(`/upload/${token}?error=upload_failed`, request.url),
       303
     );
   }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
   const submissionLink = await prisma.submissionLink.findUnique({
     where: { token },
@@ -124,28 +129,28 @@ export async function POST(request: Request, context: RouteContext) {
       "_"
     );
 
-    const uploadDir = path.join(
-      process.cwd(),
-      "public",
-      "uploads",
-      caseFolderName
-    );
-
-    await fs.mkdir(uploadDir, { recursive: true });
-
     for (const item of uploadItems) {
-      const bytes = await item.file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
       const safeOriginalName = item.file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const savedFileName = `${Date.now()}_${Math.random()
+      const uniquePrefix = `${Date.now()}_${Math.random()
         .toString(36)
-        .slice(2, 8)}_${safeOriginalName}`;
-      const savedFilePath = path.join(uploadDir, savedFileName);
+        .slice(2, 8)}`;
 
-      await fs.writeFile(savedFilePath, buffer);
+      const storagePath = `${caseFolderName}/${uniquePrefix}_${safeOriginalName}`;
 
-      const publicUrl = `/uploads/${caseFolderName}/${savedFileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(storagePath, item.file, {
+          contentType: item.file.type || undefined,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(storagePath);
 
       await prisma.document.create({
         data: {
@@ -154,13 +159,13 @@ export async function POST(request: Request, context: RouteContext) {
           docType: item.docType,
           displayName: item.docType === "other" ? item.otherName : null,
           originalFilename: item.file.name,
-          normalizedFilename: savedFileName,
+          normalizedFilename: `${uniquePrefix}_${safeOriginalName}`,
           mimeType: item.file.type || null,
           fileSize: BigInt(item.file.size),
           versionNo: 1,
-          storageProvider: "local",
-          storagePath: savedFilePath,
-          storageUrl: publicUrl,
+          storageProvider: "supabase_storage",
+          storagePath,
+          storageUrl: publicUrlData.publicUrl,
           reviewStatus: "uploaded",
         },
       });

@@ -247,7 +247,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                   serviceType: string;
                   country: string;
                   status: string;
-                  client: { chineseName: string };
+                  client: { chineseName: string; englishName: string | null };
                   assignedConsultant: { name: string } | null;
                 }) => (
                   <tr
@@ -263,7 +263,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                       </Link>
                     </td>
                     <td className="px-6 py-5 text-[15px] text-[#4e5968]">
-                      {item.client.chineseName}
+                      {item.client.englishName?.trim() || item.client.chineseName?.trim() || "-"}
                     </td>
                     <td className="px-6 py-5 text-[15px] text-[#4e5968]">
                       {item.serviceType}
