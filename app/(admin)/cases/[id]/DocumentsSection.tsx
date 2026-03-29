@@ -76,7 +76,7 @@ export default function DocumentsSection({
                   <div className="shrink-0 flex gap-2">
                     {document.storageUrl ? (
                       <a
-                        href={document.storageUrl}
+                        href={`/cases/${caseId}/documents/${document.id}/open`}
                         target="_blank"
                         rel="noreferrer"
                         className="toss-primary-button px-4 py-2 text-sm font-semibold"

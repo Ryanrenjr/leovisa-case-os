@@ -178,7 +178,7 @@ export async function POST(request: Request, context: RouteContext) {
           versionNo: 1,
           storageProvider: "supabase_storage",
           storagePath,
-          storageUrl: publicUrlData.publicUrl,
+          storageUrl: null,
           reviewStatus: "uploaded",
         },
       });
