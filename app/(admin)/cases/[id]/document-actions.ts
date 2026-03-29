@@ -1,8 +1,12 @@
 "use server";
 
-import fs from "fs/promises";
 import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import { prisma } from "../../../../lib/prisma";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const bucketName = "client-documents";
 
 export async function deleteDocument(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
@@ -19,9 +23,11 @@ export async function deleteDocument(formData: FormData) {
       caseId: true,
       originalFilename: true,
       normalizedFilename: true,
+      storageProvider: true,
       storagePath: true,
       storageUrl: true,
       docType: true,
+      displayName: true,
       fileSize: true,
       reviewStatus: true,
     },
@@ -31,11 +37,24 @@ export async function deleteDocument(formData: FormData) {
     throw new Error("Document not found.");
   }
 
-  if (existingDocument.storagePath) {
-    try {
-      await fs.unlink(existingDocument.storagePath);
-    } catch (error) {
-      console.error("Failed to delete local file:", error);
+  if (
+    existingDocument.storageProvider === "supabase_storage" &&
+    existingDocument.storagePath
+  ) {
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      throw new Error(
+        "Supabase environment variables are missing for storage deletion."
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    const { error } = await supabase.storage
+      .from(bucketName)
+      .remove([existingDocument.storagePath]);
+
+    if (error) {
+      throw new Error(`Failed to delete Supabase file: ${error.message}`);
     }
   }
 
@@ -54,7 +73,10 @@ export async function deleteDocument(formData: FormData) {
       oldValue: {
         originalFilename: existingDocument.originalFilename,
         normalizedFilename: existingDocument.normalizedFilename,
+        storageProvider: existingDocument.storageProvider,
+        storagePath: existingDocument.storagePath,
         storageUrl: existingDocument.storageUrl,
+        displayName: existingDocument.displayName,
         docType: existingDocument.docType,
         fileSize: existingDocument.fileSize
           ? Number(existingDocument.fileSize)
@@ -66,11 +88,11 @@ export async function deleteDocument(formData: FormData) {
 
   redirect(`/cases/${caseId}`);
 }
+
 export async function updateDocumentReviewStatus(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
   const documentId = formData.get("documentId")?.toString().trim() || "";
-  const reviewStatus =
-    formData.get("reviewStatus")?.toString().trim() || "";
+  const reviewStatus = formData.get("reviewStatus")?.toString().trim() || "";
 
   if (!caseId || !documentId || !reviewStatus) {
     throw new Error("Case ID, document ID, and review status are required.");
@@ -128,8 +150,7 @@ export async function updateDocumentReviewStatus(formData: FormData) {
 export async function updateDocumentDisplayName(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
   const documentId = formData.get("documentId")?.toString().trim() || "";
-  const displayName =
-    formData.get("displayName")?.toString().trim() || "";
+  const displayName = formData.get("displayName")?.toString().trim() || "";
 
   if (!caseId || !documentId) {
     throw new Error("Case ID and document ID are required.");
