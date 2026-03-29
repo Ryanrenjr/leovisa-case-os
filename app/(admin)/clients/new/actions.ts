@@ -12,34 +12,13 @@ export async function createClient(formData: FormData) {
   const nationality = formData.get("nationality")?.toString().trim() || "";
   const notes = formData.get("notes")?.toString().trim() || "";
 
-  if (!chineseName || !englishName) {
-    throw new Error("Chinese Name and English Name are required.");
+  if (!englishName) {
+    redirect("/clients/new?error=missing_english_name");
   }
 
-  const lastClient = await prisma.client.findFirst({
-    orderBy: {
-      createdAt: "desc",
-    },
-    select: {
-      clientCode: true,
-    },
-  });
-
-  let nextNumber = 1;
-
-  if (lastClient?.clientCode) {
-    const match = lastClient.clientCode.match(/CLI-(\d+)/);
-    if (match) {
-      nextNumber = Number(match[1]) + 1;
-    }
-  }
-
-  const clientCode = `CLI-${String(nextNumber).padStart(4, "0")}`;
-
-  const client = await prisma.client.create({
+  const createdClient = await prisma.client.create({
   data: {
-    clientCode,
-    chineseName,
+    chineseName: chineseName || "",
     englishName,
     email: email || null,
     phone: phone || null,
@@ -49,22 +28,24 @@ export async function createClient(formData: FormData) {
   },
 });
 
-await prisma.auditLog.create({
-  data: {
-    relatedEntityType: "client",
-    relatedEntityId: client.id,
-    actionType: "create_client",
-    actorType: "user",
-    success: true,
-    newValue: {
-      clientCode: client.clientCode,
-      chineseName: client.chineseName,
-      englishName: client.englishName,
-      nationality: client.nationality,
+  await prisma.auditLog.create({
+    data: {
+      relatedEntityType: "client",
+      relatedEntityId: createdClient.id,
+      actionType: "create_client",
+      actorType: "user",
+      success: true,
+      newValue: {
+  chineseName: chineseName || "",
+  englishName,
+  email: email || null,
+  phone: phone || null,
+  wechat: wechat || null,
+  nationality: nationality || null,
+  notes: notes || null,
+},
     },
-  },
-});
+  });
 
-redirect(`/clients/${client.id}`);
-
+  redirect("/clients");
 }

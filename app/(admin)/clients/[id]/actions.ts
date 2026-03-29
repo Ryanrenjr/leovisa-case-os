@@ -13,8 +13,8 @@ export async function updateClient(formData: FormData) {
   const nationality = formData.get("nationality")?.toString().trim() || "";
   const notes = formData.get("notes")?.toString().trim() || "";
 
-  if (!clientId || !chineseName) {
-    throw new Error("Client ID and Chinese name are required.");
+  if (!clientId || !englishName) {
+    throw new Error("Client ID and English name are required.");
   }
 
   const existingClient = await prisma.client.findUnique({
@@ -36,17 +36,17 @@ export async function updateClient(formData: FormData) {
   }
 
   await prisma.client.update({
-    where: { id: clientId },
-    data: {
-      chineseName,
-      englishName,
-      email: email || null,
-      phone: phone || null,
-      wechat: wechat || null,
-      nationality: nationality || null,
-      notes: notes || null,
-    },
-  });
+  where: { id: clientId },
+  data: {
+    chineseName: chineseName || "",
+    englishName,
+    email: email || null,
+    phone: phone || null,
+    wechat: wechat || null,
+    nationality: nationality || null,
+    notes: notes || null,
+  },
+});
 
   await prisma.auditLog.create({
     data: {
@@ -65,18 +65,18 @@ export async function updateClient(formData: FormData) {
         notes: existingClient.notes,
       },
       newValue: {
-        chineseName,
-        englishName: englishName || null,
-        email: email || null,
-        phone: phone || null,
-        wechat: wechat || null,
-        nationality: nationality || null,
-        notes: notes || null,
-      },
+  chineseName: chineseName || "",
+  englishName,
+  email: email || null,
+  phone: phone || null,
+  wechat: wechat || null,
+  nationality: nationality || null,
+  notes: notes || null,
+},
     },
   });
 
-  redirect(`/clients/${clientId}`);
+  redirect("/clients");
 }
 
 export async function deleteClient(formData: FormData) {

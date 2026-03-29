@@ -146,11 +146,11 @@ export default async function ClientsPage({
             <thead className="bg-[#fafbfc]">
               <tr className="border-b border-[#eef1f4]">
                 <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
-                  {t.clients.chineseName}
-                </th>
-                <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
-                  {t.clients.englishName}
-                </th>
+  {t.clients.englishName}
+</th>
+<th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
+  {t.clients.chineseName}
+</th>
                 <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
                   {t.clients.email}
                 </th>
@@ -178,16 +178,16 @@ export default async function ClientsPage({
                     className="border-b border-[#f0f2f5] last:border-b-0 hover:bg-[#fafbfc]"
                   >
                     <td className="px-6 py-5 text-[15px] text-[#191f28]">
-                      <Link
-                        href={`/clients/${client.id}`}
-                        className="font-semibold text-[#191f28] hover:text-[#3182f6]"
-                      >
-                        {client.chineseName}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-5 text-[15px] text-[#4e5968]">
-                      {client.englishName ?? "-"}
-                    </td>
+  <Link
+    href={`/clients/${client.id}`}
+    className="font-semibold text-[#191f28] hover:text-[#3182f6]"
+  >
+    {client.englishName?.trim() || "-"}
+  </Link>
+</td>
+<td className="px-6 py-5 text-[15px] text-[#4e5968]">
+  {client.chineseName?.trim() || "-"}
+</td>
                     <td className="px-6 py-5 text-[15px] text-[#4e5968]">
                       {client.email ?? "-"}
                     </td>
