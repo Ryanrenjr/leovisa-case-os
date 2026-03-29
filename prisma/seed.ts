@@ -1,5 +1,5 @@
-
 import "dotenv/config";
+import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 
 async function main() {
@@ -12,8 +12,23 @@ async function main() {
   await prisma.case.deleteMany();
   await prisma.client.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.adminUser.deleteMany();
 
-  // 创建用户
+  // 创建后台管理员登录账号
+  const adminPassword = "Admin123456!";
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+
+  const adminUser = await prisma.adminUser.create({
+    data: {
+      email: "admin@leovisa.com",
+      name: "LeoVisa Admin",
+      passwordHash: adminPasswordHash,
+      role: "admin",
+      isActive: true,
+    },
+  });
+
+  // 创建系统用户
   const admin = await prisma.user.create({
     data: {
       email: "admin@leovisa.test",
@@ -178,7 +193,7 @@ async function main() {
         storageProvider: "temp",
         storagePath: "/temp/LVS-UK-2026-0001/statement.pdf",
         storageUrl: "https://example.com/temp/statement.pdf",
-        reviewStatus: "pending_review",
+        reviewStatus: "uploaded",
       },
     ],
   });
@@ -230,6 +245,8 @@ async function main() {
 
   console.log("✅ Seed completed successfully");
   console.log({
+    adminLoginEmail: adminUser.email,
+    adminLoginPassword: adminPassword,
     adminEmail: admin.email,
     consultantA: consultantA.email,
     consultantB: consultantB.email,
