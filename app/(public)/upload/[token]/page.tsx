@@ -8,6 +8,7 @@ type UploadPortalPageProps = {
   }>;
   searchParams: Promise<{
     success?: string;
+    error?: string;
   }>;
 };
 
@@ -17,7 +18,9 @@ export default async function UploadPortalPage({
 }: UploadPortalPageProps) {
   const { token } = await params;
   const query = await searchParams;
+
   const isSuccess = query.success === "1";
+  const error = query.error || "";
 
   const submissionLink = await prisma.submissionLink.findUnique({
     where: { token },
@@ -46,8 +49,8 @@ export default async function UploadPortalPage({
 
   return (
     <UploadPortalContent
-      clientChineseName={submissionLink.case.client.chineseName}
-      clientEnglishName={submissionLink.case.client.englishName}
+      clientChineseName={submissionLink.case.client.chineseName || ""}
+      clientEnglishName={submissionLink.case.client.englishName || ""}
       caseCode={submissionLink.case.caseCode}
       serviceType={submissionLink.case.serviceType}
       country={submissionLink.case.country}
@@ -60,6 +63,7 @@ export default async function UploadPortalPage({
       token={submissionLink.token}
       isUnavailable={isUnavailable}
       isSuccess={isSuccess}
+      error={error}
     />
   );
 }

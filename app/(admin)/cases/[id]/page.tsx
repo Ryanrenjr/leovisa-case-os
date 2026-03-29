@@ -28,6 +28,10 @@ import {
   CONTRACT_STATUS_OPTIONS,
   INTAKE_STATUS_OPTIONS,
 } from "../../../../lib/status-options";
+import {
+  deleteAuditLog,
+  deleteSelectedAuditLogs,
+} from "./audit-log-actions";
 
 type CaseDetailPageProps = {
   params: Promise<{
@@ -365,7 +369,13 @@ export default async function CaseDetailPage({
           lang={lang}
         />
 
-        <AuditLogsSection logs={caseItem.auditLogs} lang={lang} />
+        <AuditLogsSection
+  caseId={caseItem.id}
+  logs={caseItem.auditLogs}
+  lang={lang}
+  onDeleteAction={deleteAuditLog}
+  onDeleteSelectedAction={deleteSelectedAuditLogs}
+/>
       </div>
     </main>
   );
