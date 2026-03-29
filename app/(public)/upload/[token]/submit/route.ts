@@ -18,6 +18,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const bucketName = "client-documents";
 
+const allowedMimeTypes = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+];
+
 export async function POST(request: Request, context: RouteContext) {
   const { token } = await context.params;
   const formData = await request.formData();
@@ -86,6 +92,13 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     if (docType === "other" && !otherName) {
+      return NextResponse.redirect(
+        new URL(`/upload/${token}?error=invalid_files`, request.url),
+        303
+      );
+    }
+
+    if (!allowedMimeTypes.includes(file.type)) {
       return NextResponse.redirect(
         new URL(`/upload/${token}?error=invalid_files`, request.url),
         303

@@ -60,6 +60,8 @@ type CopyContent = {
   errorInvalidFiles: string;
   errorUnavailable: string;
   errorUploadFailed: string;
+  supportedFormats: string;
+  uploadFormatHint: string;
 };
 
 const copy: Record<Language, CopyContent> = {
@@ -110,6 +112,8 @@ const copy: Record<Language, CopyContent> = {
     errorInvalidFiles: "请检查文件类型和文件内容是否完整。",
     errorUnavailable: "该上传链接当前不可用。",
     errorUploadFailed: "提交失败，请稍后再试或联系顾问。",
+    supportedFormats: "支持文件格式：PDF、JPG、JPEG、PNG。",
+    uploadFormatHint: "请上传 PDF、JPG、JPEG 或 PNG 文件。",
   },
   en: {
     portalTag: "LeoVisa Secure Upload",
@@ -163,6 +167,8 @@ const copy: Record<Language, CopyContent> = {
     errorUnavailable: "This upload link is currently unavailable.",
     errorUploadFailed:
       "Submission failed. Please try again later or contact your consultant.",
+    supportedFormats: "Supported formats: PDF, JPG, JPEG, PNG.",
+    uploadFormatHint: "Please upload a PDF, JPG, JPEG, or PNG file.",
   },
 };
 
@@ -195,7 +201,9 @@ export default function UploadPortalContent({
   error,
 }: UploadPortalContentProps) {
   const [lang, setLang] = useState<Language>("zh");
-  const [rows, setRows] = useState<UploadRow[]>([{ id: 0, docType: "passport" }]);
+  const [rows, setRows] = useState<UploadRow[]>([
+    { id: 0, docType: "passport" },
+  ]);
   const t = useMemo(() => copy[lang], [lang]);
   const submitUrl = `/upload/${token}/submit`;
 
@@ -243,7 +251,9 @@ export default function UploadPortalContent({
         </div>
 
         <div className="rounded-[28px] border border-[#e8edf3] bg-white p-8 shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
-          <p className="mb-3 text-sm font-medium text-[#8b95a1]">{t.portalTag}</p>
+          <p className="mb-3 text-sm font-medium text-[#8b95a1]">
+            {t.portalTag}
+          </p>
 
           <h1 className="mb-6 text-[40px] font-extrabold tracking-[-0.04em] text-[#191f28]">
             {t.title}
@@ -251,25 +261,39 @@ export default function UploadPortalContent({
 
           <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-5">
-              <p className="mb-2 text-sm font-medium text-[#8b95a1]">{t.client}</p>
-              <p className="text-[18px] font-semibold text-[#191f28]">{clientDisplay}</p>
+              <p className="mb-2 text-sm font-medium text-[#8b95a1]">
+                {t.client}
+              </p>
+              <p className="text-[18px] font-semibold text-[#191f28]">
+                {clientDisplay}
+              </p>
             </div>
 
             <div className="rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-5">
-              <p className="mb-2 text-sm font-medium text-[#8b95a1]">{t.caseCode}</p>
-              <p className="text-[18px] font-semibold text-[#191f28]">{caseCode}</p>
+              <p className="mb-2 text-sm font-medium text-[#8b95a1]">
+                {t.caseCode}
+              </p>
+              <p className="text-[18px] font-semibold text-[#191f28]">
+                {caseCode}
+              </p>
             </div>
 
             <div className="rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-5">
-              <p className="mb-2 text-sm font-medium text-[#8b95a1]">{t.service}</p>
+              <p className="mb-2 text-sm font-medium text-[#8b95a1]">
+                {t.service}
+              </p>
               <p className="text-[18px] font-semibold text-[#191f28]">
                 {serviceType} · {country}
               </p>
             </div>
 
             <div className="rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-5">
-              <p className="mb-2 text-sm font-medium text-[#8b95a1]">{t.expiresAt}</p>
-              <p className="text-[18px] font-semibold text-[#191f28]">{expiresAtText}</p>
+              <p className="mb-2 text-sm font-medium text-[#8b95a1]">
+                {t.expiresAt}
+              </p>
+              <p className="text-[18px] font-semibold text-[#191f28]">
+                {expiresAtText}
+              </p>
             </div>
           </div>
 
@@ -277,7 +301,9 @@ export default function UploadPortalContent({
             <h2 className="mb-3 text-[22px] font-bold tracking-[-0.02em] text-[#191f28]">
               {t.guideTitle}
             </h2>
-            <p className="mb-4 text-[15px] leading-7 text-[#4e5968]">{t.guideIntro}</p>
+            <p className="mb-4 text-[15px] leading-7 text-[#4e5968]">
+              {t.guideIntro}
+            </p>
 
             <ul className="list-disc space-y-2 pl-5 text-[15px] leading-7 text-[#4e5968]">
               {t.guideItems.map((item) => (
@@ -286,14 +312,23 @@ export default function UploadPortalContent({
             </ul>
 
             <div className="mt-5 rounded-2xl border border-[#eef1f4] bg-white p-4">
-              <p className="mb-2 text-sm font-semibold text-[#191f28]">{t.guideNoteTitle}</p>
-              <p className="text-[14px] leading-6 text-[#6b7684]">{t.guideNote}</p>
+              <p className="mb-2 text-sm font-semibold text-[#191f28]">
+                {t.guideNoteTitle}
+              </p>
+              <p className="text-[14px] leading-6 text-[#6b7684]">
+                {t.guideNote}
+              </p>
+              <p className="mt-3 text-[14px] leading-6 text-[#6b7684]">
+                {t.supportedFormats}
+              </p>
             </div>
           </div>
 
           {isSuccess && (
             <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-5">
-              <h2 className="mb-2 text-[22px] font-bold text-green-700">{t.successTitle}</h2>
+              <h2 className="mb-2 text-[22px] font-bold text-green-700">
+                {t.successTitle}
+              </h2>
               <p className="text-[15px] text-green-700">{t.successDesc}</p>
             </div>
           )}
@@ -311,7 +346,9 @@ export default function UploadPortalContent({
               <h2 className="mb-2 text-[22px] font-bold text-red-700">
                 {t.unavailableTitle}
               </h2>
-              <p className="text-[15px] leading-7 text-red-700">{t.unavailableDesc}</p>
+              <p className="text-[15px] leading-7 text-red-700">
+                {t.unavailableDesc}
+              </p>
             </div>
           ) : isSuccess ? (
             <div className="rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-6">
@@ -351,61 +388,66 @@ export default function UploadPortalContent({
                     key={row.id}
                     className="rounded-2xl border border-[#e8edf3] bg-white p-5"
                   >
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1.4fr_auto] md:items-end">
-                      <div>
-                        <label className="mb-2 block text-sm font-medium text-[#6b7684]">
-                          {t.docType}
-                        </label>
-                        <select
-                          name={`docType_${index}`}
-                          value={row.docType}
-                          onChange={(e) => updateRowDocType(row.id, e.target.value)}
-                          className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
-                          required
-                        >
-                          <option value="" disabled>
-                            {t.selectDocType}
-                          </option>
-                          <option value="passport">
-                            {lang === "zh" ? "护照" : "Passport"}
-                          </option>
-                          <option value="visa">
-                            {lang === "zh" ? "签证 / 居留" : "Visa / Residence Permit"}
-                          </option>
-                          <option value="bank_statement">
-                            {lang === "zh" ? "银行流水" : "Bank Statement"}
-                          </option>
-                          <option value="photo">
-                            {lang === "zh" ? "照片" : "Photo"}
-                          </option>
-                          <option value="other">
-                            {lang === "zh" ? "其他" : "Other"}
-                          </option>
-                        </select>
-                      </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+  <div>
+    <label className="mb-2 block text-sm font-medium text-[#6b7684]">
+      {t.docType}
+    </label>
+    <select
+      name={`docType_${index}`}
+      value={row.docType}
+      onChange={(e) => updateRowDocType(row.id, e.target.value)}
+      className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
+      required
+    >
+      <option value="" disabled>
+        {t.selectDocType}
+      </option>
+      <option value="passport">
+        {lang === "zh" ? "护照" : "Passport"}
+      </option>
+      <option value="visa">
+        {lang === "zh" ? "签证 / 居留" : "Visa / Residence Permit"}
+      </option>
+      <option value="bank_statement">
+        {lang === "zh" ? "银行流水" : "Bank Statement"}
+      </option>
+      <option value="photo">
+        {lang === "zh" ? "照片" : "Photo"}
+      </option>
+      <option value="other">
+        {lang === "zh" ? "其他" : "Other"}
+      </option>
+    </select>
+  </div>
 
-                      <div>
-                        <label className="mb-2 block text-sm font-medium text-[#6b7684]">
-                          {t.uploadFile}
-                        </label>
-                        <input
-                          type="file"
-                          name={`file_${index}`}
-                          className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
-                          required
-                        />
-                      </div>
+  <div>
+    <label className="mb-2 block text-sm font-medium text-[#6b7684]">
+      {t.uploadFile}
+    </label>
+    <input
+      type="file"
+      name={`file_${index}`}
+      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+      className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
+      required
+    />
+    <p className="mt-2 text-[13px] text-[#8b95a1]">
+      {t.uploadFormatHint}
+    </p>
+  </div>
+</div>
 
-                      <div>
-                        <button
-                          type="button"
-                          onClick={() => removeRow(row.id)}
-                          className="inline-flex items-center justify-center rounded-2xl border border-[#e5e8eb] bg-white px-4 py-3 text-sm font-semibold text-[#6b7684] hover:bg-[#f8fafc]"
-                        >
-                          {t.removeRow}
-                        </button>
-                      </div>
-                    </div>
+<div className="mt-4 flex justify-end">
+  <button
+    type="button"
+    onClick={() => removeRow(row.id)}
+    className="inline-flex items-center justify-center rounded-2xl border border-[#e5e8eb] bg-white px-4 py-3 text-sm font-semibold text-[#6b7684] hover:bg-[#f8fafc]"
+  >
+    {t.removeRow}
+  </button>
+</div>
+                    
 
                     {row.docType === "other" && (
                       <div className="mt-4">
@@ -443,7 +485,8 @@ export default function UploadPortalContent({
 
                 <div className="rounded-2xl border border-[#eef1f4] bg-white p-4">
                   <p className="text-sm font-medium text-[#8b95a1]">
-                    {t.linkStatus}: <span className="text-[#191f28]">{status}</span>
+                    {t.linkStatus}:{" "}
+                    <span className="text-[#191f28]">{status}</span>
                   </p>
                 </div>
               </form>

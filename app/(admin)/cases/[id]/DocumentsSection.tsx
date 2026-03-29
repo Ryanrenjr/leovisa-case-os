@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
+import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
 
 type DocumentItem = {
   id: string;
@@ -89,19 +90,19 @@ export default function DocumentsSection({
                     )}
 
                     <form action={onDeleteAction}>
-                      <input type="hidden" name="caseId" value={caseId} />
-                      <input
-                        type="hidden"
-                        name="documentId"
-                        value={document.id}
-                      />
-                      <button
-                        type="submit"
-                        className="toss-danger-button px-4 py-2 text-sm font-semibold"
-                      >
-                        {lang === "zh" ? "删除" : "Delete"}
-                      </button>
-                    </form>
+  <input type="hidden" name="caseId" value={caseId} />
+  <input type="hidden" name="documentId" value={document.id} />
+
+  <ConfirmSubmitButton
+    label={lang === "zh" ? "删除" : "Delete"}
+    confirmMessage={
+      lang === "zh"
+        ? "确认要删除这个文件吗？删除后将同时移除存储中的文件。"
+        : "Are you sure you want to delete this document? This will also remove the stored file."
+    }
+    className="inline-block rounded-lg border border-red-500/30 px-4 py-2 font-medium text-red-300 hover:bg-red-500/10"
+  />
+</form>
                   </div>
                 </div>
 
