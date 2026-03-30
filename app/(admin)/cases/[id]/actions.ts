@@ -168,9 +168,9 @@ export async function deleteCase(formData: FormData) {
       documents: {
         select: { id: true },
       },
-      documentSubmissions: {
-        select: { id: true },
-      },
+      submissions: {
+  select: { id: true },
+},
       submissionLinks: {
         select: { id: true },
       },
@@ -186,7 +186,7 @@ export async function deleteCase(formData: FormData) {
 
   const hasLinkedData =
     existingCase.documents.length > 0 ||
-    existingCase.documentSubmissions.length > 0 ||
+    existingCase.submissions.length > 0 ||
     existingCase.submissionLinks.length > 0 ||
     existingCase.contracts.length > 0;
 
