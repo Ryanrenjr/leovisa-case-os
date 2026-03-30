@@ -15,7 +15,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  assignedCases      Case[]           @relation("AssignedConsultant")
   createdLinks       SubmissionLink[] @relation("CreatedByUser")
   generatedContracts Contract[]       @relation("GeneratedByUser")
 }
@@ -37,26 +36,27 @@ model Client {
 }
 
 model Case {
-  id                   String   @id @default(uuid())
-  caseCode             String   @unique
+  id                   String     @id @default(cuid())
+  caseCode             String     @unique
   clientId             String
   serviceType          String
   country              String
   assignedConsultantId String?
-  status               String   @default("new")
-  contractStatus       String   @default("not_started")
-  intakeStatus         String   @default("pending")
+  status               String
+  contractStatus       String
+  intakeStatus         String
   notes                String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 
-  client              Client               @relation(fields: [clientId], references: [id])
-  assignedConsultant  User?                @relation("AssignedConsultant", fields: [assignedConsultantId], references: [id])
-  submissionLinks     SubmissionLink[]
-  documentSubmissions DocumentSubmission[]
-  documents           Document[]
-  contracts           Contract[]
-  auditLogs           AuditLog[]
+  client               Client     @relation(fields: [clientId], references: [id])
+  assignedConsultant   AdminUser? @relation("CaseConsultant", fields: [assignedConsultantId], references: [id])
+
+  submissionLinks      SubmissionLink[]
+  submissions          DocumentSubmission[]
+  documents            Document[]
+  contracts            Contract[]
+  auditLogs            AuditLog[]
 }
 
 model SubmissionLink {
@@ -147,12 +147,14 @@ model AuditLog {
 }
 
 model AdminUser {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String
-  passwordHash String
-  role         String   @default("admin")
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String   @id @default(cuid())
+  email             String   @unique
+  name              String
+  passwordHash      String
+  role              String   @default("admin")
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  assignedCases     Case[]   @relation("CaseConsultant")
 }

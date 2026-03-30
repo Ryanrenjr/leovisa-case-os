@@ -48,18 +48,20 @@ export default async function EditCasePage({
     },
   });
 
-  const consultants = await prisma.user.findMany({
-    where: {
-      role: "consultant",
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    select: {
-      id: true,
-      name: true,
-    },
-  });
+  const consultants = await prisma.adminUser.findMany({
+  where: {
+    role: "consultant",
+    isActive: true,
+  },
+  orderBy: {
+    name: "asc",
+  },
+  select: {
+    id: true,
+    name: true,
+    email: true,
+  },
+});
 
   return (
     <EditCaseForm

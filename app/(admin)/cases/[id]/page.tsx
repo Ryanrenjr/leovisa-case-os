@@ -73,7 +73,7 @@ export default async function CaseDetailPage({
         },
       },
       submissionLinks: true,
-      documentSubmissions: true,
+      submissions: true,
       auditLogs: {
         orderBy: {
           createdAt: "desc",
@@ -143,9 +143,7 @@ export default async function CaseDetailPage({
 
           <div className="grid grid-cols-1 gap-5 text-sm md:grid-cols-2">
             <div>
-              <p className="toss-label mb-2">
-                {lang === "zh" ? "客户" : "Client"}
-              </p>
+              <p className="toss-label mb-2">{lang === "zh" ? "客户" : "Client"}</p>
               <Link
                 href={`/clients/${caseItem.client.id}`}
                 className="text-[15px] font-semibold text-[#191f28] hover:text-[#3182f6]"
@@ -155,53 +153,39 @@ export default async function CaseDetailPage({
             </div>
 
             <div>
-              <p className="toss-label mb-2">
-                {lang === "zh" ? "英文名" : "English Name"}
-              </p>
+              <p className="toss-label mb-2">{lang === "zh" ? "英文名" : "English Name"}</p>
               <p className="text-[15px] text-[#333d4b]">
                 {caseItem.client.englishName ?? "-"}
               </p>
             </div>
 
             <div>
-              <p className="toss-label mb-2">
-                {lang === "zh" ? "业务类型" : "Service Type"}
-              </p>
+              <p className="toss-label mb-2">{lang === "zh" ? "业务类型" : "Service Type"}</p>
               <p className="text-[15px] text-[#333d4b]">{caseItem.serviceType}</p>
             </div>
 
             <div>
-              <p className="toss-label mb-2">
-                {lang === "zh" ? "国家" : "Country"}
-              </p>
+              <p className="toss-label mb-2">{lang === "zh" ? "国家" : "Country"}</p>
               <p className="text-[15px] text-[#333d4b]">{caseItem.country}</p>
             </div>
 
             <div>
-              <p className="toss-label mb-2">
-                {lang === "zh" ? "状态" : "Status"}
-              </p>
+              <p className="toss-label mb-2">{lang === "zh" ? "状态" : "Status"}</p>
               <StatusBadge value={caseItem.status} lang={lang} />
             </div>
 
             <div>
-              <p className="toss-label mb-2">
-                {lang === "zh" ? "合同状态" : "Contract Status"}
-              </p>
+              <p className="toss-label mb-2">{lang === "zh" ? "合同状态" : "Contract Status"}</p>
               <StatusBadge value={caseItem.contractStatus} lang={lang} />
             </div>
 
             <div>
-              <p className="toss-label mb-2">
-                {lang === "zh" ? "信息收集状态" : "Intake Status"}
-              </p>
+              <p className="toss-label mb-2">{lang === "zh" ? "信息收集状态" : "Intake Status"}</p>
               <StatusBadge value={caseItem.intakeStatus} lang={lang} />
             </div>
 
             <div>
-              <p className="toss-label mb-2">
-                {lang === "zh" ? "顾问" : "Consultant"}
-              </p>
+              <p className="toss-label mb-2">{lang === "zh" ? "顾问" : "Consultant"}</p>
               <p className="text-[15px] text-[#333d4b]">
                 {caseItem.assignedConsultant?.name ?? "-"}
               </p>
@@ -209,58 +193,30 @@ export default async function CaseDetailPage({
           </div>
 
           <div className="mt-8">
-            <p className="toss-label mb-2">
-              {lang === "zh" ? "备注" : "Notes"}
-            </p>
-            <p className="text-[15px] leading-7 text-[#4e5968]">
-              {caseItem.notes ?? "-"}
-            </p>
+            <p className="toss-label mb-2">{lang === "zh" ? "备注" : "Notes"}</p>
+            <p className="text-[15px] leading-7 text-[#4e5968]">{caseItem.notes ?? "-"}</p>
           </div>
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          <a
-            href="#documents-section"
-            className="toss-card block p-6 hover:-translate-y-[1px]"
-          >
-            <p className="toss-label mb-3">
-              {lang === "zh" ? "文件" : "Documents"}
-            </p>
+          <a href="#documents-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+            <p className="toss-label mb-3">{lang === "zh" ? "文件" : "Documents"}</p>
             <h2 className="toss-stat-number">{caseItem.documents.length}</h2>
           </a>
 
-          <a
-            href="#contracts-section"
-            className="toss-card block p-6 hover:-translate-y-[1px]"
-          >
-            <p className="toss-label mb-3">
-              {lang === "zh" ? "合同" : "Contracts"}
-            </p>
+          <a href="#contracts-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+            <p className="toss-label mb-3">{lang === "zh" ? "合同" : "Contracts"}</p>
             <h2 className="toss-stat-number">{caseItem.contracts.length}</h2>
           </a>
 
-          <a
-            href="#upload-links-section"
-            className="toss-card block p-6 hover:-translate-y-[1px]"
-          >
-            <p className="toss-label mb-3">
-              {lang === "zh" ? "上传链接" : "Upload Links"}
-            </p>
-            <h2 className="toss-stat-number">
-              {caseItem.submissionLinks.length}
-            </h2>
+          <a href="#upload-links-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+            <p className="toss-label mb-3">{lang === "zh" ? "上传链接" : "Upload Links"}</p>
+            <h2 className="toss-stat-number">{caseItem.submissionLinks.length}</h2>
           </a>
 
-          <a
-            href="#submissions-section"
-            className="toss-card block p-6 hover:-translate-y-[1px]"
-          >
-            <p className="toss-label mb-3">
-              {lang === "zh" ? "提交记录" : "Submissions"}
-            </p>
-            <h2 className="toss-stat-number">
-              {caseItem.documentSubmissions.length}
-            </h2>
+          <a href="#submissions-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+            <p className="toss-label mb-3">{lang === "zh" ? "提交记录" : "Submissions"}</p>
+            <h2 className="toss-stat-number">{caseItem.submissions.length}</h2>
           </a>
         </div>
 
@@ -269,21 +225,12 @@ export default async function CaseDetailPage({
             {lang === "zh" ? "更新案件状态" : "Update Case Status"}
           </h2>
 
-          <form
-            action={updateCaseStatus}
-            className="grid grid-cols-1 gap-6 md:grid-cols-3"
-          >
+          <form action={updateCaseStatus} className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <input type="hidden" name="caseId" value={caseItem.id} />
 
             <div>
-              <label className="toss-label mb-3 block">
-                {lang === "zh" ? "状态" : "Status"}
-              </label>
-              <select
-                name="status"
-                defaultValue={caseItem.status}
-                className="w-full px-4 py-3"
-              >
+              <label className="toss-label mb-3 block">{lang === "zh" ? "状态" : "Status"}</label>
+              <select name="status" defaultValue={caseItem.status} className="w-full px-4 py-3">
                 {CASE_STATUS_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>
                     {lang === "zh" ? item.zh : item.en}
@@ -293,9 +240,7 @@ export default async function CaseDetailPage({
             </div>
 
             <div>
-              <label className="toss-label mb-3 block">
-                {lang === "zh" ? "合同状态" : "Contract Status"}
-              </label>
+              <label className="toss-label mb-3 block">{lang === "zh" ? "合同状态" : "Contract Status"}</label>
               <select
                 name="contractStatus"
                 defaultValue={caseItem.contractStatus}
@@ -310,9 +255,7 @@ export default async function CaseDetailPage({
             </div>
 
             <div>
-              <label className="toss-label mb-3 block">
-                {lang === "zh" ? "信息收集状态" : "Intake Status"}
-              </label>
+              <label className="toss-label mb-3 block">{lang === "zh" ? "信息收集状态" : "Intake Status"}</label>
               <select
                 name="intakeStatus"
                 defaultValue={caseItem.intakeStatus}
@@ -355,7 +298,7 @@ export default async function CaseDetailPage({
 
         <SubmissionsSection
           caseId={caseItem.id}
-          submissions={caseItem.documentSubmissions}
+          submissions={caseItem.submissions}
           onDeleteAction={deleteSubmission}
           lang={lang}
         />
@@ -370,12 +313,12 @@ export default async function CaseDetailPage({
         />
 
         <AuditLogsSection
-  caseId={caseItem.id}
-  logs={caseItem.auditLogs}
-  lang={lang}
-  onDeleteAction={deleteAuditLog}
-  onDeleteSelectedAction={deleteSelectedAuditLogs}
-/>
+          caseId={caseItem.id}
+          logs={caseItem.auditLogs}
+          lang={lang}
+          onDeleteAction={deleteAuditLog}
+          onDeleteSelectedAction={deleteSelectedAuditLogs}
+        />
       </div>
     </main>
   );

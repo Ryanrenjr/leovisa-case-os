@@ -17,7 +17,7 @@ export async function createCase(formData: FormData) {
   const notes = formData.get("notes")?.toString().trim() || "";
 
   if (!clientId || !serviceType || !country) {
-    throw new Error("Client, Service Type, and Country are required.");
+    redirect("/cases/new?error=missing_required_fields");
   }
 
   const currentYear = new Date().getFullYear();
@@ -56,36 +56,35 @@ export async function createCase(formData: FormData) {
   const caseCode = `LVS-${countryCode}-${currentYear}-${String(nextNumber).padStart(4, "0")}`;
 
   const caseItem = await prisma.case.create({
-  data: {
-    caseCode,
-    clientId,
-    serviceType,
-    country,
-    assignedConsultantId: assignedConsultantId || null,
-    status,
-    contractStatus,
-    intakeStatus,
-    notes: notes || null,
-  },
-});
-
-await prisma.auditLog.create({
-  data: {
-    caseId: caseItem.id,
-    relatedEntityType: "case",
-    relatedEntityId: caseItem.id,
-    actionType: "create_case",
-    actorType: "user",
-    success: true,
-    newValue: {
-      caseCode: caseItem.caseCode,
-      serviceType: caseItem.serviceType,
-      country: caseItem.country,
-      status: caseItem.status,
+    data: {
+      caseCode,
+      clientId,
+      serviceType,
+      country,
+      assignedConsultantId: assignedConsultantId || null,
+      status,
+      contractStatus,
+      intakeStatus,
+      notes: notes || null,
     },
-  },
-});
+  });
 
-redirect(`/cases/${caseItem.id}`);
+  await prisma.auditLog.create({
+    data: {
+      caseId: caseItem.id,
+      relatedEntityType: "case",
+      relatedEntityId: caseItem.id,
+      actionType: "create_case",
+      actorType: "user",
+      success: true,
+      newValue: {
+        caseCode: caseItem.caseCode,
+        serviceType: caseItem.serviceType,
+        country: caseItem.country,
+        status: caseItem.status,
+      },
+    },
+  });
 
+  redirect(`/cases/${caseItem.id}`);
 }

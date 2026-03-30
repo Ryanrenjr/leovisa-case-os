@@ -22,6 +22,7 @@ type Client = {
 type Consultant = {
   id: string;
   name: string;
+  email?: string;
 };
 
 type NewCaseFormProps = {
@@ -106,15 +107,16 @@ export default function NewCaseForm({
                   </label>
                   <select
                     name="clientId"
-                    defaultValue={preselectedClientId}
+                    defaultValue={preselectedClientId || ""}
                     className="w-full px-4 py-3"
+                    required
                   >
                     <option value="" disabled>
                       {lang === "zh" ? "请选择客户" : "Select client"}
                     </option>
                     {filteredClients.map((client) => (
                       <option key={client.id} value={client.id}>
-                        {client.chineseName} / {client.englishName}
+                        {client.chineseName || "-"} / {client.englishName || "-"}
                       </option>
                     ))}
                   </select>
@@ -141,6 +143,7 @@ export default function NewCaseForm({
                     name="serviceType"
                     defaultValue=""
                     className="w-full px-4 py-3"
+                    required
                   >
                     <option value="" disabled>
                       {lang === "zh" ? "请选择业务类型" : "Select service type"}
@@ -170,6 +173,7 @@ export default function NewCaseForm({
                     name="country"
                     defaultValue=""
                     className="w-full px-4 py-3"
+                    required
                   >
                     <option value="" disabled>
                       {lang === "zh" ? "请选择国家" : "Select country"}
@@ -194,7 +198,7 @@ export default function NewCaseForm({
                   </label>
                   <select
                     name="assignedConsultantId"
-                    defaultValue={consultants[0]?.id ?? ""}
+                    defaultValue=""
                     className="w-full px-4 py-3"
                   >
                     <option value="">
@@ -203,6 +207,7 @@ export default function NewCaseForm({
                     {consultants.map((consultant) => (
                       <option key={consultant.id} value={consultant.id}>
                         {consultant.name}
+                        {consultant.email ? ` (${consultant.email})` : ""}
                       </option>
                     ))}
                   </select>

@@ -14,9 +14,14 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.adminUser.deleteMany();
 
-  // 创建后台管理员登录账号
+  // =========================
+  // 1) 后台登录账号（新系统）
+  // =========================
   const adminPassword = "Admin123456!";
+  const consultantPassword = "Consultant123!";
+
   const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+  const consultantPasswordHash = await bcrypt.hash(consultantPassword, 10);
 
   const adminUser = await prisma.adminUser.create({
     data: {
@@ -28,35 +33,42 @@ async function main() {
     },
   });
 
-  // 创建系统用户
-  const admin = await prisma.user.create({
+  const consultantA = await prisma.adminUser.create({
     data: {
-      email: "admin@leovisa.test",
-      name: "Admin User",
+      email: "ryanrenjr@outlook.com",
+      name: "Ryan",
+      passwordHash: consultantPasswordHash,
+      role: "consultant",
+      isActive: true,
+    },
+  });
+
+  const consultantB = await prisma.adminUser.create({
+    data: {
+      email: "consultant2@leovisa.com",
+      name: "Consultant 2",
+      passwordHash: consultantPasswordHash,
+      role: "consultant",
+      isActive: true,
+    },
+  });
+
+  // =========================================
+  // 2) 旧业务引用仍使用的 User（暂时保留）
+  // 这些通常给 createdBy / generatedBy / actorId 用
+  // =========================================
+  const systemAdminUser = await prisma.user.create({
+    data: {
+      email: "system.admin@leovisa.test",
+      name: "System Admin",
       role: "admin",
       status: "active",
     },
   });
 
-  const consultantA = await prisma.user.create({
-    data: {
-      email: "consultant.a@leovisa.test",
-      name: "Consultant A",
-      role: "consultant",
-      status: "active",
-    },
-  });
-
-  const consultantB = await prisma.user.create({
-    data: {
-      email: "consultant.b@leovisa.test",
-      name: "Consultant B",
-      role: "consultant",
-      status: "active",
-    },
-  });
-
-  // 创建客户
+  // =========================
+  // 3) 创建客户
+  // =========================
   const client1 = await prisma.client.create({
     data: {
       clientCode: "CLI-0001",
@@ -96,7 +108,10 @@ async function main() {
     },
   });
 
-  // 创建案件
+  // =========================
+  // 4) 创建案件
+  // assignedConsultantId 现在指向 AdminUser.id
+  // =========================
   const case1 = await prisma.case.create({
     data: {
       caseCode: "LVS-UK-2026-0001",
@@ -139,7 +154,10 @@ async function main() {
     },
   });
 
-  // 创建一个上传链接
+  // =========================
+  // 5) 创建上传链接
+  // createdBy 如果当前 schema 还引用 User.id，就继续用 systemAdminUser.id
+  // =========================
   const submissionLink1 = await prisma.submissionLink.create({
     data: {
       caseId: case1.id,
@@ -147,11 +165,13 @@ async function main() {
       status: "active",
       maxUses: 20,
       currentUses: 1,
-      createdBy: admin.id,
+      createdBy: systemAdminUser.id,
     },
   });
 
-  // 创建一次提交记录
+  // =========================
+  // 6) 创建一次提交记录
+  // =========================
   const submission1 = await prisma.documentSubmission.create({
     data: {
       caseId: case1.id,
@@ -164,7 +184,9 @@ async function main() {
     },
   });
 
-  // 创建文件记录
+  // =========================
+  // 7) 创建文件记录
+  // =========================
   await prisma.document.createMany({
     data: [
       {
@@ -198,20 +220,26 @@ async function main() {
     ],
   });
 
-  // 创建合同
+  // =========================
+  // 8) 创建合同
+  // generatedBy 如果当前 schema 还引用 User.id，就继续用 systemAdminUser.id
+  // =========================
   await prisma.contract.create({
     data: {
       caseId: case3.id,
       templateName: "client-care-letter-v1",
       versionNo: 1,
-      generatedBy: admin.id,
+      generatedBy: systemAdminUser.id,
       filePath: "/Cases/LVS-UK-2026-0003_WangWu/05_Contracts/contract_v1.pdf",
       fileUrl: "https://example.com/contracts/contract_v1.pdf",
       status: "sent",
     },
   });
 
-  // 创建审计日志
+  // =========================
+  // 9) 创建审计日志
+  // actorId 如果当前 schema 还引用 User.id，就继续用 systemAdminUser.id
+  // =========================
   await prisma.auditLog.createMany({
     data: [
       {
@@ -220,7 +248,7 @@ async function main() {
         relatedEntityId: case1.id,
         actionType: "create_case",
         actorType: "user",
-        actorId: admin.id,
+        actorId: systemAdminUser.id,
         success: true,
       },
       {
@@ -237,7 +265,7 @@ async function main() {
         relatedEntityId: case3.id,
         actionType: "generate_contract",
         actorType: "user",
-        actorId: admin.id,
+        actorId: systemAdminUser.id,
         success: true,
       },
     ],
@@ -247,9 +275,9 @@ async function main() {
   console.log({
     adminLoginEmail: adminUser.email,
     adminLoginPassword: adminPassword,
-    adminEmail: admin.email,
-    consultantA: consultantA.email,
-    consultantB: consultantB.email,
+    consultantLoginA: consultantA.email,
+    consultantLoginB: consultantB.email,
+    consultantPassword,
     cases: [case1.caseCode, case2.caseCode, case3.caseCode],
   });
 }
