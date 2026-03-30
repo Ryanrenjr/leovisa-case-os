@@ -15,6 +15,7 @@ type DocumentItem = {
   reviewStatus: string;
   storageProvider: string;
   storageUrl: string | null;
+  storagePath: string | null;
   createdAt: Date;
   submission: {
     submittedByName: string | null;
@@ -74,18 +75,9 @@ export default function DocumentsSection({
                   </div>
 
                   <div className="shrink-0 flex gap-2">
-                    {document.storageProvider === "supabase_storage" ? (
+                  {document.storagePath || document.storageUrl ? (
   <a
     href={`/cases/${caseId}/documents/${document.id}/open`}
-    target="_blank"
-    rel="noreferrer"
-    className="toss-primary-button px-4 py-2 text-sm font-semibold"
-  >
-    {lang === "zh" ? "打开" : "Open"}
-  </a>
-) : document.storageUrl ? (
-  <a
-    href={document.storageUrl}
     target="_blank"
     rel="noreferrer"
     className="toss-primary-button px-4 py-2 text-sm font-semibold"

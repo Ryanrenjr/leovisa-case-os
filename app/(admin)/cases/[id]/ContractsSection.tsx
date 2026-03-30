@@ -64,20 +64,20 @@ export default function ContractsSection({
                   </div>
 
                   <div className="shrink-0 flex gap-2">
-                    {contract.fileUrl ? (
-                      <a
-                        href={contract.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="toss-primary-button px-4 py-2 text-sm font-semibold"
-                      >
-                        {lang === "zh" ? "打开" : "Open"}
-                      </a>
-                    ) : (
-                      <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
-                        {lang === "zh" ? "无文件" : "No File"}
-                      </span>
-                    )}
+                    {contract.filePath || contract.fileUrl ? (
+  <a
+    href={`/cases/${caseId}/contracts/${contract.id}/open`}
+    target="_blank"
+    rel="noreferrer"
+    className="toss-primary-button px-4 py-2 text-sm font-semibold"
+  >
+    {lang === "zh" ? "打开" : "Open"}
+  </a>
+) : (
+  <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
+    {lang === "zh" ? "无文件" : "No File"}
+  </span>
+)}
 
                     <form action={onDeleteAction}>
                       <input type="hidden" name="caseId" value={caseId} />

@@ -126,6 +126,13 @@ export default async function CaseDetailPage({
                 {lang === "zh" ? "编辑案件" : "Edit Case"}
               </Link>
 
+              <Link
+  href={`/cases/${caseItem.id}/contracts/new`}
+  className="toss-primary-button px-5 py-3 text-sm font-semibold"
+>
+  {lang === "zh" ? "生成合同" : "Generate Contract"}
+</Link>
+
               <form action={deleteCase}>
                 <input type="hidden" name="caseId" value={caseItem.id} />
                 <ConfirmSubmitButton
