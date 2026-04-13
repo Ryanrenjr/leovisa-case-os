@@ -103,6 +103,7 @@ export const messages = {
   not_started: "Not Started",
   generated: "Generated",
   sent: "Sent",
+  cancelled: "Cancelled",
   superseded: "Superseded",
 
   pending: "Pending",
@@ -213,6 +214,7 @@ export const messages = {
   not_started: "未开始",
   generated: "已生成",
   sent: "已发送",
+  cancelled: "已取消",
   superseded: "已替换",
 
   pending: "待处理",

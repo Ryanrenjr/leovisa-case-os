@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "../../../../../../lib/prisma";
+import { getServiceTypeLabel } from "../../../../../../lib/service-options";
 import CreateContractForm from "./CreateContractForm";
 
 type CreateContractPageProps = {
@@ -51,10 +52,11 @@ export default async function CreateContractPage({
             caseId={caseItem.id}
             caseCode={caseItem.caseCode}
             clientName={
-              caseItem.client.englishName || caseItem.client.chineseName || ""
-            }
-            visaType={caseItem.serviceType}
+            caseItem.client.englishName || caseItem.client.chineseName || ""
+          }
+            visaType={getServiceTypeLabel(caseItem.serviceType)}
             nationality={caseItem.client.nationality || ""}
+            applicationLocation="outside UK"
             defaultDate={today}
           />
         </div>

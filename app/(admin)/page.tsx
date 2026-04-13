@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { prisma } from "../../lib/prisma";
 import { getLangFromCookie, messages } from "../../lib/i18n";
+import { getServiceTypeLabel } from "../../lib/service-options";
 
 const PIPELINE_STATUSES = [
   "new",
@@ -34,12 +35,18 @@ const BUSINESS_LINE_GROUPS = {
   uk_toc: {
     matchers: [
       "Skilled Worker",
-      "Student and PSW",
-      "Spouse Visa",
-      "Visitor Visa",
+      "Settlement",
       "Innovator Founder",
-      "High Potential Individual",
       "Global Talent",
+      "High Potential Individual (HPI)",
+      "Spouse Visa",
+      "Student Visa",
+      "Graduate Visa (PSW)",
+      "Standard Visitor",
+      "10 Year Long Residence",
+      "Student Visa / Graduate Visa (PSW)",
+      "Skilled Worker Route to Settlement",
+      "Spouse Route to Settlement",
     ],
   },
   uk_tob: {
@@ -113,7 +120,9 @@ export default async function Home() {
     ([key, group]) => {
       const count = allCases.filter(
         (item: { status: string; serviceType: string }) =>
-          group.matchers.some((matcher) => matcher === item.serviceType)
+          group.matchers.some(
+            (matcher) => matcher === getServiceTypeLabel(item.serviceType)
+          )
       ).length;
 
       return {

@@ -19,9 +19,8 @@ export async function GET(_request: Request, context: RouteContext) {
   const contractItem = await prisma.contract.findUnique({
     where: { id: contractId },
     select: {
-      id: true,
-      filePath: true,
-      fileUrl: true,
+      signedPdfPath: true,
+      signedPdfUrl: true,
     },
   });
 
@@ -29,19 +28,26 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Contract not found." }, { status: 404 });
   }
 
-  if (!contractItem.filePath) {
-    if (contractItem.fileUrl) {
-      return NextResponse.redirect(contractItem.fileUrl);
+  if (!contractItem.signedPdfPath) {
+    if (contractItem.signedPdfUrl) {
+      return NextResponse.redirect(contractItem.signedPdfUrl);
     }
 
-    return NextResponse.json({ error: "Contract file path is missing." }, { status: 404 });
+    return NextResponse.json(
+      { error: "Signed contract file is missing." },
+      { status: 404 }
+    );
   }
 
   try {
-    const signedUrl = await createStorageSignedUrl(contractItem.filePath, 60 * 10);
+    const signedUrl = await createStorageSignedUrl(
+      contractItem.signedPdfPath,
+      60 * 10
+    );
+
     return NextResponse.redirect(signedUrl);
   } catch (error) {
-    console.error("Create contract signed URL failed:", error);
+    console.error("Create signed contract URL failed:", error);
     return NextResponse.json({ error: "Failed to create signed URL." }, { status: 500 });
   }
 }

@@ -55,6 +55,7 @@ model Case {
   submissionLinks      SubmissionLink[]
   submissions          DocumentSubmission[]
   documents            Document[]
+  checklistItems       DocumentChecklistItem[]
   contracts            Contract[]
   auditLogs            AuditLog[]
 }
@@ -95,6 +96,7 @@ model Document {
   id                 String   @id @default(uuid())
   caseId             String
   submissionId       String?
+  checklistItemId    String?
   docType            String
   originalFilename   String
   normalizedFilename String?
@@ -111,18 +113,53 @@ model Document {
 
   case       Case                @relation(fields: [caseId], references: [id])
   submission DocumentSubmission? @relation(fields: [submissionId], references: [id])
+  checklistItem DocumentChecklistItem? @relation(fields: [checklistItemId], references: [id], onDelete: SetNull)
+}
+
+model DocumentChecklistItem {
+  id          String   @id @default(cuid())
+  caseId       String
+  label       String
+  description String?
+  isRequired  Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  case      Case       @relation(fields: [caseId], references: [id])
+  documents Document[]
 }
 
 model Contract {
-  id          String   @id @default(uuid())
-  caseId      String
+  id           String   @id @default(uuid())
+  caseId       String
   templateName String
-  versionNo   Int      @default(1)
-  generatedBy String?
-  filePath    String?
-  fileUrl     String?
-  status      String   @default("generated")
-  generatedAt DateTime @default(now())
+  versionNo    Int      @default(1)
+  generatedBy  String?
+  filePath     String?
+  fileUrl      String?
+  pdfPath      String?
+  pdfUrl       String?
+  signedPdfPath String?
+  signedPdfUrl String?
+  signProvider String?
+  signDeliveryMode String?
+  signerName   String?
+  signerEmail  String?
+  providerDocumentId Int? @unique
+  providerRecipientId Int?
+  providerSigningToken String?
+  providerSigningUrl String?
+  providerDocumentStatus String?
+  providerRecipientStatus String?
+  signatureError String?
+  status       String   @default("generated")
+  generatedAt  DateTime @default(now())
+  sentAt       DateTime?
+  openedAt     DateTime?
+  completedAt  DateTime?
+  rejectedAt   DateTime?
+  lastWebhookAt DateTime?
 
   case            Case  @relation(fields: [caseId], references: [id])
   generatedByUser User? @relation("GeneratedByUser", fields: [generatedBy], references: [id])

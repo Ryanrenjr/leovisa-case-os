@@ -1,18 +1,19 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import { prisma } from "../../../../../../lib/prisma";
 import { generateClientCareLetter } from "../../../../../../lib/contracts/generate-client-care-letter";
+import { convertDocxBufferToPdf } from "../../../../../../lib/contracts/convert-docx-to-pdf";
+import { getServiceTypeLabel } from "../../../../../../lib/service-options";
+import {
+  createStorageSignedUrl,
+  uploadBufferToStorage,
+} from "../../../../../../lib/supabase-admin";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 type ActionState = {
   error?: string;
 };
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const bucketName = "client-documents";
 
 function formatDateForLetter(value: string) {
   if (!value) {
@@ -32,7 +33,12 @@ export async function createClientCareLetterAction(
   formData: FormData
 ): Promise<ActionState> {
   const caseId = formData.get("caseId")?.toString().trim() || "";
+  const caseRefInput = formData.get("caseRef")?.toString().trim() || "";
   const date = formData.get("date")?.toString().trim() || "";
+  const applicationLocation =
+    formData.get("applicationLocation")?.toString().trim() || "outside UK";
+  const nationalityInput =
+    formData.get("nationality")?.toString().trim() || "";
   const dateOfBirth = formData.get("dateOfBirth")?.toString().trim() || "";
   const passport = formData.get("passport")?.toString().trim() || "";
   const totalFee = formData.get("totalFee")?.toString().trim() || "";
@@ -42,10 +48,6 @@ export async function createClientCareLetterAction(
 
   if (!caseId || !date || !dateOfBirth || !passport || !totalFee || !deposit || !balance) {
     return { error: "Please complete all required fields." };
-  }
-
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    return { error: "Supabase environment variables are missing." };
   }
 
   const caseItem = await prisma.case.findUnique({
@@ -65,12 +67,15 @@ export async function createClientCareLetterAction(
     "Client";
 
   try {
+    const contractCaseRef = caseRefInput || caseItem.caseCode;
+
     const fileBuffer = await generateClientCareLetter({
       ClientName: clientName,
       Date: formatDateForLetter(date),
-      CaseRef: caseItem.caseCode,
-      VisaType: caseItem.serviceType,
-      Nationality: caseItem.client.nationality || "",
+      CaseRef: contractCaseRef,
+      VisaType: getServiceTypeLabel(caseItem.serviceType),
+      ApplicationLocation: applicationLocation,
+      Nationality: nationalityInput || caseItem.client.nationality || "",
       DateOfBirth: dateOfBirth,
       Passport: passport,
       TotalFee: totalFee,
@@ -79,33 +84,34 @@ export async function createClientCareLetterAction(
       CaseSummary: caseSummary,
     });
 
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
     const safeCaseCode = caseItem.caseCode.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const safeContractCaseRef = contractCaseRef.replace(/[^a-zA-Z0-9._-]/g, "_");
     const safeClientName = clientName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const fileName = `${safeCaseCode}_${safeClientName}_client_care_letter.docx`;
+    const fileName = `${safeContractCaseRef}_${safeClientName}_client_care_letter.docx`;
     const storagePath = `${safeCaseCode}/contracts/${Date.now()}_${fileName}`;
+    const pdfFileName = fileName.replace(/\.docx$/i, ".pdf");
+    const pdfStoragePath = `${safeCaseCode}/contracts/${Date.now()}_${pdfFileName}`;
 
-        const { error: uploadError } = await supabase.storage
-      .from(bucketName)
-      .upload(storagePath, fileBuffer, {
-        contentType:
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        upsert: false,
-      });
+    await uploadBufferToStorage(
+      storagePath,
+      fileBuffer,
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
 
-    if (uploadError) {
-      console.error("Contract upload error:", uploadError);
-      return { error: "Failed to upload contract file." };
-    }
+    const fileUrl = await createStorageSignedUrl(storagePath);
 
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from(bucketName)
-      .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
+    let generatedPdfPath: string | null = null;
+    let generatedPdfUrl: string | null = null;
 
-    if (signedUrlError || !signedUrlData?.signedUrl) {
-      console.error("Create signed URL error:", signedUrlError);
-      return { error: "Failed to create contract file URL." };
+    try {
+      const pdfBuffer = await convertDocxBufferToPdf(fileBuffer, fileName);
+
+      await uploadBufferToStorage(pdfStoragePath, pdfBuffer, "application/pdf");
+
+      generatedPdfPath = pdfStoragePath;
+      generatedPdfUrl = await createStorageSignedUrl(pdfStoragePath);
+    } catch (error) {
+      console.warn("Contract PDF conversion skipped:", error);
     }
 
     await prisma.contract.create({
@@ -115,7 +121,9 @@ export async function createClientCareLetterAction(
         versionNo: 1,
         generatedBy: null,
         filePath: storagePath,
-        fileUrl: signedUrlData.signedUrl,
+        fileUrl,
+        pdfPath: generatedPdfPath,
+        pdfUrl: generatedPdfUrl,
         status: "generated",
       },
     });
@@ -131,8 +139,11 @@ export async function createClientCareLetterAction(
         newValue: {
           templateName: "client-care-letter-template",
           caseCode: caseItem.caseCode,
+          contractCaseRef,
           filePath: storagePath,
-          fileUrl: signedUrlData.signedUrl,
+          fileUrl,
+          pdfPath: generatedPdfPath,
+          pdfUrl: generatedPdfUrl,
         },
       },
     });

@@ -169,9 +169,12 @@ export async function deleteCase(formData: FormData) {
         select: { id: true },
       },
       submissions: {
-  select: { id: true },
-},
+        select: { id: true },
+      },
       submissionLinks: {
+        select: { id: true },
+      },
+      checklistItems: {
         select: { id: true },
       },
       contracts: {
@@ -188,13 +191,12 @@ export async function deleteCase(formData: FormData) {
     existingCase.documents.length > 0 ||
     existingCase.submissions.length > 0 ||
     existingCase.submissionLinks.length > 0 ||
+    existingCase.checklistItems.length > 0 ||
     existingCase.contracts.length > 0;
 
   if (hasLinkedData) {
-  redirect(
-    `/cases/${caseId}?deleteError=linked_data`
-  );
-}
+    redirect(`/cases/${caseId}?deleteError=linked_data`);
+  }
 
   await prisma.auditLog.create({
     data: {

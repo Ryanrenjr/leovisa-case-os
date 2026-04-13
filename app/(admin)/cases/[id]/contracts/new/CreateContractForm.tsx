@@ -9,6 +9,7 @@ type CreateContractFormProps = {
   clientName: string;
   visaType: string;
   nationality: string;
+  applicationLocation: string;
   defaultDate: string;
 };
 
@@ -22,6 +23,7 @@ export default function CreateContractForm({
   clientName,
   visaType,
   nationality,
+  applicationLocation,
   defaultDate,
 }: CreateContractFormProps) {
   const [state, formAction, isPending] = useActionState(
@@ -49,10 +51,13 @@ export default function CreateContractForm({
             <label className="toss-label mb-3 block">Case Ref</label>
             <input
               type="text"
-              value={caseCode}
-              readOnly
-              className="w-full px-4 py-3 bg-[#f8fafc]"
+              name="caseRef"
+              defaultValue={caseCode}
+              className="w-full px-4 py-3"
             />
+            <p className="mt-2 text-xs font-medium text-[#8b95a1]">
+              Used in the contract content and generated file name.
+            </p>
           </div>
 
           <div>
@@ -87,12 +92,24 @@ export default function CreateContractForm({
           </div>
 
           <div>
+            <label className="toss-label mb-3 block">Application Location</label>
+            <select
+              name="applicationLocation"
+              defaultValue={applicationLocation}
+              className="w-full px-4 py-3"
+            >
+              <option value="outside UK">Outside UK</option>
+              <option value="inside UK">Inside UK</option>
+            </select>
+          </div>
+
+          <div>
             <label className="toss-label mb-3 block">Nationality</label>
             <input
               type="text"
-              value={nationality}
-              readOnly
-              className="w-full px-4 py-3 bg-[#f8fafc]"
+              name="nationality"
+              defaultValue={nationality}
+              className="w-full px-4 py-3"
             />
           </div>
 

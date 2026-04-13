@@ -153,7 +153,9 @@ export default function NewCaseForm({
                       ([businessLine, businessLabel]) => (
                         <optgroup key={businessLine} label={businessLabel}>
                           {SERVICE_OPTIONS.filter(
-                            (item) => item.businessLine === businessLine
+                            (item) =>
+                              item.businessLine === businessLine &&
+                              !item.isLegacy
                           ).map((item) => (
                             <option key={item.value} value={item.value}>
                               {item.label}

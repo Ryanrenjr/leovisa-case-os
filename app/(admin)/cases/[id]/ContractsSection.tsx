@@ -3,6 +3,7 @@
 import { useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
+import ContractSigningActions from "./ContractSigningActions";
 
 type ContractItem = {
   id: string;
@@ -11,14 +12,30 @@ type ContractItem = {
   generatedBy: string | null;
   filePath: string | null;
   fileUrl: string | null;
+  pdfPath: string | null;
+  pdfUrl: string | null;
+  signedPdfPath: string | null;
+  signedPdfUrl: string | null;
+  signProvider: string | null;
+  signDeliveryMode: string | null;
+  signerName: string | null;
+  signerEmail: string | null;
+  providerSigningUrl: string | null;
+  providerDocumentStatus: string | null;
+  providerRecipientStatus: string | null;
+  signatureError: string | null;
   status: string;
   generatedAt: Date;
+  sentAt: Date | null;
+  openedAt: Date | null;
+  completedAt: Date | null;
 };
 
 type ContractsSectionProps = {
   caseId: string;
   contracts: ContractItem[];
   onDeleteAction: (formData: FormData) => void;
+  onSendSignatureAction: (formData: FormData) => void;
   lang: "en" | "zh";
 };
 
@@ -26,6 +43,7 @@ export default function ContractsSection({
   caseId,
   contracts,
   onDeleteAction,
+  onSendSignatureAction,
   lang,
 }: ContractsSectionProps) {
   const [expanded, setExpanded] = useState(false);
@@ -65,19 +83,59 @@ export default function ContractsSection({
 
                   <div className="shrink-0 flex gap-2">
                     {contract.filePath || contract.fileUrl ? (
-  <a
-    href={`/cases/${caseId}/contracts/${contract.id}/open`}
-    target="_blank"
-    rel="noreferrer"
-    className="toss-primary-button px-4 py-2 text-sm font-semibold"
-  >
-    {lang === "zh" ? "打开" : "Open"}
-  </a>
-) : (
-  <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
-    {lang === "zh" ? "无文件" : "No File"}
-  </span>
-)}
+                      <a
+                        href={`/cases/${caseId}/contracts/${contract.id}/open`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="toss-primary-button px-4 py-2 text-sm font-semibold"
+                      >
+                        {lang === "zh" ? "打开原合同" : "Open Contract"}
+                      </a>
+                    ) : (
+                      <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
+                        {lang === "zh" ? "无文件" : "No File"}
+                      </span>
+                    )}
+
+                    {contract.signedPdfPath || contract.signedPdfUrl ? (
+                      <a
+                        href={`/cases/${caseId}/contracts/${contract.id}/signed`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="toss-primary-button px-4 py-2 text-sm font-semibold"
+                      >
+                        {lang === "zh" ? "打开已签 PDF" : "Open Signed PDF"}
+                      </a>
+                    ) : null}
+
+                    {contract.providerSigningUrl &&
+                    contract.status !== "signed" &&
+                    contract.status !== "rejected" &&
+                    contract.status !== "cancelled" ? (
+                      <ContractSigningActions
+                        signingUrl={contract.providerSigningUrl}
+                        lang={lang}
+                      />
+                    ) : null}
+
+                    {!contract.providerSigningUrl && contract.status === "generated" ? (
+                      <form action={onSendSignatureAction}>
+                        <input type="hidden" name="caseId" value={caseId} />
+                        <input
+                          type="hidden"
+                          name="contractId"
+                          value={contract.id}
+                        />
+                        <button
+                          type="submit"
+                          className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+                        >
+                          {lang === "zh"
+                            ? "发送签署链接"
+                            : "Send for Signature"}
+                        </button>
+                      </form>
+                    ) : null}
 
                     <form action={onDeleteAction}>
                       <input type="hidden" name="caseId" value={caseId} />
@@ -134,18 +192,77 @@ export default function ContractsSection({
                       {new Date(contract.generatedAt).toLocaleString()}
                     </p>
                   </div>
+
+                  <div>
+                    <p className="toss-label mb-2">
+                      {lang === "zh" ? "签署方式" : "Signing Method"}
+                    </p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {contract.signDeliveryMode === "link"
+                        ? lang === "zh"
+                          ? "链接"
+                          : "Link"
+                        : "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="toss-label mb-2">
+                      {lang === "zh" ? "签署人邮箱" : "Signer Email"}
+                    </p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {contract.signerEmail ?? "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="toss-label mb-2">
+                      {lang === "zh" ? "Documenso 文档状态" : "Documenso Status"}
+                    </p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {contract.providerDocumentStatus ?? "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="toss-label mb-2">
+                      {lang === "zh" ? "签署进度" : "Recipient Status"}
+                    </p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {contract.providerRecipientStatus ?? "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="toss-label mb-2">
+                      {lang === "zh" ? "发送时间" : "Sent At"}
+                    </p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {contract.sentAt
+                        ? new Date(contract.sentAt).toLocaleString()
+                        : "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="toss-label mb-2">
+                      {lang === "zh" ? "完成时间" : "Completed At"}
+                    </p>
+                    <p className="text-[15px] text-[#4e5968]">
+                      {contract.completedAt
+                        ? new Date(contract.completedAt).toLocaleString()
+                        : "-"}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="mt-5">
-                  <p className="toss-label mb-2 text-sm">File URL</p>
-                  {contract.fileUrl ? (
-                    <p className="break-all text-[15px] text-[#4e5968]">
-                      {contract.fileUrl}
+                {contract.signatureError ? (
+                  <div className="mt-5 rounded-2xl border border-[#ffd9de] bg-[#fff2f4] p-4">
+                    <p className="text-sm font-medium text-[#e5484d]">
+                      {contract.signatureError}
                     </p>
-                  ) : (
-                    <p className="text-[15px] text-[#4e5968]">-</p>
-                  )}
-                </div>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

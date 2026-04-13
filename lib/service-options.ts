@@ -3,7 +3,46 @@ export type ServiceOption = {
   label: string;
   value: string;
   country: string;
+  isLegacy?: boolean;
 };
+
+const SERVICE_TYPE_LABEL_ALIASES: Record<string, string> = {
+  Student: "Student Visa",
+  PSW: "Graduate Visa (PSW)",
+  "Student and PSW": "Student Visa / Graduate Visa (PSW)",
+  "Visitor Visa": "Standard Visitor",
+  "High Potential Individual": "High Potential Individual (HPI)",
+  "Skilled Worker to Settlement": "Skilled Worker Route to Settlement",
+  "Spouse to Settlement": "Spouse Route to Settlement",
+};
+
+export function getServiceTypeLabel(serviceType: string) {
+  return SERVICE_TYPE_LABEL_ALIASES[serviceType] || serviceType;
+}
+
+export function getServiceTypeSearchValues(query: string) {
+  const keyword = query.trim().toLowerCase();
+
+  if (!keyword) {
+    return [];
+  }
+
+  const matchedValues = new Set<string>();
+
+  SERVICE_OPTIONS.forEach((item) => {
+    const searchableTexts = [
+      item.value,
+      item.label,
+      getServiceTypeLabel(item.value),
+    ];
+
+    if (searchableTexts.some((text) => text.toLowerCase().includes(keyword))) {
+      matchedValues.add(item.value);
+    }
+  });
+
+  return Array.from(matchedValues);
+}
 
 export const SERVICE_OPTIONS: ServiceOption[] = [
   // Global Citizenship
@@ -71,9 +110,28 @@ export const SERVICE_OPTIONS: ServiceOption[] = [
   },
   {
     businessLine: "uk_toc",
-    label: "Student and PSW",
-    value: "Student and PSW",
+    label: "Innovator Founder",
+    value: "Innovator Founder",
     country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Global Talent",
+    value: "Global Talent",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
+    label: "High Potential Individual (HPI)",
+    value: "High Potential Individual (HPI)",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
+    label: "High Potential Individual (HPI)",
+    value: "High Potential Individual",
+    country: "UK",
+    isLegacy: true,
   },
   {
     businessLine: "uk_toc",
@@ -83,27 +141,87 @@ export const SERVICE_OPTIONS: ServiceOption[] = [
   },
   {
     businessLine: "uk_toc",
-    label: "Visitor Visa",
+    label: "Student Visa",
+    value: "Student Visa",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Student Visa",
+    value: "Student",
+    country: "UK",
+    isLegacy: true,
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Graduate Visa (PSW)",
+    value: "Graduate Visa (PSW)",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Graduate Visa (PSW)",
+    value: "PSW",
+    country: "UK",
+    isLegacy: true,
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Student Visa / Graduate Visa (PSW)",
+    value: "Student and PSW",
+    country: "UK",
+    isLegacy: true,
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Standard Visitor",
+    value: "Standard Visitor",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Standard Visitor",
     value: "Visitor Visa",
     country: "UK",
+    isLegacy: true,
   },
   {
     businessLine: "uk_toc",
-    label: "Innovator Founder",
-    value: "Innovator Founder",
+    label: "Settlement",
+    value: "Settlement",
     country: "UK",
   },
   {
     businessLine: "uk_toc",
-    label: "High Potential Individual",
-    value: "High Potential Individual",
+    label: "10 Year Long Residence",
+    value: "10 Year Long Residence",
     country: "UK",
   },
   {
     businessLine: "uk_toc",
-    label: "Global Talent",
-    value: "Global Talent",
+    label: "Skilled Worker Route to Settlement",
+    value: "Skilled Worker Route to Settlement",
     country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Skilled Worker Route to Settlement",
+    value: "Skilled Worker to Settlement",
+    country: "UK",
+    isLegacy: true,
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Spouse Route to Settlement",
+    value: "Spouse Route to Settlement",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
+    label: "Spouse Route to Settlement",
+    value: "Spouse to Settlement",
+    country: "UK",
+    isLegacy: true,
   },
 
   // UK To B

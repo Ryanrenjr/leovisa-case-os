@@ -19,6 +19,7 @@ const BADGE_LABELS = {
     not_started: "Not Started",
     generated: "Generated",
     sent: "Sent",
+    cancelled: "Cancelled",
     superseded: "Superseded",
 
     pending: "Pending",
@@ -49,6 +50,7 @@ const BADGE_LABELS = {
     not_started: "未开始",
     generated: "已生成",
     sent: "已发送",
+    cancelled: "已取消",
     superseded: "已替换",
 
     pending: "待处理",
@@ -86,6 +88,7 @@ function getBadgeClass(value: string) {
       return "border border-[#ffe7b8] bg-[#fff8e8] text-[#b78103]";
 
     case "rejected":
+    case "cancelled":
     case "archived":
     case "inactive":
     case "expired":

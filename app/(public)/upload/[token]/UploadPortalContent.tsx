@@ -16,11 +16,20 @@ type UploadPortalContentProps = {
   isUnavailable: boolean;
   isSuccess: boolean;
   error: string;
+  missingChecklistItems: string[];
+  duplicateChecklistItems: string[];
+  checklistItems: {
+    id: string;
+    label: string;
+    description: string | null;
+    isRequired: boolean;
+  }[];
 };
 
 type UploadRow = {
   id: number;
   docType: string;
+  checklistItemId: string;
 };
 
 type CopyContent = {
@@ -43,6 +52,7 @@ type CopyContent = {
   guideTitle: string;
   guideIntro: string;
   guideItems: string[];
+  checklistGuideItems: string[];
   guideNoteTitle: string;
   guideNote: string;
   afterSuccessTitle: string;
@@ -60,8 +70,14 @@ type CopyContent = {
   errorInvalidFiles: string;
   errorUnavailable: string;
   errorUploadFailed: string;
+  errorMissingRequiredChecklistItems: string;
+  errorDuplicateChecklistItems: string;
+  errorChecklistValidationFailed: string;
+  missingChecklistItemsLabel: string;
+  duplicateChecklistItemsLabel: string;
   supportedFormats: string;
   uploadFormatHint: string;
+  allChecklistItemsSelected: string;
 };
 
 const copy: Record<Language, CopyContent> = {
@@ -92,6 +108,12 @@ const copy: Record<Language, CopyContent> = {
       "银行流水：建议上传近 3-6 个月的完整流水，文件需清晰可读。",
       "其他支持文件：如在读证明、结婚证、出生证明、地址证明等。",
     ],
+    checklistGuideItems: [
+      "请严格按照顾问创建的文件清单逐项上传。",
+      "每一行只对应一个清单项和一个文件，请不要重复选择同一项。",
+      "标记为“必传”的项目必须全部提交，否则系统不会通过。",
+      "如一个清单项有多页或多份材料，请先合并为一个清晰文件后再上传。",
+    ],
     guideNoteTitle: "温馨提示",
     guideNote:
       "请尽量上传清晰的 PDF、PNG 或 JPG 文件。若有多份材料，请逐项添加后统一提交。",
@@ -112,8 +134,14 @@ const copy: Record<Language, CopyContent> = {
     errorInvalidFiles: "请检查文件类型和文件内容是否完整。",
     errorUnavailable: "该上传链接当前不可用。",
     errorUploadFailed: "提交失败，请稍后再试或联系顾问。",
+    errorMissingRequiredChecklistItems: "请先完成所有必传清单项后再提交。",
+    errorDuplicateChecklistItems: "同一个清单项在一次提交中只能上传一次。",
+    errorChecklistValidationFailed: "请先修正清单上传中的重复项和缺失项。",
+    missingChecklistItemsLabel: "未提交的必传项",
+    duplicateChecklistItemsLabel: "重复选择的清单项",
     supportedFormats: "支持文件格式：PDF、JPG、JPEG、PNG。",
     uploadFormatHint: "请上传 PDF、JPG、JPEG 或 PNG 文件。",
+    allChecklistItemsSelected: "所有清单项都已选择，无需再新增。",
   },
   en: {
     portalTag: "LeoVisa Secure Upload",
@@ -144,6 +172,12 @@ const copy: Record<Language, CopyContent> = {
       "Bank Statement: preferably upload complete statements from the most recent 3-6 months.",
       "Other: supporting documents such as student letter, marriage certificate, birth certificate, proof of address, etc.",
     ],
+    checklistGuideItems: [
+      "Please upload strictly against the checklist created by your consultant.",
+      "Each row should contain one checklist item and one file. Do not select the same item twice.",
+      "All items marked as required must be submitted, otherwise the form will not pass validation.",
+      "If one checklist item contains multiple pages or supporting files, please combine them into one clear file before uploading.",
+    ],
     guideNoteTitle: "Important Note",
     guideNote:
       "Please use clear PDF, PNG, or JPG files whenever possible. If you have multiple documents, add them one by one and submit together.",
@@ -167,8 +201,18 @@ const copy: Record<Language, CopyContent> = {
     errorUnavailable: "This upload link is currently unavailable.",
     errorUploadFailed:
       "Submission failed. Please try again later or contact your consultant.",
+    errorMissingRequiredChecklistItems:
+      "Please upload all required checklist items before submitting.",
+    errorDuplicateChecklistItems:
+      "Each checklist item can only be uploaded once per submission.",
+    errorChecklistValidationFailed:
+      "Please fix the duplicate and missing checklist items before submitting.",
+    missingChecklistItemsLabel: "Missing required items",
+    duplicateChecklistItemsLabel: "Duplicate checklist items",
     supportedFormats: "Supported formats: PDF, JPG, JPEG, PNG.",
     uploadFormatHint: "Please upload a PDF, JPG, JPEG, or PNG file.",
+    allChecklistItemsSelected:
+      "All checklist items have already been selected. No additional row is needed.",
   },
 };
 
@@ -182,6 +226,12 @@ function getErrorMessage(error: string, t: CopyContent) {
       return t.errorUnavailable;
     case "upload_failed":
       return t.errorUploadFailed;
+    case "missing_required_checklist_items":
+      return t.errorMissingRequiredChecklistItems;
+    case "duplicate_checklist_items":
+      return t.errorDuplicateChecklistItems;
+    case "checklist_validation_failed":
+      return t.errorChecklistValidationFailed;
     default:
       return "";
   }
@@ -199,25 +249,49 @@ export default function UploadPortalContent({
   isUnavailable,
   isSuccess,
   error,
+  missingChecklistItems,
+  duplicateChecklistItems,
+  checklistItems,
 }: UploadPortalContentProps) {
+  const checklistMode = checklistItems.length > 0;
   const [lang, setLang] = useState<Language>("zh");
-  const [rows, setRows] = useState<UploadRow[]>([
-    { id: 0, docType: "passport" },
+  const [rows, setRows] = useState<UploadRow[]>(() => [
+    {
+      id: 0,
+      docType: checklistMode ? "" : "passport",
+      checklistItemId: "",
+    },
   ]);
   const t = useMemo(() => copy[lang], [lang]);
   const submitUrl = `/upload/${token}/submit`;
+  const guideIntro = checklistMode
+    ? lang === "zh"
+      ? "请按照顾问创建的文件清单逐项上传。每一行请选择一个清单项并上传对应文件。"
+      : "Please upload documents against the checklist created by your consultant. Each row should match one checklist item and one file."
+    : t.guideIntro;
+  const guideItems = checklistMode ? t.checklistGuideItems : t.guideItems;
 
   const clientDisplay =
     [clientEnglishName?.trim(), clientChineseName?.trim()]
       .filter(Boolean)
       .join(" / ") || "-";
+  const selectedChecklistItemIds = new Set(
+    rows.map((row) => row.checklistItemId).filter(Boolean)
+  );
+  const canAddChecklistRow =
+    !checklistMode || selectedChecklistItemIds.size < checklistItems.length;
 
   function addRow() {
+    if (!canAddChecklistRow) {
+      return;
+    }
+
     setRows((prev) => [
       ...prev,
       {
         id: Date.now(),
-        docType: "other",
+        docType: checklistMode ? "" : "other",
+        checklistItemId: "",
       },
     ]);
   }
@@ -234,6 +308,20 @@ export default function UploadPortalContent({
   function updateRowDocType(id: number, value: string) {
     setRows((prev) =>
       prev.map((row) => (row.id === id ? { ...row, docType: value } : row))
+    );
+  }
+
+  function updateRowChecklistItem(id: number, value: string) {
+    setRows((prev) =>
+      prev.map((row) =>
+        row.id === id ? { ...row, checklistItemId: value } : row
+      )
+    );
+  }
+
+  function isChecklistItemTaken(itemId: string, currentRowId: number) {
+    return rows.some(
+      (row) => row.id !== currentRowId && row.checklistItemId === itemId
     );
   }
 
@@ -302,11 +390,11 @@ export default function UploadPortalContent({
               {t.guideTitle}
             </h2>
             <p className="mb-4 text-[15px] leading-7 text-[#4e5968]">
-              {t.guideIntro}
+              {guideIntro}
             </p>
 
             <ul className="list-disc space-y-2 pl-5 text-[15px] leading-7 text-[#4e5968]">
-              {t.guideItems.map((item) => (
+              {guideItems.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
@@ -324,6 +412,55 @@ export default function UploadPortalContent({
             </div>
           </div>
 
+          {checklistMode && (
+            <div className="mb-8 rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-6">
+              <h2 className="mb-3 text-[22px] font-bold tracking-[-0.02em] text-[#191f28]">
+                {lang === "zh" ? "顾问文件清单" : "Consultant Checklist"}
+              </h2>
+              <p className="mb-4 text-[15px] leading-7 text-[#4e5968]">
+                {lang === "zh"
+                  ? "请按下列清单准备并上传材料。已标记“必传”的项目请务必提供。"
+                  : "Please prepare and upload documents according to the checklist below. Items marked as required should be provided."}
+              </p>
+
+              <div className="space-y-3">
+                {checklistItems.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-[#eef1f4] bg-white p-4"
+                  >
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-[16px] font-semibold text-[#191f28]">
+                        {index + 1}. {item.label}
+                      </p>
+                      <span
+                        className={`inline-flex items-center justify-center rounded-2xl px-3 py-1 text-xs font-semibold ${
+                          item.isRequired
+                            ? "border border-[#dbe7ff] bg-[#eef4ff] text-[#3563e9]"
+                            : "border border-[#eef1f4] bg-white text-[#6b7684]"
+                        }`}
+                      >
+                        {item.isRequired
+                          ? lang === "zh"
+                            ? "必传"
+                            : "Required"
+                          : lang === "zh"
+                          ? "可选"
+                          : "Optional"}
+                      </span>
+                    </div>
+
+                    {!!item.description && (
+                      <p className="text-[14px] leading-6 text-[#6b7684]">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isSuccess && (
             <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-5">
               <h2 className="mb-2 text-[22px] font-bold text-green-700">
@@ -338,6 +475,32 @@ export default function UploadPortalContent({
               <p className="text-[15px] font-semibold text-red-600">
                 {getErrorMessage(error, t)}
               </p>
+
+              {missingChecklistItems.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-red-600">
+                    {t.missingChecklistItemsLabel}
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-600">
+                    {missingChecklistItems.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {duplicateChecklistItems.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-red-600">
+                    {t.duplicateChecklistItemsLabel}
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-600">
+                    {duplicateChecklistItems.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -389,67 +552,103 @@ export default function UploadPortalContent({
                     className="rounded-2xl border border-[#e8edf3] bg-white p-5"
                   >
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-  <div>
-    <label className="mb-2 block text-sm font-medium text-[#6b7684]">
-      {t.docType}
-    </label>
-    <select
-      name={`docType_${index}`}
-      value={row.docType}
-      onChange={(e) => updateRowDocType(row.id, e.target.value)}
-      className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
-      required
-    >
-      <option value="" disabled>
-        {t.selectDocType}
-      </option>
-      <option value="passport">
-        {lang === "zh" ? "护照" : "Passport"}
-      </option>
-      <option value="visa">
-        {lang === "zh" ? "签证 / 居留" : "Visa / Residence Permit"}
-      </option>
-      <option value="bank_statement">
-        {lang === "zh" ? "银行流水" : "Bank Statement"}
-      </option>
-      <option value="photo">
-        {lang === "zh" ? "照片" : "Photo"}
-      </option>
-      <option value="other">
-        {lang === "zh" ? "其他" : "Other"}
-      </option>
-    </select>
-  </div>
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-[#6b7684]">
+                          {checklistMode
+                            ? lang === "zh"
+                              ? "清单项"
+                              : "Checklist Item"
+                            : t.docType}
+                        </label>
 
-  <div>
-    <label className="mb-2 block text-sm font-medium text-[#6b7684]">
-      {t.uploadFile}
-    </label>
-    <input
-      type="file"
-      name={`file_${index}`}
-      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-      className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
-      required
-    />
-    <p className="mt-2 text-[13px] text-[#8b95a1]">
-      {t.uploadFormatHint}
-    </p>
-  </div>
-</div>
+                        {checklistMode ? (
+                          <select
+                            name={`checklistItemId_${index}`}
+                            value={row.checklistItemId}
+                            onChange={(e) =>
+                              updateRowChecklistItem(row.id, e.target.value)
+                            }
+                            className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
+                            required
+                          >
+                            <option value="" disabled>
+                              {lang === "zh"
+                                ? "请选择清单项"
+                                : "Please select a checklist item"}
+                            </option>
+                            {checklistItems.map((item) => (
+                              <option
+                                key={item.id}
+                                value={item.id}
+                                disabled={isChecklistItemTaken(item.id, row.id)}
+                              >
+                                {item.label}
+                                {item.isRequired
+                                  ? lang === "zh"
+                                    ? "（必传）"
+                                    : " (Required)"
+                                  : ""}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <select
+                            name={`docType_${index}`}
+                            value={row.docType}
+                            onChange={(e) => updateRowDocType(row.id, e.target.value)}
+                            className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
+                            required
+                          >
+                            <option value="" disabled>
+                              {t.selectDocType}
+                            </option>
+                            <option value="passport">
+                              {lang === "zh" ? "护照" : "Passport"}
+                            </option>
+                            <option value="visa">
+                              {lang === "zh" ? "签证 / 居留" : "Visa / Residence Permit"}
+                            </option>
+                            <option value="bank_statement">
+                              {lang === "zh" ? "银行流水" : "Bank Statement"}
+                            </option>
+                            <option value="photo">
+                              {lang === "zh" ? "照片" : "Photo"}
+                            </option>
+                            <option value="other">
+                              {lang === "zh" ? "其他" : "Other"}
+                            </option>
+                          </select>
+                        )}
+                      </div>
 
-<div className="mt-4 flex justify-end">
-  <button
-    type="button"
-    onClick={() => removeRow(row.id)}
-    className="inline-flex items-center justify-center rounded-2xl border border-[#e5e8eb] bg-white px-4 py-3 text-sm font-semibold text-[#6b7684] hover:bg-[#f8fafc]"
-  >
-    {t.removeRow}
-  </button>
-</div>
-                    
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-[#6b7684]">
+                          {t.uploadFile}
+                        </label>
+                        <input
+                          type="file"
+                          name={`file_${index}`}
+                          accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                          className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
+                          required
+                        />
+                        <p className="mt-2 text-[13px] text-[#8b95a1]">
+                          {t.uploadFormatHint}
+                        </p>
+                      </div>
+                    </div>
 
-                    {row.docType === "other" && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => removeRow(row.id)}
+                        className="inline-flex items-center justify-center rounded-2xl border border-[#e5e8eb] bg-white px-4 py-3 text-sm font-semibold text-[#6b7684] hover:bg-[#f8fafc]"
+                      >
+                        {t.removeRow}
+                      </button>
+                    </div>
+
+                    {!checklistMode && row.docType === "other" && (
                       <div className="mt-4">
                         <label className="mb-2 block text-sm font-medium text-[#6b7684]">
                           {t.otherDocName}
@@ -470,7 +669,8 @@ export default function UploadPortalContent({
                   <button
                     type="button"
                     onClick={addRow}
-                    className="inline-flex items-center justify-center rounded-2xl border border-[#dbe7ff] bg-[#eef4ff] px-5 py-3 text-sm font-semibold text-[#3563e9] hover:bg-[#e8f0ff]"
+                    disabled={!canAddChecklistRow}
+                    className="inline-flex items-center justify-center rounded-2xl border border-[#dbe7ff] bg-[#eef4ff] px-5 py-3 text-sm font-semibold text-[#3563e9] hover:bg-[#e8f0ff] disabled:cursor-not-allowed disabled:border-[#eef1f4] disabled:bg-[#f8fafc] disabled:text-[#8b95a1]"
                   >
                     {t.addRow}
                   </button>
@@ -488,6 +688,12 @@ export default function UploadPortalContent({
                     {t.linkStatus}:{" "}
                     <span className="text-[#191f28]">{status}</span>
                   </p>
+
+                  {checklistMode && !canAddChecklistRow && (
+                    <p className="mt-2 text-sm text-[#6b7684]">
+                      {t.allChecklistItemsSelected}
+                    </p>
+                  )}
                 </div>
               </form>
             </div>

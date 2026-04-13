@@ -6,6 +6,7 @@ import { getLangFromCookie } from "../../../../lib/i18n";
 import StatusBadge from "../../../../components/StatusBadge";
 import { deleteClient } from "./actions";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
+import { getServiceTypeLabel } from "../../../../lib/service-options";
 
 type ClientDetailPageProps = {
   params: Promise<{
@@ -245,7 +246,7 @@ export default async function ClientDetailPage({
                         </Link>
 
                         <p className="mt-2 text-[15px] text-[#6b7684]">
-                          {item.serviceType} · {item.country}
+                          {getServiceTypeLabel(item.serviceType)} · {item.country}
                         </p>
                       </div>
 

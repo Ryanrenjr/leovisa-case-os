@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "../../../../lib/prisma";
-import { getLangFromCookie, messages } from "../../../../lib/i18n";
+import { getLangFromCookie } from "../../../../lib/i18n";
 import { updateCaseStatus, deleteCase } from "./actions";
 import { generateUploadLink } from "./upload-actions";
 import {
@@ -19,10 +19,18 @@ import UploadLinksSection from "./UploadLinksSection";
 import SubmissionsSection from "./SubmissionsSection";
 import ContractsSection from "./ContractsSection";
 import AuditLogsSection from "./AuditLogsSection";
+import ChecklistSection from "./ChecklistSection";
 import StatusBadge from "../../../../components/StatusBadge";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
 import { deleteSubmission } from "./submission-actions";
-import { deleteContract } from "./contract-actions";
+import { deleteContract, sendContractForSignature } from "./contract-actions";
+import {
+  createChecklistItem,
+  updateChecklistItem,
+  deleteChecklistItem,
+  moveChecklistItemUp,
+  moveChecklistItemDown,
+} from "./checklist-actions";
 import {
   CASE_STATUS_OPTIONS,
   CONTRACT_STATUS_OPTIONS,
@@ -32,6 +40,7 @@ import {
   deleteAuditLog,
   deleteSelectedAuditLogs,
 } from "./audit-log-actions";
+import { getServiceTypeLabel } from "../../../../lib/service-options";
 
 type CaseDetailPageProps = {
   params: Promise<{
@@ -39,6 +48,9 @@ type CaseDetailPageProps = {
   }>;
   searchParams: Promise<{
     deleteError?: string;
+    checklistExpanded?: string;
+    contractActionError?: string;
+    contractActionMessage?: string;
   }>;
 };
 
@@ -49,10 +61,12 @@ export default async function CaseDetailPage({
   const { id } = await params;
   const query = await searchParams;
   const deleteError = query.deleteError || "";
+  const checklistExpanded = query.checklistExpanded === "1";
+  const contractActionError = query.contractActionError || "";
+  const contractActionMessage = query.contractActionMessage || "";
 
   const cookieStore = await cookies();
   const lang = getLangFromCookie(cookieStore.get("lang")?.value);
-  const t = messages[lang];
 
   const caseItem = await prisma.case.findUnique({
     where: { id },
@@ -74,6 +88,16 @@ export default async function CaseDetailPage({
       },
       submissionLinks: true,
       submissions: true,
+      checklistItems: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        include: {
+          _count: {
+            select: {
+              documents: true,
+            },
+          },
+        },
+      },
       auditLogs: {
         orderBy: {
           createdAt: "desc",
@@ -101,8 +125,24 @@ export default async function CaseDetailPage({
           <div className="mb-6 rounded-[24px] border border-[#ffd9de] bg-[#fff2f4] p-4">
             <p className="text-sm font-medium text-[#f04452]">
               {lang === "zh"
-                ? "该案件暂时不能删除，因为仍有关联的文件、提交记录、上传链接或合同。"
-                : "This case cannot be deleted because linked documents, submissions, upload links, or contracts exist."}
+                ? "该案件暂时不能删除，因为仍有关联的文件清单、文件、提交记录、上传链接或合同。"
+                : "This case cannot be deleted because linked checklist items, documents, submissions, upload links, or contracts exist."}
+            </p>
+          </div>
+        )}
+
+        {!!contractActionError && (
+          <div className="mb-6 rounded-[24px] border border-[#ffd9de] bg-[#fff2f4] p-4">
+            <p className="text-sm font-medium text-[#f04452]">
+              {contractActionError}
+            </p>
+          </div>
+        )}
+
+        {!!contractActionMessage && (
+          <div className="mb-6 rounded-[24px] border border-[#d7f0df] bg-[#eefbf3] p-4">
+            <p className="text-sm font-medium text-[#1f8f55]">
+              {contractActionMessage}
             </p>
           </div>
         )}
@@ -168,7 +208,9 @@ export default async function CaseDetailPage({
 
             <div>
               <p className="toss-label mb-2">{lang === "zh" ? "业务类型" : "Service Type"}</p>
-              <p className="text-[15px] text-[#333d4b]">{caseItem.serviceType}</p>
+              <p className="text-[15px] text-[#333d4b]">
+                {getServiceTypeLabel(caseItem.serviceType)}
+              </p>
             </div>
 
             <div>
@@ -296,10 +338,23 @@ export default async function CaseDetailPage({
           onDeleteAction={deleteUploadLink}
         />
 
+        <ChecklistSection
+          caseId={caseItem.id}
+          items={caseItem.checklistItems}
+          lang={lang}
+          defaultExpanded={checklistExpanded}
+          onCreateAction={createChecklistItem}
+          onUpdateAction={updateChecklistItem}
+          onDeleteAction={deleteChecklistItem}
+          onMoveUpAction={moveChecklistItemUp}
+          onMoveDownAction={moveChecklistItemDown}
+        />
+
         <ContractsSection
           caseId={caseItem.id}
           contracts={caseItem.contracts}
           onDeleteAction={deleteContract}
+          onSendSignatureAction={sendContractForSignature}
           lang={lang}
         />
 

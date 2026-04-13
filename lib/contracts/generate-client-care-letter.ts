@@ -8,6 +8,7 @@ export type ClientCareLetterData = {
   Date: string;
   CaseRef: string;
   VisaType: string;
+  ApplicationLocation: string;
   Nationality: string;
   DateOfBirth: string;
   Passport: string;
@@ -39,6 +40,7 @@ export async function generateClientCareLetter(
     Date: data.Date || "",
     CaseRef: data.CaseRef || "",
     VisaType: data.VisaType || "",
+    ApplicationLocation: data.ApplicationLocation || "outside UK",
     Nationality: data.Nationality || "",
     DateOfBirth: data.DateOfBirth || "",
     Passport: data.Passport || "",

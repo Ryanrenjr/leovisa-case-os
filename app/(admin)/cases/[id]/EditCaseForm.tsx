@@ -148,7 +148,9 @@ export default function EditCaseForm({
                     ([businessLine, businessLabel]) => (
                       <optgroup key={businessLine} label={businessLabel}>
                         {SERVICE_OPTIONS.filter(
-                          (item) => item.businessLine === businessLine
+                          (item) =>
+                            item.businessLine === businessLine &&
+                            (!item.isLegacy || item.value === caseItem.serviceType)
                         ).map((item) => (
                           <option key={item.value} value={item.value}>
                             {item.label}

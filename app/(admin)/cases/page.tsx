@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import StatusBadge from "../../../components/StatusBadge";
 import { getLangFromCookie, messages } from "../../../lib/i18n";
 import { CASE_STATUS_OPTIONS } from "../../../lib/status-options";
+import {
+  getServiceTypeLabel,
+  getServiceTypeSearchValues,
+} from "../../../lib/service-options";
 
 type CasesPageProps = {
   searchParams: Promise<{
@@ -28,6 +33,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const currentPage = Math.max(1, Number(params.page || "1"));
   const pageSize = 10;
   const skip = (currentPage - 1) * pageSize;
+  const matchedServiceTypes = q ? getServiceTypeSearchValues(q) : [];
 
   const consultants = await prisma.adminUser.findMany({
   where: {
@@ -44,53 +50,66 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   },
 });
 
-  const whereClause = {
-    AND: [
-      q
-        ? {
-            OR: [
-              {
-                caseCode: {
-                  contains: q,
-                },
-              },
+  const searchConditions: Prisma.CaseWhereInput[] = q
+    ? [
+        {
+          caseCode: {
+            contains: q,
+          },
+        },
+        {
+          serviceType: {
+            contains: q,
+          },
+        },
+        ...(matchedServiceTypes.length > 0
+          ? [
               {
                 serviceType: {
-                  contains: q,
+                  in: matchedServiceTypes,
                 },
               },
-              {
-                country: {
-                  contains: q,
-                },
-              },
-              {
-                client: {
-                  chineseName: {
-                    contains: q,
-                  },
-                },
-              },
-              {
-                client: {
-                  englishName: {
-                    contains: q,
-                  },
-                },
-              },
-            ],
-          }
-        : {},
-      status
-        ? {
-            status,
-          }
-        : {},
-      consultant
-        ? {
-            assignedConsultantId: consultant,
-          }
-        : {},
+            ]
+          : []),
+        {
+          country: {
+            contains: q,
+          },
+        },
+        {
+          client: {
+            chineseName: {
+              contains: q,
+            },
+          },
+        },
+        {
+          client: {
+            englishName: {
+              contains: q,
+            },
+          },
+        },
+      ]
+    : [];
+
+  const whereClause: Prisma.CaseWhereInput = {
+    AND: [
+      ...(searchConditions.length > 0 ? [{ OR: searchConditions }] : []),
+      ...(status
+        ? [
+            {
+              status,
+            },
+          ]
+        : []),
+      ...(consultant
+        ? [
+            {
+              assignedConsultantId: consultant,
+            },
+          ]
+        : []),
     ],
   };
 
@@ -268,7 +287,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                       {item.client.englishName?.trim() || item.client.chineseName?.trim() || "-"}
                     </td>
                     <td className="px-6 py-5 text-[15px] text-[#4e5968]">
-                      {item.serviceType}
+                      {getServiceTypeLabel(item.serviceType)}
                     </td>
                     <td className="px-6 py-5 text-[15px] text-[#4e5968]">
                       {item.country}
