@@ -53,6 +53,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const searchConditions: Prisma.CaseWhereInput[] = q
     ? [
         {
+          reference: {
+            contains: q,
+          },
+        },
+        {
           caseCode: {
             contains: q,
           },
@@ -240,7 +245,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             <thead className="bg-[#fafbfc]">
               <tr className="border-b border-[#eef1f4]">
                 <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
-                  {t.cases.caseCode}
+                  {t.cases.reference}
                 </th>
                 <th className="px-6 py-4 text-sm font-semibold text-[#8b95a1]">
                   {t.cases.client}
@@ -264,6 +269,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               {cases.map(
                 (item: {
                   id: string;
+                  reference: string;
                   caseCode: string;
                   serviceType: string;
                   country: string;
@@ -280,8 +286,11 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
                         href={`/cases/${item.id}`}
                         className="font-semibold text-[#191f28] hover:text-[#3182f6]"
                       >
-                        {item.caseCode}
+                        {item.reference}
                       </Link>
+                      <p className="mt-1 text-xs text-[#8b95a1]">
+                        {item.caseCode}
+                      </p>
                     </td>
                     <td className="px-6 py-5 text-[15px] text-[#4e5968]">
                       {item.client.englishName?.trim() || item.client.chineseName?.trim() || "-"}

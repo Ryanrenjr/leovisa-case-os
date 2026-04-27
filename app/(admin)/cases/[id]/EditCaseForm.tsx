@@ -16,6 +16,7 @@ import {
 type EditCaseFormProps = {
   caseItem: {
     id: string;
+    reference: string;
     clientId: string;
     serviceType: string;
     country: string;
@@ -34,6 +35,7 @@ type EditCaseFormProps = {
     id: string;
     name: string;
   }[];
+  error?: string;
   lang: "en" | "zh";
 };
 
@@ -41,6 +43,7 @@ export default function EditCaseForm({
   caseItem,
   clients,
   consultants,
+  error = "",
   lang,
 }: EditCaseFormProps) {
   const [clientKeyword, setClientKeyword] = useState("");
@@ -78,6 +81,26 @@ export default function EditCaseForm({
               : "Update case information in LeoVisa Case OS."}
           </p>
         </div>
+
+        {error === "duplicate_reference" && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+            <p className="text-sm font-semibold text-red-600">
+              {lang === "zh"
+                ? "Reference 已被其他案件使用，请换一个。"
+                : "This reference is already used by another case. Please choose a different one."}
+            </p>
+          </div>
+        )}
+
+        {error === "missing_reference" && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+            <p className="text-sm font-semibold text-red-600">
+              {lang === "zh"
+                ? "Reference 不能为空。"
+                : "Reference is required."}
+            </p>
+          </div>
+        )}
 
         <form action={updateCase} className="space-y-8">
           <input type="hidden" name="caseId" value={caseItem.id} />
@@ -135,6 +158,22 @@ export default function EditCaseForm({
             </h2>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div>
+                <label className="toss-label mb-3 block">Reference</label>
+                <input
+                  type="text"
+                  name="reference"
+                  defaultValue={caseItem.reference}
+                  required
+                  className="w-full px-4 py-3"
+                />
+                <p className="mt-2 text-sm font-medium text-[#8b95a1]">
+                  {lang === "zh"
+                    ? "顾问可手动修改，对外展示优先使用这个编号。"
+                    : "Consultants can edit this value. It will be used as the primary display reference."}
+                </p>
+              </div>
+
               <div>
                 <label className="toss-label mb-3 block">
                   {lang === "zh" ? "业务类型" : "Service Type"}

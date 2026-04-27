@@ -230,6 +230,7 @@ export default async function ClientDetailPage({
               {client.cases.map(
                 (item: {
                   id: string;
+                  reference: string;
                   caseCode: string;
                   serviceType: string;
                   country: string;
@@ -242,8 +243,12 @@ export default async function ClientDetailPage({
                           href={`/cases/${item.id}`}
                           className="text-[18px] font-semibold text-[#191f28] hover:text-[#3182f6]"
                         >
-                          {item.caseCode}
+                          {item.reference}
                         </Link>
+
+                        <p className="mt-1 text-xs font-medium text-[#8b95a1]">
+                          {item.caseCode}
+                        </p>
 
                         <p className="mt-2 text-[15px] text-[#6b7684]">
                           {getServiceTypeLabel(item.serviceType)} · {item.country}

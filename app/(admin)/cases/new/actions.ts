@@ -2,6 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
+import {
+  buildCaseReferenceBase,
+  generateUniqueCaseReference,
+} from "../../../../lib/case-reference";
 
 export async function createCase(formData: FormData) {
   const clientId = formData.get("clientId")?.toString().trim() || "";
@@ -17,6 +21,17 @@ export async function createCase(formData: FormData) {
   const notes = formData.get("notes")?.toString().trim() || "";
 
   if (!clientId || !serviceType || !country) {
+    redirect("/cases/new?error=missing_required_fields");
+  }
+
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: {
+      clientCode: true,
+    },
+  });
+
+  if (!client) {
     redirect("/cases/new?error=missing_required_fields");
   }
 
@@ -54,10 +69,18 @@ export async function createCase(formData: FormData) {
   }
 
   const caseCode = `LVS-${countryCode}-${currentYear}-${String(nextNumber).padStart(4, "0")}`;
+  const reference = await generateUniqueCaseReference(
+    prisma,
+    buildCaseReferenceBase({
+      caseCode,
+      clientCode: client.clientCode,
+    })
+  );
 
   const caseItem = await prisma.case.create({
     data: {
       caseCode,
+      reference,
       clientId,
       serviceType,
       country,
@@ -79,6 +102,7 @@ export async function createCase(formData: FormData) {
       success: true,
       newValue: {
         caseCode: caseItem.caseCode,
+        reference: caseItem.reference,
         serviceType: caseItem.serviceType,
         country: caseItem.country,
         status: caseItem.status,

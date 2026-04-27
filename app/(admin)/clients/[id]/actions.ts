@@ -2,9 +2,11 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
+import { normalizeReference } from "../../../../lib/case-reference";
 
 export async function updateClient(formData: FormData) {
   const clientId = formData.get("clientId")?.toString().trim() || "";
+  const clientCodeInput = formData.get("clientCode")?.toString().trim() || "";
   const chineseName = formData.get("chineseName")?.toString().trim() || "";
   const englishName = formData.get("englishName")?.toString().trim() || "";
   const email = formData.get("email")?.toString().trim() || "";
@@ -17,10 +19,13 @@ export async function updateClient(formData: FormData) {
     throw new Error("Client ID and English name are required.");
   }
 
+  const clientCode = normalizeReference(clientCodeInput);
+
   const existingClient = await prisma.client.findUnique({
     where: { id: clientId },
     select: {
       id: true,
+      clientCode: true,
       chineseName: true,
       englishName: true,
       email: true,
@@ -38,6 +43,7 @@ export async function updateClient(formData: FormData) {
   await prisma.client.update({
   where: { id: clientId },
   data: {
+    clientCode: clientCode || null,
     chineseName: chineseName || "",
     englishName,
     email: email || null,
@@ -56,6 +62,7 @@ export async function updateClient(formData: FormData) {
       actorType: "user",
       success: true,
       oldValue: {
+        clientCode: existingClient.clientCode,
         chineseName: existingClient.chineseName,
         englishName: existingClient.englishName,
         email: existingClient.email,
@@ -65,6 +72,7 @@ export async function updateClient(formData: FormData) {
         notes: existingClient.notes,
       },
       newValue: {
+  clientCode: clientCode || null,
   chineseName: chineseName || "",
   englishName,
   email: email || null,
@@ -117,6 +125,7 @@ export async function deleteClient(formData: FormData) {
       actorType: "user",
       success: true,
       oldValue: {
+        clientCode: existingClient.clientCode,
         chineseName: existingClient.chineseName,
         englishName: existingClient.englishName,
         email: existingClient.email,

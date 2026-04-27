@@ -61,7 +61,8 @@ export const messages = {
       title: "Cases",
       newCase: "New Case",
       searchPlaceholder:
-        "Search by case code, client name, service type, country",
+        "Search by reference, case code, client name, service type, country",
+      reference: "Reference",
       caseCode: "Case Code",
       client: "Client",
       serviceType: "Service Type",
@@ -172,7 +173,8 @@ export const messages = {
     cases: {
       title: "案件",
       newCase: "新建案件",
-      searchPlaceholder: "按案件编号、客户名、业务类型、国家搜索",
+      searchPlaceholder: "按 Reference、案件编号、客户名、业务类型、国家搜索",
+      reference: "Reference",
       caseCode: "案件编号",
       client: "客户",
       serviceType: "业务类型",

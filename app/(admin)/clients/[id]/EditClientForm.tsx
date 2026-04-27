@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { updateClient, deleteClient } from "./actions";
 
 type EditClientFormProps = {
   client: {
     id: string;
+    clientCode: string | null;
     chineseName: string;
     englishName: string | null;
     email: string | null;
@@ -46,12 +48,12 @@ export default function EditClientForm({
       <div className="toss-container">
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <a
+            <Link
               href={`/clients/${client.id}`}
               className="mb-4 inline-flex items-center text-sm font-semibold text-[#6b7684] hover:text-[#3182f6]"
             >
               {lang === "zh" ? "← 返回客户详情" : "← Back to Client"}
-            </a>
+            </Link>
 
             <h1 className="toss-title">
               {lang === "zh" ? "编辑客户" : "Edit Client"}
@@ -64,14 +66,14 @@ export default function EditClientForm({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <a
+            <Link
               href={`/cases/new?clientId=${client.id}`}
               className="toss-primary-button px-5 py-3 text-sm font-semibold"
             >
               {lang === "zh"
                 ? "为该客户创建案件"
                 : "Create Case for This Client"}
-            </a>
+            </Link>
 
             <form action={deleteClient}>
               <input type="hidden" name="clientId" value={client.id} />
@@ -105,6 +107,23 @@ export default function EditClientForm({
             </h2>
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div>
+                <label className="toss-label mb-2 block">
+                  {lang === "zh" ? "客户编号" : "Client Code"}
+                </label>
+                <input
+                  type="text"
+                  name="clientCode"
+                  defaultValue={client.clientCode ?? ""}
+                  className="toss-input"
+                />
+                <p className="mt-2 text-xs text-[#8b95a1]">
+                  {lang === "zh"
+                    ? "用于自动生成案件 Reference，可随时修改。"
+                    : "Used to auto-generate case references and can be updated at any time."}
+                </p>
+              </div>
+
               <div>
                 <label className="toss-label mb-2 block">
                   {lang === "zh" ? "中文名" : "Chinese Name"}
@@ -222,12 +241,12 @@ export default function EditClientForm({
               {lang === "zh" ? "保存修改" : "Save Changes"}
             </button>
 
-            <a
+            <Link
               href="/clients"
               className="toss-secondary-button px-6 py-3 text-sm font-semibold"
             >
               {lang === "zh" ? "取消" : "Cancel"}
-            </a>
+            </Link>
           </div>
         </form>
       </div>

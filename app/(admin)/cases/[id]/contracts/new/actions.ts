@@ -67,7 +67,8 @@ export async function createClientCareLetterAction(
     "Client";
 
   try {
-    const contractCaseRef = caseRefInput || caseItem.caseCode;
+    const contractCaseRef =
+      caseRefInput || caseItem.reference || caseItem.caseCode;
 
     const fileBuffer = await generateClientCareLetter({
       ClientName: clientName,
@@ -139,6 +140,7 @@ export async function createClientCareLetterAction(
         newValue: {
           templateName: "client-care-letter-template",
           caseCode: caseItem.caseCode,
+          reference: caseItem.reference,
           contractCaseRef,
           filePath: storagePath,
           fileUrl,

@@ -5,7 +5,7 @@ import { createClientCareLetterAction } from "./actions";
 
 type CreateContractFormProps = {
   caseId: string;
-  caseCode: string;
+  reference: string;
   clientName: string;
   visaType: string;
   nationality: string;
@@ -19,7 +19,7 @@ const initialState = {
 
 export default function CreateContractForm({
   caseId,
-  caseCode,
+  reference,
   clientName,
   visaType,
   nationality,
@@ -48,11 +48,11 @@ export default function CreateContractForm({
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="toss-label mb-3 block">Case Ref</label>
+            <label className="toss-label mb-3 block">Reference</label>
             <input
               type="text"
               name="caseRef"
-              defaultValue={caseCode}
+              defaultValue={reference}
               className="w-full px-4 py-3"
             />
             <p className="mt-2 text-xs font-medium text-[#8b95a1]">

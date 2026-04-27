@@ -78,7 +78,7 @@ export default async function UploadPortalPage({
     <UploadPortalContent
       clientChineseName={submissionLink.case.client.chineseName || ""}
       clientEnglishName={submissionLink.case.client.englishName || ""}
-      caseCode={submissionLink.case.caseCode}
+      reference={submissionLink.case.reference}
       serviceType={getServiceTypeLabel(submissionLink.case.serviceType)}
       country={submissionLink.case.country}
       status={submissionLink.status}

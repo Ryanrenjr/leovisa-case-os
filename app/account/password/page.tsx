@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getAdminSessionUserId } from "../../../lib/auth";
@@ -145,12 +146,12 @@ export default async function PasswordPage({
                 {lang === "zh" ? "更新密码" : "Update Password"}
               </button>
 
-              <a
+              <Link
                 href="/"
                 className="toss-secondary-button px-6 py-3 text-sm font-semibold"
               >
                 {lang === "zh" ? "返回" : "Back"}
-              </a>
+              </Link>
             </div>
           </form>
         </div>

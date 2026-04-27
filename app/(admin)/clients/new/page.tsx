@@ -81,6 +81,27 @@ export default async function NewClientPage({
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div>
                 <label className="toss-label mb-2 block">
+                  {lang === "zh" ? "客户编号" : "Client Code"}
+                </label>
+                <input
+                  type="text"
+                  name="clientCode"
+                  className="toss-input"
+                  placeholder={
+                    lang === "zh"
+                      ? "例如：SONG150567YW"
+                      : "e.g. SONG150567YW"
+                  }
+                />
+                <p className="mt-2 text-xs text-[#8b95a1]">
+                  {lang === "zh"
+                    ? "用于自动生成案件 Reference，可留空。"
+                    : "Used to auto-generate case references. Optional."}
+                </p>
+              </div>
+
+              <div>
+                <label className="toss-label mb-2 block">
                   {lang === "zh" ? "中文名" : "Chinese Name"}
                 </label>
                 <input

@@ -2,8 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
+import { normalizeReference } from "../../../../lib/case-reference";
 
 export async function createClient(formData: FormData) {
+  const clientCodeInput = formData.get("clientCode")?.toString().trim() || "";
   const chineseName = formData.get("chineseName")?.toString().trim() || "";
   const englishName = formData.get("englishName")?.toString().trim() || "";
   const email = formData.get("email")?.toString().trim() || "";
@@ -16,8 +18,11 @@ export async function createClient(formData: FormData) {
     redirect("/clients/new?error=missing_english_name");
   }
 
+  const clientCode = normalizeReference(clientCodeInput);
+
   const createdClient = await prisma.client.create({
   data: {
+    clientCode: clientCode || null,
     chineseName: chineseName || "",
     englishName,
     email: email || null,
@@ -36,6 +41,7 @@ export async function createClient(formData: FormData) {
       actorType: "user",
       success: true,
       newValue: {
+  clientCode: clientCode || null,
   chineseName: chineseName || "",
   englishName,
   email: email || null,

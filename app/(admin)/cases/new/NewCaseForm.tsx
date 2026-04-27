@@ -75,6 +75,11 @@ export default function NewCaseForm({
                 ? "创建一个新案件，并关联到已有客户。"
                 : "Create a new case and link it to an existing client."}
             </p>
+            <p className="mt-3 text-sm font-medium text-[#8b95a1]">
+              {lang === "zh"
+                ? "案件 Reference 会自动生成，创建后顾问可在编辑案件页面手动修改。"
+                : "The case reference is generated automatically and can be edited later on the Edit Case page."}
+            </p>
           </div>
 
           <form action={createCase} className="space-y-8">

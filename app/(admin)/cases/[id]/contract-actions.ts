@@ -42,6 +42,7 @@ async function ensureContractPdf(contract: {
   pdfPath: string | null;
   case: {
     caseCode: string;
+    reference: string;
   };
 }) {
   if (contract.pdfPath) {
@@ -129,7 +130,7 @@ export async function sendContractForSignature(formData: FormData) {
   if (contract.providerDocumentId || contract.providerSigningUrl) {
     redirect(
       buildContractsRedirect(caseId, {
-        message: "Signing link already exists for this contract.",
+        message: "Signing link already exists. Copy it and share it with the client manually.",
       })
     );
   }
@@ -143,7 +144,7 @@ export async function sendContractForSignature(formData: FormData) {
   if (!signerEmail) {
     redirect(
       buildContractsRedirect(caseId, {
-        error: "Client email is required before sending a contract for signature.",
+        error: "Client email is still required to create the signing link.",
       })
     );
   }
@@ -155,12 +156,13 @@ export async function sendContractForSignature(formData: FormData) {
       pdfPath: contract.pdfPath,
       case: {
         caseCode: contract.case.caseCode,
+        reference: contract.case.reference,
       },
     });
 
     const signingRequest = await createDocumensoSigningRequest({
       contractId: contract.id,
-      title: `${contract.case.caseCode} ${signerName} Contract`,
+      title: `${contract.case.reference} ${signerName} Contract`,
       pdfBuffer,
       signerName,
       signerEmail,
@@ -205,6 +207,7 @@ export async function sendContractForSignature(formData: FormData) {
           newValue: {
             signProvider: "documenso",
             signDeliveryMode: "link",
+            reference: contract.case.reference,
             signerName,
             signerEmail,
             providerDocumentId: signingRequest.documentId,
@@ -217,7 +220,7 @@ export async function sendContractForSignature(formData: FormData) {
 
     redirect(
       buildContractsRedirect(caseId, {
-        message: "Signing link is ready.",
+        message: "Signing link is ready. Share it with the client manually.",
       })
     );
   } catch (error) {

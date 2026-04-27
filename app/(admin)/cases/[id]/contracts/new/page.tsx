@@ -44,13 +44,13 @@ export default async function CreateContractPage({
           <div className="mb-8">
             <h1 className="toss-title">Generate Contract</h1>
             <p className="toss-subtitle">
-              Create a client care letter for {caseItem.caseCode}.
+              Create a client care letter for {caseItem.reference}.
             </p>
           </div>
 
           <CreateContractForm
             caseId={caseItem.id}
-            caseCode={caseItem.caseCode}
+            reference={caseItem.reference}
             clientName={
             caseItem.client.englishName || caseItem.client.chineseName || ""
           }

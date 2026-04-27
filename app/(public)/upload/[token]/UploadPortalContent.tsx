@@ -7,7 +7,7 @@ type Language = "zh" | "en";
 type UploadPortalContentProps = {
   clientChineseName: string;
   clientEnglishName: string;
-  caseCode: string;
+  reference: string;
   serviceType: string;
   country: string;
   status: string;
@@ -36,7 +36,7 @@ type CopyContent = {
   portalTag: string;
   title: string;
   client: string;
-  caseCode: string;
+  reference: string;
   service: string;
   linkStatus: string;
   expiresAt: string;
@@ -85,7 +85,7 @@ const copy: Record<Language, CopyContent> = {
     portalTag: "LeoVisa 安全上传入口",
     title: "文件上传入口",
     client: "客户",
-    caseCode: "案件编号",
+    reference: "Reference",
     service: "服务项目",
     linkStatus: "链接状态",
     expiresAt: "失效时间",
@@ -147,7 +147,7 @@ const copy: Record<Language, CopyContent> = {
     portalTag: "LeoVisa Secure Upload",
     title: "Document Upload Portal",
     client: "Client",
-    caseCode: "Case Code",
+    reference: "Reference",
     service: "Service",
     linkStatus: "Link Status",
     expiresAt: "Expires At",
@@ -240,7 +240,7 @@ function getErrorMessage(error: string, t: CopyContent) {
 export default function UploadPortalContent({
   clientChineseName,
   clientEnglishName,
-  caseCode,
+  reference,
   serviceType,
   country,
   status,
@@ -359,10 +359,10 @@ export default function UploadPortalContent({
 
             <div className="rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-5">
               <p className="mb-2 text-sm font-medium text-[#8b95a1]">
-                {t.caseCode}
+                {t.reference}
               </p>
               <p className="text-[18px] font-semibold text-[#191f28]">
-                {caseCode}
+                {reference}
               </p>
             </div>
 

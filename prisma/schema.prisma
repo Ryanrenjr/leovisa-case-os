@@ -38,6 +38,7 @@ model Client {
 model Case {
   id                   String     @id @default(cuid())
   caseCode             String     @unique
+  reference            String     @unique
   clientId             String
   serviceType          String
   country              String

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
+import { normalizeReference } from "../../../../lib/case-reference";
 
 export async function updateCaseStatus(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
@@ -65,6 +66,7 @@ export async function updateCaseStatus(formData: FormData) {
 
 export async function updateCase(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
+  const referenceInput = formData.get("reference")?.toString().trim() || "";
   const clientId = formData.get("clientId")?.toString().trim() || "";
   const serviceType = formData.get("serviceType")?.toString().trim() || "";
   const country = formData.get("country")?.toString().trim() || "";
@@ -92,6 +94,8 @@ export async function updateCase(formData: FormData) {
     where: { id: caseId },
     select: {
       id: true,
+      caseCode: true,
+      reference: true,
       clientId: true,
       serviceType: true,
       country: true,
@@ -107,9 +111,32 @@ export async function updateCase(formData: FormData) {
     throw new Error("Case not found.");
   }
 
+  const reference = normalizeReference(referenceInput);
+
+  if (!reference) {
+    redirect(`/cases/${caseId}/edit?error=missing_reference`);
+  }
+
+  const duplicateReferenceCase = await prisma.case.findFirst({
+    where: {
+      id: {
+        not: caseId,
+      },
+      reference,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (duplicateReferenceCase) {
+    redirect(`/cases/${caseId}/edit?error=duplicate_reference`);
+  }
+
   await prisma.case.update({
     where: { id: caseId },
     data: {
+      reference,
       clientId,
       serviceType,
       country,
@@ -130,6 +157,8 @@ export async function updateCase(formData: FormData) {
       actorType: "user",
       success: true,
       oldValue: {
+        caseCode: existingCase.caseCode,
+        reference: existingCase.reference,
         clientId: existingCase.clientId,
         serviceType: existingCase.serviceType,
         country: existingCase.country,
@@ -140,6 +169,8 @@ export async function updateCase(formData: FormData) {
         notes: existingCase.notes,
       },
       newValue: {
+        caseCode: existingCase.caseCode,
+        reference,
         clientId,
         serviceType,
         country,
@@ -209,6 +240,7 @@ export async function deleteCase(formData: FormData) {
       oldValue: {
         caseId: existingCase.id,
         caseCode: existingCase.caseCode,
+        reference: existingCase.reference,
         clientId: existingCase.clientId,
         serviceType: existingCase.serviceType,
         country: existingCase.country,

@@ -41,6 +41,37 @@ import {
   deleteSelectedAuditLogs,
 } from "./audit-log-actions";
 import { getServiceTypeLabel } from "../../../../lib/service-options";
+import { isDocumensoConfigured } from "../../../../lib/documenso/client";
+
+function getContractActionFeedback(
+  value: string,
+  lang: "en" | "zh"
+) {
+  const messages: Record<string, { zh: string; en: string }> = {
+    "DOCUMENSO_API_KEY is missing.": {
+      zh: "Documenso 签署服务尚未配置，请先设置 DOCUMENSO_API_KEY。",
+      en: "Documenso signing is not configured. Set DOCUMENSO_API_KEY first.",
+    },
+    "Client email is still required to create the signing link.": {
+      zh: "客户邮箱仍然是必填项。请先补全客户邮箱后再生成签署链接。",
+      en: "Client email is still required before generating a signing link.",
+    },
+    "Signing link is ready. Share it with the client manually.": {
+      zh: "签署链接已生成，请复制后手动发给客户。",
+      en: "Signing link is ready. Copy it and share it with the client manually.",
+    },
+    "Signing link already exists. Copy it and share it with the client manually.": {
+      zh: "签署链接已经存在，直接复制后手动发给客户即可。",
+      en: "Signing link already exists. Copy it and share it with the client manually.",
+    },
+    "This contract has already been signed.": {
+      zh: "这份合同已经签完了。",
+      en: "This contract has already been signed.",
+    },
+  };
+
+  return messages[value]?.[lang] ?? value;
+}
 
 type CaseDetailPageProps = {
   params: Promise<{
@@ -67,6 +98,7 @@ export default async function CaseDetailPage({
 
   const cookieStore = await cookies();
   const lang = getLangFromCookie(cookieStore.get("lang")?.value);
+  const documensoConfigured = isDocumensoConfigured();
 
   const caseItem = await prisma.case.findUnique({
     where: { id },
@@ -111,6 +143,16 @@ export default async function CaseDetailPage({
     notFound();
   }
 
+  const displayContractActionError = getContractActionFeedback(
+    contractActionError,
+    lang
+  );
+  const displayContractActionMessage = getContractActionFeedback(
+    contractActionMessage,
+    lang
+  );
+  const defaultSignerEmail = caseItem.client.email?.trim() || "";
+
   return (
     <main className="toss-page">
       <div className="toss-container">
@@ -134,7 +176,7 @@ export default async function CaseDetailPage({
         {!!contractActionError && (
           <div className="mb-6 rounded-[24px] border border-[#ffd9de] bg-[#fff2f4] p-4">
             <p className="text-sm font-medium text-[#f04452]">
-              {contractActionError}
+              {displayContractActionError}
             </p>
           </div>
         )}
@@ -142,7 +184,7 @@ export default async function CaseDetailPage({
         {!!contractActionMessage && (
           <div className="mb-6 rounded-[24px] border border-[#d7f0df] bg-[#eefbf3] p-4">
             <p className="text-sm font-medium text-[#1f8f55]">
-              {contractActionMessage}
+              {displayContractActionMessage}
             </p>
           </div>
         )}
@@ -151,8 +193,13 @@ export default async function CaseDetailPage({
           <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>
               <h1 className="text-[40px] font-extrabold tracking-[-0.03em] text-[#191f28]">
-                {caseItem.caseCode}
+                {caseItem.reference}
               </h1>
+              <p className="mt-2 text-sm font-medium text-[#8b95a1]">
+                {lang === "zh"
+                  ? `系统案件编号：${caseItem.caseCode}`
+                  : `System Case Code: ${caseItem.caseCode}`}
+              </p>
               <p className="mt-3 text-[15px] text-[#6b7684]">
                 {lang === "zh" ? "案件详情与状态管理" : "Case details and status management"}
               </p>
@@ -355,6 +402,8 @@ export default async function CaseDetailPage({
           contracts={caseItem.contracts}
           onDeleteAction={deleteContract}
           onSendSignatureAction={sendContractForSignature}
+          documensoConfigured={documensoConfigured}
+          defaultSignerEmail={defaultSignerEmail}
           lang={lang}
         />
 

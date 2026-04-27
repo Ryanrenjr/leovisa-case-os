@@ -22,6 +22,7 @@ export default async function EditClientPage({
     where: { id },
     select: {
       id: true,
+      clientCode: true,
       chineseName: true,
       englishName: true,
       email: true,

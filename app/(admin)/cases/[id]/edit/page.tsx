@@ -8,12 +8,18 @@ type EditCasePageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    error?: string;
+  }>;
 };
 
 export default async function EditCasePage({
   params,
+  searchParams,
 }: EditCasePageProps) {
   const { id } = await params;
+  const query = await searchParams;
+  const error = query.error || "";
 
   const cookieStore = await cookies();
   const lang = getLangFromCookie(cookieStore.get("lang")?.value);
@@ -22,6 +28,7 @@ export default async function EditCasePage({
     where: { id },
     select: {
       id: true,
+      reference: true,
       clientId: true,
       serviceType: true,
       country: true,
@@ -68,6 +75,7 @@ export default async function EditCasePage({
       caseItem={caseItem}
       clients={clients}
       consultants={consultants}
+      error={error}
       lang={lang}
     />
   );

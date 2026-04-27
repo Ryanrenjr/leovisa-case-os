@@ -115,6 +115,7 @@ async function main() {
   const case1 = await prisma.case.create({
     data: {
       caseCode: "LVS-UK-2026-0001",
+      reference: "LVS-CLI-0001",
       clientId: client1.id,
       serviceType: "UK Visa",
       country: "UK",
@@ -129,6 +130,7 @@ async function main() {
   const case2 = await prisma.case.create({
     data: {
       caseCode: "LVS-ES-2026-0002",
+      reference: "LVS-CLI-0002",
       clientId: client2.id,
       serviceType: "Spain Golden Visa",
       country: "Spain",
@@ -143,6 +145,7 @@ async function main() {
   const case3 = await prisma.case.create({
     data: {
       caseCode: "LVS-UK-2026-0003",
+      reference: "LVS-CLI-0003",
       clientId: client3.id,
       serviceType: "UK Visitor Visa",
       country: "UK",
