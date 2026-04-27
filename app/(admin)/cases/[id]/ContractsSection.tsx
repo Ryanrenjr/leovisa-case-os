@@ -36,6 +36,8 @@ type ContractsSectionProps = {
   contracts: ContractItem[];
   onDeleteAction: (formData: FormData) => void;
   onSendSignatureAction: (formData: FormData) => void;
+  documensoConfigured: boolean;
+  defaultSignerEmail: string;
   lang: "en" | "zh";
 };
 
@@ -44,9 +46,12 @@ export default function ContractsSection({
   contracts,
   onDeleteAction,
   onSendSignatureAction,
+  documensoConfigured,
+  defaultSignerEmail,
   lang,
 }: ContractsSectionProps) {
   const [expanded, setExpanded] = useState(false);
+  const hasDefaultSignerEmail = Boolean(defaultSignerEmail.trim());
 
   const hasMore = contracts.length > 3;
   const visibleContracts = expanded ? contracts : contracts.slice(0, 3);
@@ -61,6 +66,26 @@ export default function ContractsSection({
           {contracts.length} {lang === "zh" ? "份合同" : "contract(s)"}
         </p>
       </div>
+
+      {!documensoConfigured && (
+        <div className="mb-6 rounded-[20px] border border-[#ffd9de] bg-[#fff2f4] p-4">
+          <p className="text-sm font-medium text-[#e5484d]">
+            {lang === "zh"
+              ? "签署服务还没配置好，暂时不能生成签署链接。请先在环境变量里设置 DOCUMENSO_API_KEY。"
+              : "The signing service is not configured yet. Set DOCUMENSO_API_KEY before generating signing links."}
+          </p>
+        </div>
+      )}
+
+      {documensoConfigured && !hasDefaultSignerEmail && (
+        <div className="mb-6 rounded-[20px] border border-[#ffe8b5] bg-[#fff8e6] p-4">
+          <p className="text-sm font-medium text-[#a16207]">
+            {lang === "zh"
+              ? "客户邮箱为空，暂时不能生成签署链接。请先到客户资料里补全邮箱。"
+              : "Client email is missing. Add it to the client profile before generating a signing link."}
+          </p>
+        </div>
+      )}
 
       {contracts.length === 0 ? (
         <p className="text-[15px] text-[#8b95a1]">
@@ -119,22 +144,34 @@ export default function ContractsSection({
                     ) : null}
 
                     {!contract.providerSigningUrl && contract.status === "generated" ? (
-                      <form action={onSendSignatureAction}>
-                        <input type="hidden" name="caseId" value={caseId} />
-                        <input
-                          type="hidden"
-                          name="contractId"
-                          value={contract.id}
-                        />
+                      documensoConfigured && hasDefaultSignerEmail ? (
+                        <form action={onSendSignatureAction}>
+                          <input type="hidden" name="caseId" value={caseId} />
+                          <input
+                            type="hidden"
+                            name="contractId"
+                            value={contract.id}
+                          />
+                          <button
+                            type="submit"
+                            className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+                          >
+                            {lang === "zh"
+                              ? "生成签署链接"
+                              : "Generate Signing Link"}
+                          </button>
+                        </form>
+                      ) : (
                         <button
-                          type="submit"
-                          className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+                          type="button"
+                          disabled
+                          className="cursor-not-allowed rounded-2xl border border-[#e5e8eb] bg-[#f8fafc] px-4 py-2 text-sm font-semibold text-[#aeb7c2]"
                         >
                           {lang === "zh"
-                            ? "发送签署链接"
-                            : "Send for Signature"}
+                            ? "暂时无法生成签署链接"
+                            : "Signing Link Unavailable"}
                         </button>
-                      </form>
+                      )
                     ) : null}
 
                     <form action={onDeleteAction}>
@@ -211,7 +248,7 @@ export default function ContractsSection({
                       {lang === "zh" ? "签署人邮箱" : "Signer Email"}
                     </p>
                     <p className="text-[15px] text-[#4e5968]">
-                      {contract.signerEmail ?? "-"}
+                      {(contract.signerEmail ?? defaultSignerEmail) || "-"}
                     </p>
                   </div>
 
