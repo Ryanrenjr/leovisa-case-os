@@ -16,6 +16,7 @@ import {
 } from "./document-actions";
 import DocumentsSection from "./DocumentsSection";
 import UploadLinksSection from "./UploadLinksSection";
+import QuestionnairesSection from "./QuestionnairesSection";
 import SubmissionsSection from "./SubmissionsSection";
 import ContractsSection from "./ContractsSection";
 import AuditLogsSection from "./AuditLogsSection";
@@ -31,6 +32,12 @@ import {
   moveChecklistItemUp,
   moveChecklistItemDown,
 } from "./checklist-actions";
+import {
+  deactivateQuestionnaireLink,
+  deleteQuestionnaireLink,
+  generateQuestionnaireLink,
+  reopenQuestionnaireSubmission,
+} from "./questionnaire-actions";
 import {
   CASE_STATUS_OPTIONS,
   CONTRACT_STATUS_OPTIONS,
@@ -119,6 +126,18 @@ export default async function CaseDetailPage({
         },
       },
       submissionLinks: true,
+      questionnaireLinks: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          submissions: {
+            orderBy: {
+              updatedAt: "desc",
+            },
+          },
+        },
+      },
       submissions: true,
       checklistItems: {
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
@@ -167,8 +186,8 @@ export default async function CaseDetailPage({
           <div className="mb-6 rounded-[24px] border border-[#ffd9de] bg-[#fff2f4] p-4">
             <p className="text-sm font-medium text-[#f04452]">
               {lang === "zh"
-                ? "该案件暂时不能删除，因为仍有关联的文件清单、文件、提交记录、上传链接或合同。"
-                : "This case cannot be deleted because linked checklist items, documents, submissions, upload links, or contracts exist."}
+                ? "该案件暂时不能删除，因为仍有关联的文件清单、文件、提交记录、上传链接、申请表或合同。"
+                : "This case cannot be deleted because linked checklist items, documents, submissions, upload links, questionnaires, or contracts exist."}
             </p>
           </div>
         )}
@@ -294,7 +313,7 @@ export default async function CaseDetailPage({
           </div>
         </div>
 
-        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-5">
           <a href="#documents-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "文件" : "Documents"}</p>
             <h2 className="toss-stat-number">{caseItem.documents.length}</h2>
@@ -308,6 +327,11 @@ export default async function CaseDetailPage({
           <a href="#upload-links-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "上传链接" : "Upload Links"}</p>
             <h2 className="toss-stat-number">{caseItem.submissionLinks.length}</h2>
+          </a>
+
+          <a href="#questionnaires-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+            <p className="toss-label mb-3">{lang === "zh" ? "申请表" : "Forms"}</p>
+            <h2 className="toss-stat-number">{caseItem.questionnaireLinks.length}</h2>
           </a>
 
           <a href="#submissions-section" className="toss-card block p-6 hover:-translate-y-[1px]">
@@ -383,6 +407,16 @@ export default async function CaseDetailPage({
           onGenerateAction={generateUploadLink}
           onDeactivateAction={deactivateUploadLink}
           onDeleteAction={deleteUploadLink}
+        />
+
+        <QuestionnairesSection
+          caseId={caseItem.id}
+          links={caseItem.questionnaireLinks}
+          lang={lang}
+          onGenerateAction={generateQuestionnaireLink}
+          onDeactivateAction={deactivateQuestionnaireLink}
+          onDeleteAction={deleteQuestionnaireLink}
+          onReopenAction={reopenQuestionnaireSubmission}
         />
 
         <ChecklistSection

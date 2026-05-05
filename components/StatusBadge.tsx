@@ -24,6 +24,8 @@ const BADGE_LABELS = {
 
     pending: "Pending",
     received: "Received",
+    draft: "Draft",
+    submitted: "Submitted",
 
     uploaded: "Uploaded",
     approved: "Approved",
@@ -55,6 +57,8 @@ const BADGE_LABELS = {
 
     pending: "待处理",
     received: "已收到",
+    draft: "草稿",
+    submitted: "已提交",
 
     uploaded: "已上传",
     approved: "已通过",
@@ -76,6 +80,7 @@ function getBadgeClass(value: string) {
     case "signed":
     case "active":
     case "generated":
+    case "submitted":
       return "border border-[#d7f0df] bg-[#eefbf3] text-[#1f8f55]";
 
     case "under_review":
@@ -85,6 +90,7 @@ function getBadgeClass(value: string) {
     case "uploaded":
     case "pending":
     case "sent":
+    case "draft":
       return "border border-[#ffe7b8] bg-[#fff8e8] text-[#b78103]";
 
     case "rejected":

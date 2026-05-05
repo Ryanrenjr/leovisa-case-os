@@ -205,6 +205,12 @@ export async function deleteCase(formData: FormData) {
       submissionLinks: {
         select: { id: true },
       },
+      questionnaireLinks: {
+        select: { id: true },
+      },
+      questionnaireSubmissions: {
+        select: { id: true },
+      },
       checklistItems: {
         select: { id: true },
       },
@@ -222,6 +228,8 @@ export async function deleteCase(formData: FormData) {
     existingCase.documents.length > 0 ||
     existingCase.submissions.length > 0 ||
     existingCase.submissionLinks.length > 0 ||
+    existingCase.questionnaireLinks.length > 0 ||
+    existingCase.questionnaireSubmissions.length > 0 ||
     existingCase.checklistItems.length > 0 ||
     existingCase.contracts.length > 0;
 

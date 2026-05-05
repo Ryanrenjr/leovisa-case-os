@@ -54,6 +54,8 @@ model Case {
   assignedConsultant   AdminUser? @relation("CaseConsultant", fields: [assignedConsultantId], references: [id])
 
   submissionLinks      SubmissionLink[]
+  questionnaireLinks   QuestionnaireLink[]
+  questionnaireSubmissions QuestionnaireSubmission[]
   submissions          DocumentSubmission[]
   documents            Document[]
   checklistItems       DocumentChecklistItem[]
@@ -75,6 +77,37 @@ model SubmissionLink {
   case          Case                 @relation(fields: [caseId], references: [id])
   createdByUser User?                @relation("CreatedByUser", fields: [createdBy], references: [id])
   submissions   DocumentSubmission[]
+}
+
+model QuestionnaireLink {
+  id          String   @id @default(uuid())
+  caseId      String
+  token       String   @unique
+  templateKey String
+  status      String   @default("active")
+  expiresAt   DateTime?
+  currentUses Int      @default(0)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  case        Case                      @relation(fields: [caseId], references: [id])
+  submissions QuestionnaireSubmission[]
+}
+
+model QuestionnaireSubmission {
+  id          String   @id @default(uuid())
+  caseId      String
+  linkId      String
+  templateKey String
+  status      String   @default("draft")
+  answers     Json     @default("{}")
+  submittedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  case Case @relation(fields: [caseId], references: [id])
+  link QuestionnaireLink @relation(fields: [linkId], references: [id])
 }
 
 model DocumentSubmission {
