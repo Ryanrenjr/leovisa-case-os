@@ -12,6 +12,7 @@ type UploadPortalPageProps = {
     error?: string;
     missingChecklistItems?: string;
     duplicateChecklistItems?: string;
+    alreadyUploadedChecklistItems?: string;
   }>;
 };
 
@@ -45,6 +46,9 @@ export default async function UploadPortalPage({
   const duplicateChecklistItems = parseChecklistItemsParam(
     query.duplicateChecklistItems
   );
+  const alreadyUploadedChecklistItems = parseChecklistItemsParam(
+    query.alreadyUploadedChecklistItems
+  );
 
   const submissionLink = await prisma.submissionLink.findUnique({
     where: { token },
@@ -54,6 +58,11 @@ export default async function UploadPortalPage({
           client: true,
           checklistItems: {
             orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+            include: {
+              documents: {
+                select: { id: true },
+              },
+            },
           },
         },
       },
@@ -73,6 +82,15 @@ export default async function UploadPortalPage({
     submissionLink.currentUses >= submissionLink.maxUses;
 
   const isUnavailable = Boolean(isExpired || isInactive || isMaxedOut);
+  const checklistItems = submissionLink.case.checklistItems;
+  const pendingChecklistItems = checklistItems
+    .filter((item) => item.documents.length === 0)
+    .map((item) => ({
+      id: item.id,
+      label: item.label,
+      description: item.description,
+      isRequired: item.isRequired,
+    }));
 
   return (
     <UploadPortalContent
@@ -93,7 +111,9 @@ export default async function UploadPortalPage({
       error={error}
       missingChecklistItems={missingChecklistItems}
       duplicateChecklistItems={duplicateChecklistItems}
-      checklistItems={submissionLink.case.checklistItems}
+      alreadyUploadedChecklistItems={alreadyUploadedChecklistItems}
+      hasChecklist={checklistItems.length > 0}
+      checklistItems={pendingChecklistItems}
     />
   );
 }

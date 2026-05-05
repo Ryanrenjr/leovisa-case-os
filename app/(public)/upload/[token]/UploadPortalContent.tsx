@@ -18,6 +18,8 @@ type UploadPortalContentProps = {
   error: string;
   missingChecklistItems: string[];
   duplicateChecklistItems: string[];
+  alreadyUploadedChecklistItems: string[];
+  hasChecklist: boolean;
   checklistItems: {
     id: string;
     label: string;
@@ -45,6 +47,7 @@ type UploadErrorPayload = {
   error?: string;
   missingChecklistItems?: string[];
   duplicateChecklistItems?: string[];
+  alreadyUploadedChecklistItems?: string[];
 };
 
 type CopyContent = {
@@ -87,12 +90,16 @@ type CopyContent = {
   errorUploadFailed: string;
   errorMissingRequiredChecklistItems: string;
   errorDuplicateChecklistItems: string;
+  errorAlreadyUploadedChecklistItems: string;
   errorChecklistValidationFailed: string;
   missingChecklistItemsLabel: string;
   duplicateChecklistItemsLabel: string;
+  alreadyUploadedChecklistItemsLabel: string;
   supportedFormats: string;
   uploadFormatHint: string;
   allChecklistItemsSelected: string;
+  allChecklistItemsSubmittedTitle: string;
+  allChecklistItemsSubmittedDesc: string;
 };
 
 const copy: Record<Language, CopyContent> = {
@@ -126,12 +133,12 @@ const copy: Record<Language, CopyContent> = {
     checklistGuideItems: [
       "请严格按照顾问创建的文件清单逐项上传。",
       "每一行只对应一个清单项和一个文件，请不要重复选择同一项。",
-      "标记为“必传”的项目必须全部提交，否则系统不会通过。",
+      "可以先提交手头已有的材料，已提交项目会从清单中隐藏。",
       "如一个清单项有多页或多份材料，请先合并为一个清晰文件后再上传。",
     ],
     guideNoteTitle: "温馨提示",
     guideNote:
-      "请尽量上传清晰的 PDF、PNG 或 JPG 文件。若有多份材料，请逐项添加后统一提交。",
+      "请尽量上传清晰的 PDF、PNG 或 JPG 文件。有多少材料可以先提交多少，稍后可继续使用同一链接上传剩余项目。",
     afterSuccessTitle: "资料已提交",
     afterSuccessDesc:
       "我们已经收到您本次上传的资料。顾问会尽快查看并与您联系。",
@@ -151,12 +158,18 @@ const copy: Record<Language, CopyContent> = {
     errorUploadFailed: "提交失败，请稍后再试或联系顾问。",
     errorMissingRequiredChecklistItems: "请先完成所有必传清单项后再提交。",
     errorDuplicateChecklistItems: "同一个清单项在一次提交中只能上传一次。",
+    errorAlreadyUploadedChecklistItems:
+      "部分清单项已经提交，请刷新页面后继续上传剩余项目。",
     errorChecklistValidationFailed: "请先修正清单上传中的重复项和缺失项。",
     missingChecklistItemsLabel: "未提交的必传项",
     duplicateChecklistItemsLabel: "重复选择的清单项",
+    alreadyUploadedChecklistItemsLabel: "已经提交的清单项",
     supportedFormats: "支持文件格式：PDF、JPG、JPEG、PNG。",
     uploadFormatHint: "请上传 PDF、JPG、JPEG 或 PNG 文件。",
     allChecklistItemsSelected: "所有清单项都已选择，无需再新增。",
+    allChecklistItemsSubmittedTitle: "清单材料已全部提交",
+    allChecklistItemsSubmittedDesc:
+      "顾问清单中的材料已经全部收到。如还需要补充其他资料，请联系顾问更新清单。",
   },
   en: {
     portalTag: "LeoVisa Secure Upload",
@@ -190,12 +203,12 @@ const copy: Record<Language, CopyContent> = {
     checklistGuideItems: [
       "Please upload strictly against the checklist created by your consultant.",
       "Each row should contain one checklist item and one file. Do not select the same item twice.",
-      "All items marked as required must be submitted, otherwise the form will not pass validation.",
+      "You can submit the documents you have now. Submitted items will be hidden from the checklist.",
       "If one checklist item contains multiple pages or supporting files, please combine them into one clear file before uploading.",
     ],
     guideNoteTitle: "Important Note",
     guideNote:
-      "Please use clear PDF, PNG, or JPG files whenever possible. If you have multiple documents, add them one by one and submit together.",
+      "Please use clear PDF, PNG, or JPG files whenever possible. You can submit available documents now and use the same link later for the remaining items.",
     afterSuccessTitle: "Documents Submitted",
     afterSuccessDesc:
       "We have received your uploaded documents. Your consultant will review them and contact you if needed.",
@@ -220,14 +233,20 @@ const copy: Record<Language, CopyContent> = {
       "Please upload all required checklist items before submitting.",
     errorDuplicateChecklistItems:
       "Each checklist item can only be uploaded once per submission.",
+    errorAlreadyUploadedChecklistItems:
+      "Some checklist items have already been submitted. Please refresh the page and continue with the remaining items.",
     errorChecklistValidationFailed:
       "Please fix the duplicate and missing checklist items before submitting.",
     missingChecklistItemsLabel: "Missing required items",
     duplicateChecklistItemsLabel: "Duplicate checklist items",
+    alreadyUploadedChecklistItemsLabel: "Already submitted checklist items",
     supportedFormats: "Supported formats: PDF, JPG, JPEG, PNG.",
     uploadFormatHint: "Please upload a PDF, JPG, JPEG, or PNG file.",
     allChecklistItemsSelected:
       "All checklist items have already been selected. No additional row is needed.",
+    allChecklistItemsSubmittedTitle: "All checklist documents submitted",
+    allChecklistItemsSubmittedDesc:
+      "All documents on the consultant checklist have been received. If more documents are needed, please contact your consultant to update the checklist.",
   },
 };
 
@@ -245,6 +264,8 @@ function getErrorMessage(error: string, t: CopyContent) {
       return t.errorMissingRequiredChecklistItems;
     case "duplicate_checklist_items":
       return t.errorDuplicateChecklistItems;
+    case "checklist_items_already_uploaded":
+      return t.errorAlreadyUploadedChecklistItems;
     case "checklist_validation_failed":
       return t.errorChecklistValidationFailed;
     default:
@@ -266,14 +287,17 @@ export default function UploadPortalContent({
   error,
   missingChecklistItems,
   duplicateChecklistItems,
+  alreadyUploadedChecklistItems,
+  hasChecklist,
   checklistItems,
 }: UploadPortalContentProps) {
-  const checklistMode = checklistItems.length > 0;
+  const checklistMode = hasChecklist;
+  const hasPendingChecklistItems = !checklistMode || checklistItems.length > 0;
   const [lang, setLang] = useState<Language>("zh");
   const [rows, setRows] = useState<UploadRow[]>(() => [
     {
       id: 0,
-      docType: checklistMode ? "" : "passport",
+      docType: hasChecklist ? "" : "passport",
       checklistItemId: "",
     },
   ]);
@@ -356,6 +380,13 @@ export default function UploadPortalContent({
       url.searchParams.set(
         "duplicateChecklistItems",
         JSON.stringify(payload.duplicateChecklistItems)
+      );
+    }
+
+    if ((payload.alreadyUploadedChecklistItems?.length ?? 0) > 0) {
+      url.searchParams.set(
+        "alreadyUploadedChecklistItems",
+        JSON.stringify(payload.alreadyUploadedChecklistItems)
       );
     }
 
@@ -586,15 +617,15 @@ export default function UploadPortalContent({
             </div>
           </div>
 
-          {checklistMode && (
+          {checklistMode && hasPendingChecklistItems && (
             <div className="mb-8 rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-6">
               <h2 className="mb-3 text-[22px] font-bold tracking-[-0.02em] text-[#191f28]">
-                {lang === "zh" ? "顾问文件清单" : "Consultant Checklist"}
+                {lang === "zh" ? "待上传文件清单" : "Remaining Checklist"}
               </h2>
               <p className="mb-4 text-[15px] leading-7 text-[#4e5968]">
                 {lang === "zh"
-                  ? "请按下列清单准备并上传材料。已标记“必传”的项目请务必提供。"
-                  : "Please prepare and upload documents according to the checklist below. Items marked as required should be provided."}
+                  ? "下面只显示尚未收到的清单项。已经提交的材料不会再出现在这里。"
+                  : "Only checklist items that have not been received are shown below. Submitted items no longer appear here."}
               </p>
 
               <div className="space-y-3">
@@ -675,6 +706,19 @@ export default function UploadPortalContent({
                   </ul>
                 </div>
               )}
+
+              {alreadyUploadedChecklistItems.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-red-600">
+                    {t.alreadyUploadedChecklistItemsLabel}
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-600">
+                    {alreadyUploadedChecklistItems.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -687,13 +731,13 @@ export default function UploadPortalContent({
                 {t.unavailableDesc}
               </p>
             </div>
-          ) : isSuccess ? (
+          ) : !hasPendingChecklistItems ? (
             <div className="rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-6">
               <h2 className="mb-3 text-[24px] font-bold tracking-[-0.02em] text-[#191f28]">
-                {t.afterSuccessTitle}
+                {t.allChecklistItemsSubmittedTitle}
               </h2>
               <p className="mb-4 text-[15px] leading-7 text-[#4e5968]">
-                {t.afterSuccessDesc}
+                {t.allChecklistItemsSubmittedDesc}
               </p>
 
               <div className="rounded-2xl border border-[#eef1f4] bg-white p-4">

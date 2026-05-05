@@ -34,12 +34,14 @@ function buildValidationPayload(
   options?: {
     missingChecklistItems?: string[];
     duplicateChecklistItems?: string[];
+    alreadyUploadedChecklistItems?: string[];
   }
 ) {
   return {
     error: errorCode,
     missingChecklistItems: options?.missingChecklistItems ?? [],
     duplicateChecklistItems: options?.duplicateChecklistItems ?? [],
+    alreadyUploadedChecklistItems: options?.alreadyUploadedChecklistItems ?? [],
   };
 }
 
@@ -63,6 +65,11 @@ export async function POST(request: Request, context: RouteContext) {
           client: true,
           checklistItems: {
             orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+            include: {
+              documents: {
+                select: { id: true },
+              },
+            },
           },
         },
       },
@@ -123,7 +130,6 @@ export async function POST(request: Request, context: RouteContext) {
     const selectedChecklistItemIds = uploadItems
       .map((item) => item.checklistItemId)
       .filter((item): item is string => Boolean(item));
-    const selectedChecklistItemIdSet = new Set(selectedChecklistItemIds);
     const duplicateChecklistItems = Array.from(
       new Set(
         selectedChecklistItemIds
@@ -133,24 +139,26 @@ export async function POST(request: Request, context: RouteContext) {
           .map((itemId) => checklistItemMap.get(itemId)?.label || itemId)
       )
     );
-    const missingChecklistItems = checklistItems
-      .filter(
-        (item) => item.isRequired && !selectedChecklistItemIdSet.has(item.id)
-      )
-      .map((item) => item.label);
+    const alreadyUploadedChecklistItems = selectedChecklistItemIds
+      .filter((itemId) => {
+        const checklistItem = checklistItemMap.get(itemId);
+        return (checklistItem?.documents.length ?? 0) > 0;
+      })
+      .map((itemId) => checklistItemMap.get(itemId)?.label || itemId);
 
-    if (duplicateChecklistItems.length > 0 || missingChecklistItems.length > 0) {
+    if (
+      duplicateChecklistItems.length > 0 ||
+      alreadyUploadedChecklistItems.length > 0
+    ) {
       const errorCode =
-        duplicateChecklistItems.length > 0 && missingChecklistItems.length > 0
-          ? "checklist_validation_failed"
-          : duplicateChecklistItems.length > 0
+        duplicateChecklistItems.length > 0
           ? "duplicate_checklist_items"
-          : "missing_required_checklist_items";
+          : "checklist_items_already_uploaded";
 
       return NextResponse.json(
         buildValidationPayload(errorCode, {
-          missingChecklistItems,
           duplicateChecklistItems,
+          alreadyUploadedChecklistItems,
         }),
         { status: 400 }
       );
