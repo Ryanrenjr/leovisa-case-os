@@ -32,6 +32,21 @@ type UploadRow = {
   checklistItemId: string;
 };
 
+type PreparedUpload = {
+  originalFilename: string;
+  normalizedFilename: string;
+  mimeType: string;
+  fileSize: number;
+  storagePath: string;
+  signedUrl: string;
+};
+
+type UploadErrorPayload = {
+  error?: string;
+  missingChecklistItems?: string[];
+  duplicateChecklistItems?: string[];
+};
+
 type CopyContent = {
   portalTag: string;
   title: string;
@@ -263,7 +278,8 @@ export default function UploadPortalContent({
     },
   ]);
   const t = useMemo(() => copy[lang], [lang]);
-  const submitUrl = `/upload/${token}/submit`;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
   const guideIntro = checklistMode
     ? lang === "zh"
       ? "请按照顾问创建的文件清单逐项上传。每一行请选择一个清单项并上传对应文件。"
@@ -323,6 +339,164 @@ export default function UploadPortalContent({
     return rows.some(
       (row) => row.id !== currentRowId && row.checklistItemId === itemId
     );
+  }
+
+  function redirectWithError(payload: UploadErrorPayload) {
+    const url = new URL(`/upload/${token}`, window.location.origin);
+    url.searchParams.set("error", payload.error || "upload_failed");
+
+    if ((payload.missingChecklistItems?.length ?? 0) > 0) {
+      url.searchParams.set(
+        "missingChecklistItems",
+        JSON.stringify(payload.missingChecklistItems)
+      );
+    }
+
+    if ((payload.duplicateChecklistItems?.length ?? 0) > 0) {
+      url.searchParams.set(
+        "duplicateChecklistItems",
+        JSON.stringify(payload.duplicateChecklistItems)
+      );
+    }
+
+    window.location.assign(url.toString());
+  }
+
+  async function parseUploadResponse(response: Response) {
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw payload || { error: "upload_failed" };
+    }
+
+    return payload;
+  }
+
+  async function uploadToSignedUrl(signedUrl: string, file: File) {
+    const uploadBody = new FormData();
+    uploadBody.append("cacheControl", "3600");
+    uploadBody.append("", file);
+
+    const response = await fetch(signedUrl, {
+      method: "PUT",
+      headers: {
+        "x-upsert": "false",
+      },
+      body: uploadBody,
+    });
+
+    if (!response.ok) {
+      throw { error: "upload_failed" };
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const localItems = rows.map((row, index) => {
+      const file = formData.get(`file_${index}`);
+      const otherName =
+        formData.get(`otherName_${index}`)?.toString().trim() || "";
+
+      return {
+        row,
+        file: file instanceof File ? file : null,
+        otherName,
+      };
+    });
+
+    if (localItems.some((item) => !item.file || item.file.size <= 0)) {
+      redirectWithError({ error: "invalid_files" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setUploadProgress(lang === "zh" ? "正在准备上传..." : "Preparing upload...");
+
+    try {
+      const prepareResponse = await fetch(`/upload/${token}/prepare-upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          files: localItems.map((item) => ({
+            originalFilename: item.file?.name,
+            mimeType: item.file?.type,
+            fileSize: item.file?.size,
+          })),
+        }),
+      });
+      const preparePayload = (await parseUploadResponse(prepareResponse)) as {
+        uploads: PreparedUpload[];
+      };
+
+      if (preparePayload.uploads.length !== localItems.length) {
+        throw { error: "upload_failed" };
+      }
+
+      const completedItems = [];
+
+      for (let index = 0; index < localItems.length; index++) {
+        const localItem = localItems[index];
+        const preparedUpload = preparePayload.uploads[index];
+        const file = localItem.file;
+
+        if (!file) {
+          throw { error: "invalid_files" };
+        }
+
+        setUploadProgress(
+          lang === "zh"
+            ? `正在上传 ${index + 1}/${localItems.length}...`
+            : `Uploading ${index + 1}/${localItems.length}...`
+        );
+
+        await uploadToSignedUrl(preparedUpload.signedUrl, file);
+
+        completedItems.push({
+          docType: checklistMode ? "" : localItem.row.docType,
+          checklistItemId: checklistMode ? localItem.row.checklistItemId : null,
+          otherName: localItem.otherName,
+          displayName:
+            !checklistMode && localItem.row.docType === "other"
+              ? localItem.otherName
+              : null,
+          originalFilename: preparedUpload.originalFilename,
+          normalizedFilename: preparedUpload.normalizedFilename,
+          mimeType: preparedUpload.mimeType,
+          fileSize: preparedUpload.fileSize,
+          storagePath: preparedUpload.storagePath,
+        });
+      }
+
+      setUploadProgress(lang === "zh" ? "正在提交记录..." : "Saving submission...");
+
+      const completeResponse = await fetch(`/upload/${token}/complete-upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          remarks: formData.get("remarks")?.toString().trim() || "",
+          items: completedItems,
+        }),
+      });
+      await parseUploadResponse(completeResponse);
+
+      window.location.assign(`/upload/${token}?success=1`);
+    } catch (error) {
+      redirectWithError((error as UploadErrorPayload) || { error: "upload_failed" });
+    } finally {
+      setIsSubmitting(false);
+      setUploadProgress("");
+    }
   }
 
   return (
@@ -538,9 +712,7 @@ export default function UploadPortalContent({
               </p>
 
               <form
-                action={submitUrl}
-                method="POST"
-                encType="multipart/form-data"
+                onSubmit={handleSubmit}
                 className="space-y-5"
               >
                 <input type="hidden" name="token" value={token} />
@@ -630,6 +802,7 @@ export default function UploadPortalContent({
                           name={`file_${index}`}
                           accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                           className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
+                          disabled={isSubmitting}
                           required
                         />
                         <p className="mt-2 text-[13px] text-[#8b95a1]">
@@ -642,6 +815,7 @@ export default function UploadPortalContent({
                       <button
                         type="button"
                         onClick={() => removeRow(row.id)}
+                        disabled={isSubmitting}
                         className="inline-flex items-center justify-center rounded-2xl border border-[#e5e8eb] bg-white px-4 py-3 text-sm font-semibold text-[#6b7684] hover:bg-[#f8fafc]"
                       >
                         {t.removeRow}
@@ -669,7 +843,7 @@ export default function UploadPortalContent({
                   <button
                     type="button"
                     onClick={addRow}
-                    disabled={!canAddChecklistRow}
+                    disabled={!canAddChecklistRow || isSubmitting}
                     className="inline-flex items-center justify-center rounded-2xl border border-[#dbe7ff] bg-[#eef4ff] px-5 py-3 text-sm font-semibold text-[#3563e9] hover:bg-[#e8f0ff] disabled:cursor-not-allowed disabled:border-[#eef1f4] disabled:bg-[#f8fafc] disabled:text-[#8b95a1]"
                   >
                     {t.addRow}
@@ -677,11 +851,24 @@ export default function UploadPortalContent({
 
                   <button
                     type="submit"
+                    disabled={isSubmitting}
                     className="inline-flex items-center justify-center rounded-2xl bg-[#3182f6] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(49,130,246,0.28)] hover:opacity-95"
                   >
-                    {t.submit}
+                    {isSubmitting
+                      ? lang === "zh"
+                        ? "提交中..."
+                        : "Submitting..."
+                      : t.submit}
                   </button>
                 </div>
+
+                {!!uploadProgress && (
+                  <div className="rounded-2xl border border-[#dbe7ff] bg-[#eef4ff] p-4">
+                    <p className="text-sm font-semibold text-[#3563e9]">
+                      {uploadProgress}
+                    </p>
+                  </div>
+                )}
 
                 <div className="rounded-2xl border border-[#eef1f4] bg-white p-4">
                   <p className="text-sm font-medium text-[#8b95a1]">
