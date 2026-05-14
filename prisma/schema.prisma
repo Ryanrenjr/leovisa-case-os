@@ -47,6 +47,9 @@ model Case {
   contractStatus       String
   intakeStatus         String
   notes                String?
+  immigrationPortalUrl String?
+  immigrationPortalUsername String?
+  immigrationPortalPassword String?
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
 

@@ -37,6 +37,9 @@ export default async function EditCasePage({
       contractStatus: true,
       intakeStatus: true,
       notes: true,
+      immigrationPortalUrl: true,
+      immigrationPortalUsername: true,
+      immigrationPortalPassword: true,
     },
   });
 

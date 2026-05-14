@@ -77,6 +77,12 @@ export async function updateCase(formData: FormData) {
     formData.get("contractStatus")?.toString().trim() || "";
   const intakeStatus = formData.get("intakeStatus")?.toString().trim() || "";
   const notes = formData.get("notes")?.toString().trim() || "";
+  const immigrationPortalUrl =
+    formData.get("immigrationPortalUrl")?.toString().trim() || "";
+  const immigrationPortalUsername =
+    formData.get("immigrationPortalUsername")?.toString().trim() || "";
+  const immigrationPortalPassword =
+    formData.get("immigrationPortalPassword")?.toString().trim() || "";
 
   if (
     !caseId ||
@@ -104,6 +110,9 @@ export async function updateCase(formData: FormData) {
       contractStatus: true,
       intakeStatus: true,
       notes: true,
+      immigrationPortalUrl: true,
+      immigrationPortalUsername: true,
+      immigrationPortalPassword: true,
     },
   });
 
@@ -145,6 +154,9 @@ export async function updateCase(formData: FormData) {
       contractStatus,
       intakeStatus,
       notes: notes || null,
+      immigrationPortalUrl: immigrationPortalUrl || null,
+      immigrationPortalUsername: immigrationPortalUsername || null,
+      immigrationPortalPassword: immigrationPortalPassword || null,
     },
   });
 
@@ -167,6 +179,11 @@ export async function updateCase(formData: FormData) {
         contractStatus: existingCase.contractStatus,
         intakeStatus: existingCase.intakeStatus,
         notes: existingCase.notes,
+        immigrationPortalUrl: existingCase.immigrationPortalUrl,
+        immigrationPortalUsername: existingCase.immigrationPortalUsername,
+        immigrationPortalPassword: existingCase.immigrationPortalPassword
+          ? "[stored]"
+          : null,
       },
       newValue: {
         caseCode: existingCase.caseCode,
@@ -179,6 +196,9 @@ export async function updateCase(formData: FormData) {
         contractStatus,
         intakeStatus,
         notes: notes || null,
+        immigrationPortalUrl: immigrationPortalUrl || null,
+        immigrationPortalUsername: immigrationPortalUsername || null,
+        immigrationPortalPassword: immigrationPortalPassword ? "[stored]" : null,
       },
     },
   });

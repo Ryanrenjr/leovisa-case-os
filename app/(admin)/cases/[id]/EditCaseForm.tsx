@@ -25,6 +25,9 @@ type EditCaseFormProps = {
     contractStatus: string;
     intakeStatus: string;
     notes: string | null;
+    immigrationPortalUrl: string | null;
+    immigrationPortalUsername: string | null;
+    immigrationPortalPassword: string | null;
   };
   clients: {
     id: string;
@@ -304,6 +307,53 @@ export default function EditCaseForm({
                   defaultValue={caseItem.notes ?? ""}
                   className="w-full px-4 py-3"
                   placeholder={lang === "zh" ? "案件备注..." : "Case notes..."}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="toss-card p-7">
+            <h2 className="mb-5 text-[24px] font-bold tracking-[-0.02em] text-[#191f28]">
+              {lang === "zh" ? "移民局登录信息" : "Immigration Portal Login"}
+            </h2>
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="toss-label mb-3 block">
+                  {lang === "zh" ? "移民局链接" : "Portal Link"}
+                </label>
+                <input
+                  type="url"
+                  name="immigrationPortalUrl"
+                  defaultValue={caseItem.immigrationPortalUrl ?? ""}
+                  className="w-full px-4 py-3"
+                  placeholder="https://"
+                />
+              </div>
+
+              <div>
+                <label className="toss-label mb-3 block">
+                  {lang === "zh" ? "账号" : "Account"}
+                </label>
+                <input
+                  type="text"
+                  name="immigrationPortalUsername"
+                  defaultValue={caseItem.immigrationPortalUsername ?? ""}
+                  className="w-full px-4 py-3"
+                  autoComplete="off"
+                />
+              </div>
+
+              <div>
+                <label className="toss-label mb-3 block">
+                  {lang === "zh" ? "密码" : "Password"}
+                </label>
+                <input
+                  type="text"
+                  name="immigrationPortalPassword"
+                  defaultValue={caseItem.immigrationPortalPassword ?? ""}
+                  className="w-full px-4 py-3"
+                  autoComplete="off"
                 />
               </div>
             </div>

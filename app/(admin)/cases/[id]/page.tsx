@@ -312,6 +312,61 @@ export default async function CaseDetailPage({
             <p className="toss-label mb-2">{lang === "zh" ? "备注" : "Notes"}</p>
             <p className="text-[15px] leading-7 text-[#4e5968]">{caseItem.notes ?? "-"}</p>
           </div>
+
+          <div className="mt-8 rounded-[24px] border border-[#eef1f4] bg-[#fafbfc] p-5">
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="toss-label mb-2">
+                  {lang === "zh" ? "移民局登录信息" : "Immigration Portal Login"}
+                </p>
+                <p className="text-[15px] text-[#6b7684]">
+                  {lang === "zh"
+                    ? "顾问可在这里查看并打开客户申请系统。"
+                    : "Consultants can open the client application portal from here."}
+                </p>
+              </div>
+
+              {caseItem.immigrationPortalUrl ? (
+                <a
+                  href={caseItem.immigrationPortalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="toss-primary-button px-4 py-2 text-sm font-semibold"
+                >
+                  {lang === "zh" ? "打开链接" : "Open Portal"}
+                </a>
+              ) : null}
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
+              <div>
+                <p className="toss-label mb-2">
+                  {lang === "zh" ? "链接" : "Link"}
+                </p>
+                <p className="break-all text-[15px] text-[#333d4b]">
+                  {caseItem.immigrationPortalUrl ?? "-"}
+                </p>
+              </div>
+
+              <div>
+                <p className="toss-label mb-2">
+                  {lang === "zh" ? "账号" : "Account"}
+                </p>
+                <p className="break-all text-[15px] text-[#333d4b]">
+                  {caseItem.immigrationPortalUsername ?? "-"}
+                </p>
+              </div>
+
+              <div>
+                <p className="toss-label mb-2">
+                  {lang === "zh" ? "密码" : "Password"}
+                </p>
+                <p className="break-all text-[15px] font-semibold text-[#333d4b]">
+                  {caseItem.immigrationPortalPassword ?? "-"}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-5">
