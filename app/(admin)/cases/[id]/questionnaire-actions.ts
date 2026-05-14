@@ -3,7 +3,10 @@
 import crypto from "crypto";
 import { redirect } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
-import { getQuestionnaireTemplate } from "../../../../lib/questionnaires/templates";
+import {
+  getQuestionnaireTemplate,
+  isQuestionnaireTemplate,
+} from "../../../../lib/questionnaires/templates";
 
 function buildRedirect(caseId: string) {
   return `/cases/${caseId}#questionnaires-section`;
@@ -12,16 +15,27 @@ function buildRedirect(caseId: string) {
 export async function generateQuestionnaireLink(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
   const templateKey = formData.get("templateKey")?.toString().trim() || "";
+  const customTemplateText =
+    formData.get("customTemplate")?.toString().trim() || "";
 
   if (!caseId || !templateKey) {
     throw new Error("Case ID and questionnaire template are required.");
   }
 
   const template = getQuestionnaireTemplate(templateKey);
+  const customTemplate = customTemplateText
+    ? JSON.parse(customTemplateText)
+    : template;
 
   if (!template) {
     throw new Error("Questionnaire template not found.");
   }
+
+  if (!isQuestionnaireTemplate(customTemplate)) {
+    throw new Error("Questionnaire template is invalid.");
+  }
+
+  const customTemplateSnapshot = JSON.parse(JSON.stringify(customTemplate));
 
   const caseItem = await prisma.case.findUnique({
     where: { id: caseId },
@@ -41,6 +55,7 @@ export async function generateQuestionnaireLink(formData: FormData) {
       caseId,
       token,
       templateKey,
+      customTemplate: customTemplateSnapshot,
       status: "active",
       expiresAt,
     },
@@ -57,7 +72,7 @@ export async function generateQuestionnaireLink(formData: FormData) {
       newValue: {
         token: link.token,
         templateKey,
-        templateTitle: template.titleZh,
+        templateTitle: customTemplate.titleZh,
         expiresAt: link.expiresAt?.toISOString(),
       },
     },

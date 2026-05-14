@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
 import { getServiceTypeLabel } from "../../../../lib/service-options";
-import { getQuestionnaireTemplate } from "../../../../lib/questionnaires/templates";
+import { getQuestionnaireTemplateSnapshot } from "../../../../lib/questionnaires/templates";
 import IntakeFormContent from "./IntakeFormContent";
 
 type IntakePageProps = {
@@ -43,7 +43,10 @@ export default async function IntakePage({
     notFound();
   }
 
-  const template = getQuestionnaireTemplate(link.templateKey);
+  const template = getQuestionnaireTemplateSnapshot(
+    link.templateKey,
+    link.customTemplate
+  );
 
   if (!template) {
     notFound();

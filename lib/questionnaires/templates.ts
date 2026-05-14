@@ -472,6 +472,233 @@ const workerEmploymentSection: QuestionnaireSection = {
   ],
 };
 
+const visitorPurposeOptions: QuestionnaireFieldOption[] = [
+  { value: "tourism", labelZh: "旅游", labelEn: "Tourism" },
+  { value: "family_visit", labelZh: "探亲访友", labelEn: "Family or friends visit" },
+  { value: "business", labelZh: "商务", labelEn: "Business" },
+  { value: "other", labelZh: "其他", labelEn: "Other" },
+];
+
+const employmentStatusOptions: QuestionnaireFieldOption[] = [
+  { value: "full_time", labelZh: "全职", labelEn: "Full-time employed" },
+  { value: "part_time", labelZh: "兼职", labelEn: "Part-time employed" },
+  { value: "self_employed", labelZh: "企业法人/个体户", labelEn: "Business owner or self-employed" },
+  { value: "unemployed", labelZh: "无业", labelEn: "Unemployed" },
+  { value: "retired", labelZh: "退休", labelEn: "Retired" },
+  { value: "student", labelZh: "学生", labelEn: "Student" },
+  { value: "family_supported", labelZh: "由配偶或家庭成员资助", labelEn: "Supported by spouse or family" },
+];
+
+const visitorPersonalSection: QuestionnaireSection = {
+  id: "visitor_personal",
+  titleZh: "个人与护照信息",
+  titleEn: "Personal and Passport Details",
+  fields: [
+    ...contactFields,
+    ...previousNameFields,
+    { id: "chineseName", type: "text", labelZh: "中文姓名", labelEn: "Chinese name" },
+    { id: "dateOfBirth", type: "date", labelZh: "出生日期", labelEn: "Date of birth" },
+    { id: "nationalIdNumber", type: "text", labelZh: "身份证号码", labelEn: "National ID number" },
+    { id: "birthCity", type: "text", labelZh: "出生城市", labelEn: "City of birth" },
+    { id: "gender", type: "text", labelZh: "性别", labelEn: "Gender" },
+    { id: "nationality", type: "text", labelZh: "现国籍", labelEn: "Current nationality" },
+    { id: "otherNationalities", type: "textarea", labelZh: "是否有其他国籍？如有请说明加入时间", labelEn: "Any other nationalities? If yes, provide dates" },
+    { id: "maritalStatus", type: "text", labelZh: "婚姻状况", labelEn: "Marital status" },
+    { id: "currentPassportNumber", type: "text", labelZh: "现在使用的护照号码", labelEn: "Current passport number" },
+    { id: "passportIssuePlace", type: "text", labelZh: "护照签发地", labelEn: "Passport place of issue" },
+    { id: "passportIssueDate", type: "date", labelZh: "护照签发日期", labelEn: "Passport issue date" },
+    { id: "passportExpiryDate", type: "date", labelZh: "护照有效期至", labelEn: "Passport expiry date" },
+    { id: "isFirstPassport", type: "select", labelZh: "现在使用的护照是否是您的第一本护照？", labelEn: "Is your current passport your first passport?", options: yesNoOptions },
+    {
+      id: "previousPassports",
+      type: "repeater",
+      labelZh: "过去 10 年内的旧护照（如有）",
+      labelEn: "Previous passports in the last 10 years, if any",
+      fields: [
+        { id: "passportNumber", type: "text", labelZh: "旧护照号码", labelEn: "Previous passport number" },
+        { id: "issuePlace", type: "text", labelZh: "签发地", labelEn: "Place of issue" },
+        { id: "issueDate", type: "date", labelZh: "签发日期", labelEn: "Issue date" },
+        { id: "expiryDate", type: "date", labelZh: "有效期至", labelEn: "Expiry date" },
+        { id: "currentLocation", type: "textarea", labelZh: "旧护照现在何处？如遗失或不能提供，请说明原因及出境记录", labelEn: "Where is the old passport now? If unavailable, explain why and list travel records" },
+      ],
+    },
+  ],
+};
+
+const visitorFamilySection: QuestionnaireSection = {
+  id: "visitor_family",
+  titleZh: "家庭信息",
+  titleEn: "Family Details",
+  fields: [
+    parentDetailsField,
+    {
+      id: "spouse",
+      type: "textarea",
+      labelZh: "配偶信息：姓名、国籍、出生日期、是否同行、护照号码、是否同住；如不同住请提供地址",
+      labelEn: "Spouse details: name, nationality, date of birth, whether travelling, passport number, whether living with you; if not, provide address",
+    },
+    {
+      id: "children",
+      type: "repeater",
+      labelZh: "子女信息（如有）",
+      labelEn: "Children, if any",
+      fields: [
+        { id: "fullName", type: "text", labelZh: "孩子姓名", labelEn: "Child's full name" },
+        { id: "dateOfBirth", type: "date", labelZh: "出生日期", labelEn: "Date of birth" },
+        { id: "birthPlace", type: "text", labelZh: "出生地", labelEn: "Place of birth" },
+        { id: "currentAddress", type: "textarea", labelZh: "现居住地址（如不同住）", labelEn: "Current address, if not living with you" },
+        { id: "livesWithApplicant", type: "select", labelZh: "目前是否同您一起居住？", labelEn: "Currently living with you?", options: yesNoOptions },
+        { id: "travellingToUk", type: "select", labelZh: "是否同您一起前来英国？", labelEn: "Travelling to the UK with you?", options: yesNoOptions },
+        { id: "passportNumber", type: "text", labelZh: "如同行，请填写护照号码", labelEn: "If travelling, provide passport number" },
+      ],
+    },
+    {
+      id: "otherChildrenTravelling",
+      type: "repeater",
+      labelZh: "是否有其他孩子跟随您一起旅游（如外甥、侄女等）",
+      labelEn: "Other children travelling with you, if any",
+      helperZh: "如有，通常需要提供亲属关系及委托公证书。",
+      helperEn: "If yes, relationship and consent documents may be needed.",
+      fields: [
+        { id: "fullName", type: "text", labelZh: "孩子姓名", labelEn: "Child's full name" },
+        { id: "dateOfBirth", type: "date", labelZh: "出生日期", labelEn: "Date of birth" },
+        { id: "birthPlace", type: "text", labelZh: "出生地", labelEn: "Place of birth" },
+        { id: "currentAddress", type: "textarea", labelZh: "孩子现居住地址", labelEn: "Child's current address" },
+        { id: "relationshipToChild", type: "text", labelZh: "您与孩子的关系", labelEn: "Your relationship to the child" },
+        { id: "relationshipToParents", type: "text", labelZh: "您与孩子父母的关系", labelEn: "Your relationship to the child's parents" },
+      ],
+    },
+  ],
+};
+
+const visitorTravelSection: QuestionnaireSection = {
+  id: "visitor_travel",
+  titleZh: "以前申请和旅游情况",
+  titleEn: "Previous Applications and Travel",
+  fields: [
+    ukTravelHistoryField,
+    worldTravelHistoryField,
+    {
+      id: "hasVisaRefusals",
+      type: "select",
+      labelZh: "是否被任何国家拒签、驱逐或遣返？",
+      labelEn: "Have you ever been refused a visa, deported, or removed by any country?",
+      options: yesNoOptions,
+      required: true,
+    },
+    {
+      id: "visaRefusalDetails",
+      type: "textarea",
+      labelZh: "如有，请提供日期、国家和原因",
+      labelEn: "If yes, provide date, country, and reason",
+    },
+  ],
+};
+
+const visitorTripSection: QuestionnaireSection = {
+  id: "visitor_trip",
+  titleZh: "本次英国行程",
+  titleEn: "Current UK Trip",
+  fields: [
+    { id: "visitPurpose", type: "select", labelZh: "本次访问英国的主要目的", labelEn: "Main purpose of this UK visit", options: visitorPurposeOptions, required: true },
+    { id: "plannedDepartureDate", type: "date", labelZh: "本次具体出发日期", labelEn: "Planned departure date" },
+    { id: "plannedReturnDate", type: "date", labelZh: "计划离开英国/返回日期", labelEn: "Planned UK departure or return date" },
+    { id: "itinerary", type: "textarea", labelZh: "请简要说明本次英国旅游行程安排", labelEn: "Briefly describe your UK travel itinerary" },
+    { id: "hasUkFriendsOrRelatives", type: "select", labelZh: "您在英国有亲戚或朋友吗？", labelEn: "Do you have relatives or friends in the UK?", options: yesNoOptions },
+    { id: "willVisitUkContacts", type: "select", labelZh: "此次英国旅游是否打算探望在英国的亲戚朋友？", labelEn: "Will you visit relatives or friends in the UK during this trip?", options: yesNoOptions },
+    { id: "willStayWithUkContacts", type: "select", labelZh: "旅游期间是否住在英国亲戚或朋友家？", labelEn: "Will you stay with relatives or friends in the UK?", options: yesNoOptions },
+    {
+      id: "ukContacts",
+      type: "repeater",
+      labelZh: "英国亲戚或朋友信息（如有）",
+      labelEn: "UK relatives or friends, if any",
+      fields: [
+        { id: "fullName", type: "text", labelZh: "姓名", labelEn: "Full name" },
+        { id: "nationality", type: "text", labelZh: "国籍", labelEn: "Nationality" },
+        { id: "relationship", type: "text", labelZh: "关系", labelEn: "Relationship" },
+        { id: "phone", type: "tel", labelZh: "英国联系电话", labelEn: "UK phone number" },
+        { id: "email", type: "email", labelZh: "邮箱", labelEn: "Email" },
+        { id: "ukAddress", type: "textarea", labelZh: "在英国的地址", labelEn: "UK address" },
+      ],
+    },
+    {
+      id: "travelCompanions",
+      type: "repeater",
+      labelZh: "本次英国旅游是否有其他随行人员？",
+      labelEn: "Other people travelling with you, if any",
+      fields: [
+        { id: "fullName", type: "text", labelZh: "姓名", labelEn: "Full name" },
+        { id: "dateOfBirth", type: "date", labelZh: "出生日期", labelEn: "Date of birth" },
+        { id: "nationality", type: "text", labelZh: "国籍", labelEn: "Nationality" },
+        { id: "passportNumber", type: "text", labelZh: "护照号码", labelEn: "Passport number" },
+        { id: "relationship", type: "text", labelZh: "与您的关系", labelEn: "Relationship to you" },
+      ],
+    },
+  ],
+};
+
+const visitorEmploymentSection: QuestionnaireSection = {
+  id: "visitor_employment",
+  titleZh: "个人经济及就业细节",
+  titleEn: "Employment and Financial Details",
+  fields: [
+    { id: "employmentStatus", type: "select", labelZh: "您现在的工作状态", labelEn: "Current employment status", options: employmentStatusOptions, required: true },
+    { id: "familySponsorDetails", type: "textarea", labelZh: "如由配偶或家庭成员资助，请说明资助人信息及与您的关系", labelEn: "If supported by spouse or family, provide sponsor details and relationship" },
+    { id: "companyOrSchoolName", type: "text", labelZh: "公司/学校名称", labelEn: "Company or school name" },
+    { id: "jobTitleOrMajor", type: "text", labelZh: "职务/专业", labelEn: "Job title or major" },
+    { id: "jobDescription", type: "textarea", labelZh: "描述您的工作内容", labelEn: "Describe your work duties" },
+    { id: "startDate", type: "date", labelZh: "入职/入学时间", labelEn: "Employment or study start date" },
+    { id: "companyOrSchoolAddress", type: "textarea", labelZh: "工作/学校地址", labelEn: "Company or school address" },
+    { id: "postcode", type: "text", labelZh: "邮政编码", labelEn: "Postcode" },
+    { id: "phone", type: "tel", labelZh: "电话（区号+号码）", labelEn: "Phone number with area code" },
+    { id: "fax", type: "text", labelZh: "传真（如有）", labelEn: "Fax, if any" },
+    { id: "email", type: "email", labelZh: "电子邮件", labelEn: "Email" },
+    {
+      id: "sensitivePreviousEmployment",
+      type: "textarea",
+      labelZh: "过去是否曾从事军队、政府、司法、媒体、行政管理、公共安全等职业？如有请列明单位、职务和工作时间",
+      labelEn: "Any previous military, government, judiciary, media, public administration, or public security roles? If yes, list employer, role, and dates",
+    },
+  ],
+};
+
+const visitorFinanceSection: QuestionnaireSection = {
+  id: "visitor_finances",
+  titleZh: "收支与资金来源",
+  titleEn: "Income, Expenses, and Funding",
+  fields: [
+    { id: "monthlyNetIncome", type: "text", labelZh: "现在工作的税后月收入（企业法人请提供年收入）", labelEn: "Monthly net employment income, or annual income for business owners" },
+    { id: "otherAssetIncome", type: "textarea", labelZh: "是否有其他资产收入或家庭津贴？请说明年收入", labelEn: "Any other asset income or family allowance? Provide annual amount" },
+    { id: "savingsAmount", type: "text", labelZh: "存款储蓄总金额", labelEn: "Total savings amount" },
+    { id: "investmentIncome", type: "textarea", labelZh: "股票、基金、分红等投资收入（请写年总收入）", labelEn: "Investment income such as stocks, funds, dividends; provide annual amount" },
+    { id: "otherIncome", type: "textarea", labelZh: "是否还有其他收入？如房租或其他收入请列明年收入", labelEn: "Any other income, such as rent? Provide annual amount" },
+    { id: "monthlyLivingCosts", type: "text", labelZh: "每月生活支出金额（生活费、还贷款、账单等）", labelEn: "Monthly living costs, including expenses, loans, and bills" },
+    { id: "tripTotalCost", type: "text", labelZh: "此次旅游全程费用（机票、酒店、花费等）", labelEn: "Total trip cost, including flights, hotels, and spending" },
+    { id: "thirdPartyFunding", type: "textarea", labelZh: "如果由他人支付全部或部分费用，请说明金额、付款人和原因", labelEn: "If someone else pays all or part of the trip, provide amount, payer, and reason" },
+  ],
+};
+
+const visitorAdditionalSection: QuestionnaireSection = {
+  id: "visitor_additional",
+  titleZh: "补充信息",
+  titleEn: "Additional Information",
+  fields: [
+    { id: "additionalInfo", type: "textarea", labelZh: "您想提供给使馆的其他签证申请信息", labelEn: "Any other information you want to provide for the visa application" },
+    {
+      id: "businessVisitDetails",
+      type: "textarea",
+      labelZh: "如申请商务签证，请填写邀请人、邀请公司英文名、公司地址、电话及主营业务",
+      labelEn: "For business visits, provide inviter, inviting company name, company address, phone, and main business",
+    },
+    {
+      id: "familyVisitDetails",
+      type: "textarea",
+      labelZh: "如申请探亲签证，请填写亲人姓名、地址、电话、邮箱、护照号、是否住其家中、资助记录、工作单位、最后见面时间地点，以及在英国所有亲属信息",
+      labelEn: "For family visits, provide relative's name, address, phone, email, passport number, accommodation, sponsorship history, employer, last meeting, and all UK relatives",
+    },
+  ],
+};
+
 export const questionnaireTemplates: QuestionnaireTemplate[] = [
   {
     key: "settlement",
@@ -511,6 +738,28 @@ export const questionnaireTemplates: QuestionnaireTemplate[] = [
         includeFutureUkAddress: true,
       }),
       workerEmploymentSection,
+    ],
+  },
+  {
+    key: "standard_visitor",
+    titleZh: "英国旅游签问题清单",
+    titleEn: "UK Standard Visitor Questionnaire",
+    descriptionZh: "用于英国旅游、探亲访友或商务访问签证的信息收集。",
+    descriptionEn: "Information collection for UK tourism, family/friend visit, or business visitor applications.",
+    sections: [
+      visitorPersonalSection,
+      {
+        id: "visitor_address",
+        titleZh: "联络地址",
+        titleEn: "Contact Address",
+        fields: [addressHistoryField],
+      },
+      visitorFamilySection,
+      visitorTravelSection,
+      visitorTripSection,
+      visitorEmploymentSection,
+      visitorFinanceSection,
+      visitorAdditionalSection,
     ],
   },
   {
@@ -611,4 +860,91 @@ export const questionnaireTemplates: QuestionnaireTemplate[] = [
 
 export function getQuestionnaireTemplate(key: string) {
   return questionnaireTemplates.find((template) => template.key === key) ?? null;
+}
+
+const questionnaireFieldTypes = new Set<QuestionnaireFieldType>([
+  "text",
+  "email",
+  "tel",
+  "date",
+  "month",
+  "textarea",
+  "boolean",
+  "select",
+  "repeater",
+]);
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function isQuestionnaireField(value: unknown): value is QuestionnaireField {
+  if (!isPlainRecord(value)) {
+    return false;
+  }
+
+  if (
+    typeof value.id !== "string" ||
+    !questionnaireFieldTypes.has(value.type as QuestionnaireFieldType) ||
+    typeof value.labelZh !== "string" ||
+    typeof value.labelEn !== "string"
+  ) {
+    return false;
+  }
+
+  if (value.type === "repeater") {
+    return Array.isArray(value.fields) && value.fields.every(isQuestionnaireField);
+  }
+
+  if (value.options !== undefined) {
+    return (
+      Array.isArray(value.options) &&
+      value.options.every(
+        (option) =>
+          isPlainRecord(option) &&
+          typeof option.value === "string" &&
+          typeof option.labelZh === "string" &&
+          typeof option.labelEn === "string"
+      )
+    );
+  }
+
+  return true;
+}
+
+export function isQuestionnaireTemplate(
+  value: unknown
+): value is QuestionnaireTemplate {
+  if (!isPlainRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.key === "string" &&
+    typeof value.titleZh === "string" &&
+    typeof value.titleEn === "string" &&
+    typeof value.descriptionZh === "string" &&
+    typeof value.descriptionEn === "string" &&
+    Array.isArray(value.sections) &&
+    value.sections.every(
+      (section) =>
+        isPlainRecord(section) &&
+        typeof section.id === "string" &&
+        typeof section.titleZh === "string" &&
+        typeof section.titleEn === "string" &&
+        Array.isArray(section.fields) &&
+        section.fields.every(isQuestionnaireField)
+    )
+  );
+}
+
+export function getQuestionnaireTemplateSnapshot(
+  templateKey: string,
+  customTemplate: unknown
+) {
+  if (isQuestionnaireTemplate(customTemplate)) {
+    return customTemplate;
+  }
+
+  return getQuestionnaireTemplate(templateKey);
 }

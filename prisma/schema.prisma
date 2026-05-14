@@ -84,6 +84,7 @@ model QuestionnaireLink {
   caseId      String
   token       String   @unique
   templateKey String
+  customTemplate Json?
   status      String   @default("active")
   expiresAt   DateTime?
   currentUses Int      @default(0)

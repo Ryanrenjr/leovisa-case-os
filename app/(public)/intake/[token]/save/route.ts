@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
-import { getQuestionnaireTemplate } from "../../../../../lib/questionnaires/templates";
+import { getQuestionnaireTemplateSnapshot } from "../../../../../lib/questionnaires/templates";
 
 type RouteContext = {
   params: Promise<{
@@ -38,7 +38,10 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "link_unavailable" }, { status: 404 });
   }
 
-  const template = getQuestionnaireTemplate(link.templateKey);
+  const template = getQuestionnaireTemplateSnapshot(
+    link.templateKey,
+    link.customTemplate
+  );
   const isExpired = link.expiresAt && new Date(link.expiresAt) < new Date();
 
   if (!template || link.status !== "active" || isExpired) {

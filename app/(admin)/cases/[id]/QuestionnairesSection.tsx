@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import ConfirmSubmitButton from "@/components/ConfirmSubmitButton";
 import StatusBadge from "@/components/StatusBadge";
 import {
-  getQuestionnaireTemplate,
+  getQuestionnaireTemplateSnapshot,
   questionnaireTemplates,
   type QuestionnaireField,
+  type QuestionnaireFieldType,
+  type QuestionnaireSection,
   type QuestionnaireTemplate,
 } from "../../../../lib/questionnaires/templates";
 
@@ -23,6 +25,7 @@ type QuestionnaireLinkItem = {
   id: string;
   token: string;
   templateKey: string;
+  customTemplate?: unknown;
   status: string;
   expiresAt: Date | string | null;
   currentUses: number;
@@ -45,6 +48,58 @@ function getLabel(field: QuestionnaireField, lang: "en" | "zh") {
 
 function getTemplateLabel(template: QuestionnaireTemplate, lang: "en" | "zh") {
   return lang === "zh" ? template.titleZh : template.titleEn;
+}
+
+const customQuestionTypes: {
+  value: QuestionnaireFieldType | "yes_no";
+  labelZh: string;
+  labelEn: string;
+}[] = [
+  { value: "text", labelZh: "短文本", labelEn: "Short Text" },
+  { value: "textarea", labelZh: "长文本", labelEn: "Long Text" },
+  { value: "date", labelZh: "日期", labelEn: "Date" },
+  { value: "month", labelZh: "年月", labelEn: "Month" },
+  { value: "email", labelZh: "邮箱", labelEn: "Email" },
+  { value: "tel", labelZh: "电话", labelEn: "Phone" },
+  { value: "yes_no", labelZh: "是/否", labelEn: "Yes/No" },
+];
+
+const yesNoOptions = [
+  { value: "yes", labelZh: "是", labelEn: "Yes" },
+  { value: "no", labelZh: "否", labelEn: "No" },
+];
+
+function cloneTemplate(template: QuestionnaireTemplate): QuestionnaireTemplate {
+  return JSON.parse(JSON.stringify(template)) as QuestionnaireTemplate;
+}
+
+function getTemplateByKey(templateKey: string) {
+  return (
+    questionnaireTemplates.find((template) => template.key === templateKey) ??
+    questionnaireTemplates[0]!
+  );
+}
+
+function createCustomField(
+  section: QuestionnaireSection,
+  labelZh: string,
+  labelEn: string,
+  type: QuestionnaireFieldType | "yes_no",
+  required: boolean
+): QuestionnaireField {
+  const normalizedType: QuestionnaireFieldType =
+    type === "yes_no" ? "select" : type;
+
+  return {
+    id: `custom_${section.id}_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 8)}`,
+    type: normalizedType,
+    labelZh,
+    labelEn,
+    required,
+    ...(type === "yes_no" ? { options: yesNoOptions } : {}),
+  };
 }
 
 function getLinkDisplayStatus(link: QuestionnaireLinkItem) {
@@ -212,6 +267,20 @@ export default function QuestionnairesSection({
   const [expandedSubmissionId, setExpandedSubmissionId] = useState("");
   const [showAllLinks, setShowAllLinks] = useState(false);
   const [copiedToken, setCopiedToken] = useState("");
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState(
+    questionnaireTemplates[0]?.key ?? ""
+  );
+  const [editableTemplate, setEditableTemplate] = useState<QuestionnaireTemplate>(
+    () => cloneTemplate(questionnaireTemplates[0]!)
+  );
+  const [newQuestionSectionId, setNewQuestionSectionId] = useState(
+    questionnaireTemplates[0]?.sections[0]?.id ?? ""
+  );
+  const [newQuestionLabelZh, setNewQuestionLabelZh] = useState("");
+  const [newQuestionLabelEn, setNewQuestionLabelEn] = useState("");
+  const [newQuestionType, setNewQuestionType] =
+    useState<QuestionnaireFieldType | "yes_no">("text");
+  const [newQuestionRequired, setNewQuestionRequired] = useState(false);
   const baseUrl =
     typeof window === "undefined"
       ? process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
@@ -223,12 +292,17 @@ export default function QuestionnairesSection({
           ...submission,
           linkId: link.id,
           linkToken: link.token,
+          linkTemplate: link.customTemplate,
         }))
       ),
     [links]
   );
   const hasMoreLinks = links.length > 3;
   const visibleLinks = showAllLinks ? links : links.slice(0, 3);
+  const editableQuestionCount = editableTemplate.sections.reduce(
+    (sum, section) => sum + section.fields.length,
+    0
+  );
 
   function getShareUrl(token: string) {
     const origin =
@@ -241,6 +315,61 @@ export default function QuestionnairesSection({
     const url = getShareUrl(token);
     await navigator.clipboard.writeText(url);
     setCopiedToken(token);
+  }
+
+  function selectTemplate(templateKey: string) {
+    const template = getTemplateByKey(templateKey);
+
+    setSelectedTemplateKey(template.key);
+    setEditableTemplate(cloneTemplate(template));
+    setNewQuestionSectionId(template.sections[0]?.id ?? "");
+  }
+
+  function removeQuestion(sectionId: string, fieldId: string) {
+    setEditableTemplate((prev) => ({
+      ...prev,
+      sections: prev.sections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              fields: section.fields.filter((field) => field.id !== fieldId),
+            }
+          : section
+      ),
+    }));
+  }
+
+  function addCustomQuestion() {
+    const labelZh = newQuestionLabelZh.trim();
+    const labelEn = newQuestionLabelEn.trim() || labelZh;
+
+    if (!labelZh || !newQuestionSectionId) {
+      return;
+    }
+
+    setEditableTemplate((prev) => ({
+      ...prev,
+      sections: prev.sections.map((section) =>
+        section.id === newQuestionSectionId
+          ? {
+              ...section,
+              fields: [
+                ...section.fields,
+                createCustomField(
+                  section,
+                  labelZh,
+                  labelEn,
+                  newQuestionType,
+                  newQuestionRequired
+                ),
+              ],
+            }
+          : section
+      ),
+    }));
+    setNewQuestionLabelZh("");
+    setNewQuestionLabelEn("");
+    setNewQuestionRequired(false);
   }
 
   return (
@@ -258,15 +387,22 @@ export default function QuestionnairesSection({
         </div>
 
         <form
+          id="questionnaire-generator-form"
           action={onGenerateAction}
           className="flex w-full flex-col gap-3 md:w-auto md:min-w-[420px] md:flex-row"
         >
           <input type="hidden" name="caseId" value={caseId} />
+          <input
+            type="hidden"
+            name="customTemplate"
+            value={JSON.stringify(editableTemplate)}
+          />
           <select
             name="templateKey"
             className="w-full px-4 py-3 text-sm md:min-w-[280px]"
             required
-            defaultValue={questionnaireTemplates[0]?.key ?? ""}
+            value={selectedTemplateKey}
+            onChange={(event) => selectTemplate(event.target.value)}
           >
             {questionnaireTemplates.map((template) => (
               <option key={template.key} value={template.key}>
@@ -283,6 +419,161 @@ export default function QuestionnairesSection({
         </form>
       </div>
 
+      <div className="mb-6 rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-5">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 className="text-[20px] font-bold text-[#191f28]">
+              {lang === "zh" ? "发送前编辑问题" : "Edit Questions Before Sending"}
+            </h3>
+            <p className="mt-1 text-sm text-[#6b7684]">
+              {lang === "zh"
+                ? "选择模板后，可以删除不需要的问题，也可以添加顾问自己的问题。生成链接时会保存当前版本。"
+                : "After choosing a template, remove questions you do not need or add your own. The generated link keeps this version."}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#4e5968]">
+              {lang === "zh"
+                ? `${editableQuestionCount} 个问题`
+                : `${editableQuestionCount} questions`}
+            </span>
+            <button
+              type="button"
+              onClick={() => selectTemplate(selectedTemplateKey)}
+              className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+            >
+              {lang === "zh" ? "重置" : "Reset"}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_360px]">
+          <div className="max-h-[520px] space-y-4 overflow-auto rounded-2xl border border-[#e8edf3] bg-white p-4">
+            {editableTemplate.sections.map((section) => (
+              <div key={section.id}>
+                <h4 className="mb-2 text-sm font-bold text-[#191f28]">
+                  {lang === "zh" ? section.titleZh : section.titleEn}
+                </h4>
+                {section.fields.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-[#dfe3e8] px-3 py-2 text-sm text-[#8b95a1]">
+                    {lang === "zh"
+                      ? "该分组暂无问题"
+                      : "No questions in this section"}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {section.fields.map((field) => (
+                      <div
+                        key={field.id}
+                        className="flex items-start justify-between gap-3 rounded-xl border border-[#eef1f4] bg-[#fafbfc] px-3 py-2"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-[#333d4b]">
+                            {getLabel(field, lang)}
+                            {field.required ? (
+                              <span className="text-[#f04452]"> *</span>
+                            ) : null}
+                          </p>
+                          <p className="mt-1 text-xs text-[#8b95a1]">
+                            {field.type === "repeater"
+                              ? lang === "zh"
+                                ? "可重复问题组"
+                                : "Repeating group"
+                              : field.type}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeQuestion(section.id, field.id)}
+                          className="toss-danger-button shrink-0 px-3 py-2 text-xs font-semibold"
+                        >
+                          {lang === "zh" ? "删除" : "Remove"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-2xl border border-[#e8edf3] bg-white p-4 xl:self-start">
+            <p className="mb-3 text-sm font-bold text-[#191f28]">
+              {lang === "zh" ? "新增问题" : "Add Question"}
+            </p>
+            <div className="space-y-3">
+              <select
+                value={newQuestionSectionId}
+                onChange={(event) => setNewQuestionSectionId(event.target.value)}
+                className="w-full px-4 py-3 text-sm"
+              >
+                {editableTemplate.sections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {lang === "zh" ? section.titleZh : section.titleEn}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={newQuestionType}
+                onChange={(event) =>
+                  setNewQuestionType(
+                    event.target.value as QuestionnaireFieldType | "yes_no"
+                  )
+                }
+                className="w-full px-4 py-3 text-sm"
+              >
+                {customQuestionTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {lang === "zh" ? type.labelZh : type.labelEn}
+                  </option>
+                ))}
+              </select>
+              <input
+                value={newQuestionLabelZh}
+                onChange={(event) => setNewQuestionLabelZh(event.target.value)}
+                placeholder={lang === "zh" ? "中文问题" : "Chinese question"}
+                className="w-full px-4 py-3 text-sm"
+              />
+              <input
+                value={newQuestionLabelEn}
+                onChange={(event) => setNewQuestionLabelEn(event.target.value)}
+                placeholder={
+                  lang === "zh" ? "英文问题（可选）" : "English question, optional"
+                }
+                className="w-full px-4 py-3 text-sm"
+              />
+              <label className="inline-flex items-center gap-2 text-sm font-semibold text-[#4e5968]">
+                <input
+                  type="checkbox"
+                  checked={newQuestionRequired}
+                  onChange={(event) =>
+                    setNewQuestionRequired(event.target.checked)
+                  }
+                />
+                {lang === "zh" ? "设为必填" : "Required"}
+              </label>
+              <button
+                type="button"
+                onClick={addCustomQuestion}
+                className="toss-secondary-button w-full px-4 py-2 text-sm font-semibold"
+              >
+                {lang === "zh" ? "添加问题" : "Add Question"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 flex justify-end">
+          <button
+            type="submit"
+            form="questionnaire-generator-form"
+            className="toss-primary-button px-5 py-3 text-sm font-semibold"
+          >
+            {lang === "zh" ? "生成并准备发送给客户" : "Generate Link for Client"}
+          </button>
+        </div>
+      </div>
+
       {links.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#dfe3e8] bg-[#fafbfc] p-5">
           <p className="text-[15px] text-[#8b95a1]">
@@ -294,7 +585,10 @@ export default function QuestionnairesSection({
       ) : (
         <div className="space-y-4">
           {visibleLinks.map((link) => {
-            const template = getQuestionnaireTemplate(link.templateKey);
+            const template = getQuestionnaireTemplateSnapshot(
+              link.templateKey,
+              link.customTemplate
+            );
             const displayStatus = getLinkDisplayStatus(link);
             const shareUrl = getShareUrl(link.token);
 
@@ -439,7 +733,10 @@ export default function QuestionnairesSection({
 
           <div className="space-y-4">
             {latestSubmissions.map((submission) => {
-              const template = getQuestionnaireTemplate(submission.templateKey);
+              const template = getQuestionnaireTemplateSnapshot(
+                submission.templateKey,
+                submission.linkTemplate
+              );
               const expanded = expandedSubmissionId === submission.id;
 
               return (
