@@ -48,9 +48,42 @@ export default function DocumentsSection({
   lang,
 }: DocumentsSectionProps) {
   const [expanded, setExpanded] = useState(false);
+  const [archiveFilter, setArchiveFilter] = useState("all");
 
-  const visibleDocuments = expanded ? documents : documents.slice(0, 3);
-  const hasMore = documents.length > 3;
+  const archiveFilterItems = [
+    {
+      key: "all",
+      label: lang === "zh" ? "全部" : "All",
+      count: documents.length,
+    },
+    {
+      key: "unfiled",
+      label: lang === "zh" ? "未归档" : "Unfiled",
+      count: documents.filter((document) => !document.archiveFolder).length,
+    },
+    ...DOCUMENT_ARCHIVE_FOLDERS.map((folder) => ({
+      key: folder.key,
+      label: folder.label,
+      count: documents.filter(
+        (document) => document.archiveFolder === folder.key
+      ).length,
+    })),
+  ];
+  const filteredDocuments = documents.filter((document) => {
+    if (archiveFilter === "all") {
+      return true;
+    }
+
+    if (archiveFilter === "unfiled") {
+      return !document.archiveFolder;
+    }
+
+    return document.archiveFolder === archiveFilter;
+  });
+  const visibleDocuments = expanded
+    ? filteredDocuments
+    : filteredDocuments.slice(0, 3);
+  const hasMore = filteredDocuments.length > 3;
 
   return (
     <div id="documents-section" className="toss-card mb-8 p-8">
@@ -63,9 +96,44 @@ export default function DocumentsSection({
         </p>
       </div>
 
+      <div className="mb-6 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+        {archiveFilterItems.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => {
+              setArchiveFilter(item.key);
+              setExpanded(false);
+            }}
+            className={`flex min-h-[56px] items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${
+              archiveFilter === item.key
+                ? "border-[#3182f6] bg-[#eff6ff] text-[#1b64da]"
+                : "border-[#eef1f4] bg-white text-[#4e5968] hover:bg-[#f8fafc]"
+            }`}
+          >
+            <span className="truncate">{item.label}</span>
+            <span
+              className={`ml-3 rounded-full px-2 py-1 text-xs ${
+                archiveFilter === item.key
+                  ? "bg-[#dbeafe] text-[#1b64da]"
+                  : "bg-[#f2f4f6] text-[#8b95a1]"
+              }`}
+            >
+              {item.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
       {documents.length === 0 ? (
         <p className="text-[15px] text-[#8b95a1]">
           {lang === "zh" ? "暂无文件。" : "No documents yet."}
+        </p>
+      ) : filteredDocuments.length === 0 ? (
+        <p className="rounded-[20px] border border-[#eef1f4] bg-[#fafbfc] p-5 text-[15px] text-[#8b95a1]">
+          {lang === "zh"
+            ? "这个文件夹里暂无文件。"
+            : "No documents in this folder yet."}
         </p>
       ) : (
         <>
@@ -346,8 +414,8 @@ export default function DocumentsSection({
                     ? "收起"
                     : "Show Less"
                   : lang === "zh"
-                  ? `显示更多 (${documents.length - 3})`
-                  : `Show More (${documents.length - 3})`}
+                  ? `显示更多 (${filteredDocuments.length - 3})`
+                  : `Show More (${filteredDocuments.length - 3})`}
               </button>
             </div>
           )}
