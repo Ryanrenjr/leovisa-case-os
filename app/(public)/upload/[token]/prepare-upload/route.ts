@@ -4,6 +4,7 @@ import {
   STORAGE_BUCKET_NAME,
 } from "../../../../../lib/supabase-admin";
 import { prisma } from "../../../../../lib/prisma";
+import { buildCaseStorageFolder } from "../../../../../lib/document-archive";
 
 type RouteContext = {
   params: Promise<{
@@ -75,10 +76,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   try {
     const supabase = getSupabaseAdminClient();
-    const caseFolderName = submissionLink.case.caseCode.replace(
-      /[^a-zA-Z0-9._-]/g,
-      "_"
-    );
+    const caseFolderName = buildCaseStorageFolder(submissionLink.case.caseCode);
 
     const uploads = await Promise.all(
       files.map(async (file) => {
@@ -87,7 +85,7 @@ export async function POST(request: Request, context: RouteContext) {
           .toString(36)
           .slice(2, 8)}`;
         const normalizedFilename = `${uniquePrefix}_${safeOriginalName}`;
-        const storagePath = `${caseFolderName}/${normalizedFilename}`;
+        const storagePath = `${caseFolderName}/inbox/${normalizedFilename}`;
 
         const { data, error } = await supabase.storage
           .from(STORAGE_BUCKET_NAME)

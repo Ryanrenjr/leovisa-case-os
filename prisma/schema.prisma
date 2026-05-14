@@ -142,6 +142,8 @@ model Document {
   storageProvider    String   @default("temp")
   storagePath        String?
   storageUrl         String?
+  archiveFolder      String?
+  archivedAt         DateTime?
   reviewStatus       String   @default("uploaded")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

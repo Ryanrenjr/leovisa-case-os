@@ -13,6 +13,7 @@ import {
   deleteDocument,
   updateDocumentReviewStatus,
   updateDocumentDisplayName,
+  archiveDocument,
 } from "./document-actions";
 import DocumentsSection from "./DocumentsSection";
 import UploadLinksSection from "./UploadLinksSection";
@@ -454,6 +455,7 @@ export default async function CaseDetailPage({
           onDeleteAction={deleteDocument}
           onUpdateReviewStatusAction={updateDocumentReviewStatus}
           onUpdateDisplayNameAction={updateDocumentDisplayName}
+          onArchiveAction={archiveDocument}
           lang={lang}
         />
 

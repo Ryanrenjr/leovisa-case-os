@@ -3,10 +3,20 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { prisma } from "../../../../lib/prisma";
+import {
+  buildCaseStorageFolder,
+  getDocumentArchiveFolder,
+} from "../../../../lib/document-archive";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const bucketName = "client-documents";
+
+function getStorageFilename(storagePath: string, fallbackName: string) {
+  const filename = storagePath.split("/").filter(Boolean).pop();
+
+  return filename || fallbackName.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
 
 export async function deleteDocument(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
@@ -203,4 +213,139 @@ export async function updateDocumentDisplayName(formData: FormData) {
   });
 
   redirect(`/cases/${caseId}`);
+}
+
+export async function archiveDocument(formData: FormData) {
+  const caseId = formData.get("caseId")?.toString().trim() || "";
+  const documentId = formData.get("documentId")?.toString().trim() || "";
+  const archiveFolderKey =
+    formData.get("archiveFolder")?.toString().trim() || "";
+
+  if (!caseId || !documentId || !archiveFolderKey) {
+    throw new Error("Case ID, document ID, and archive folder are required.");
+  }
+
+  const archiveFolder = getDocumentArchiveFolder(archiveFolderKey);
+
+  if (!archiveFolder) {
+    throw new Error("Archive folder is invalid.");
+  }
+
+  const existingDocument = await prisma.document.findUnique({
+    where: { id: documentId },
+    select: {
+      id: true,
+      caseId: true,
+      originalFilename: true,
+      normalizedFilename: true,
+      storageProvider: true,
+      storagePath: true,
+      storageUrl: true,
+      docType: true,
+      displayName: true,
+      archiveFolder: true,
+      archivedAt: true,
+      case: {
+        select: {
+          caseCode: true,
+        },
+      },
+    },
+  });
+
+  if (!existingDocument) {
+    throw new Error("Document not found.");
+  }
+
+  if (existingDocument.caseId !== caseId) {
+    throw new Error("Document does not belong to this case.");
+  }
+
+  let nextStoragePath = existingDocument.storagePath;
+
+  if (
+    existingDocument.storageProvider === "supabase_storage" &&
+    existingDocument.storagePath
+  ) {
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      throw new Error(
+        "Supabase environment variables are missing for storage archiving."
+      );
+    }
+
+    const caseFolderName = buildCaseStorageFolder(
+      existingDocument.case.caseCode
+    );
+    const filename = getStorageFilename(
+      existingDocument.storagePath,
+      existingDocument.normalizedFilename || existingDocument.originalFilename
+    );
+    nextStoragePath = `${caseFolderName}/${archiveFolder.label}/${filename}`;
+
+    if (nextStoragePath !== existingDocument.storagePath) {
+      const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+      const bucket = supabase.storage.from(bucketName);
+      const { error: copyError } = await bucket.copy(
+        existingDocument.storagePath,
+        nextStoragePath
+      );
+
+      if (copyError) {
+        throw new Error(`Failed to copy Supabase file: ${copyError.message}`);
+      }
+
+      const { error: removeError } = await bucket.remove([
+        existingDocument.storagePath,
+      ]);
+
+      if (removeError) {
+        throw new Error(
+          `File archived, but failed to remove old Supabase file: ${removeError.message}`
+        );
+      }
+    }
+  }
+
+  const archivedAt = new Date();
+
+  await prisma.document.update({
+    where: { id: documentId },
+    data: {
+      archiveFolder: archiveFolder.key,
+      archivedAt,
+      storagePath: nextStoragePath,
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      caseId: existingDocument.caseId,
+      relatedEntityType: "document",
+      relatedEntityId: existingDocument.id,
+      actionType: "archive_document",
+      actorType: "user",
+      success: true,
+      oldValue: {
+        archiveFolder: existingDocument.archiveFolder,
+        archivedAt: existingDocument.archivedAt?.toISOString() ?? null,
+        storagePath: existingDocument.storagePath,
+        originalFilename: existingDocument.originalFilename,
+        normalizedFilename: existingDocument.normalizedFilename,
+        displayName: existingDocument.displayName,
+        docType: existingDocument.docType,
+      },
+      newValue: {
+        archiveFolder: archiveFolder.key,
+        archiveFolderLabel: archiveFolder.label,
+        archivedAt: archivedAt.toISOString(),
+        storagePath: nextStoragePath,
+        originalFilename: existingDocument.originalFilename,
+        normalizedFilename: existingDocument.normalizedFilename,
+        displayName: existingDocument.displayName,
+        docType: existingDocument.docType,
+      },
+    },
+  });
+
+  redirect(`/cases/${caseId}#documents-section`);
 }

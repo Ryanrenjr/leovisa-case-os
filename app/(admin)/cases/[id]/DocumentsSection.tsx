@@ -3,6 +3,10 @@
 import { useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
+import {
+  DOCUMENT_ARCHIVE_FOLDERS,
+  getDocumentArchiveLabel,
+} from "../../../../lib/document-archive";
 
 type DocumentItem = {
   id: string;
@@ -16,6 +20,8 @@ type DocumentItem = {
   storageProvider: string;
   storageUrl: string | null;
   storagePath: string | null;
+  archiveFolder: string | null;
+  archivedAt: Date | null;
   createdAt: Date;
   submission: {
     submittedByName: string | null;
@@ -28,6 +34,7 @@ type DocumentsSectionProps = {
   onDeleteAction: (formData: FormData) => void;
   onUpdateReviewStatusAction: (formData: FormData) => void;
   onUpdateDisplayNameAction: (formData: FormData) => void;
+  onArchiveAction: (formData: FormData) => void;
   lang: "en" | "zh";
 };
 
@@ -37,6 +44,7 @@ export default function DocumentsSection({
   onDeleteAction,
   onUpdateReviewStatusAction,
   onUpdateDisplayNameAction,
+  onArchiveAction,
   lang,
 }: DocumentsSectionProps) {
   const [expanded, setExpanded] = useState(false);
@@ -162,6 +170,23 @@ export default function DocumentsSection({
 
                   <div>
                     <p className="toss-label mb-2">
+                      {lang === "zh" ? "归档位置" : "Archive Folder"}
+                    </p>
+                    <p className="text-[15px] font-semibold text-[#4e5968]">
+                      {getDocumentArchiveLabel(
+                        document.archiveFolder,
+                        lang === "zh" ? "未归档" : "Unfiled"
+                      )}
+                    </p>
+                    {document.archivedAt && (
+                      <p className="mt-1 text-xs text-[#8b95a1]">
+                        {new Date(document.archivedAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="toss-label mb-2">
                       {lang === "zh" ? "上传时间" : "Uploaded At"}
                     </p>
                     <p className="text-[15px] text-[#4e5968]">
@@ -219,6 +244,46 @@ export default function DocumentsSection({
                         className="toss-secondary-button px-4 py-3 text-sm font-semibold"
                       >
                         {lang === "zh" ? "保存名称" : "Save Name"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <div className="mt-4 rounded-[20px] border border-[#eef1f4] bg-[#fafbfc] p-4">
+                  <p className="toss-label mb-3">
+                    {lang === "zh" ? "文件归档" : "File Archive"}
+                  </p>
+
+                  <form action={onArchiveAction} className="space-y-3">
+                    <input type="hidden" name="caseId" value={caseId} />
+                    <input
+                      type="hidden"
+                      name="documentId"
+                      value={document.id}
+                    />
+
+                    <select
+                      name="archiveFolder"
+                      defaultValue={document.archiveFolder ?? ""}
+                      className="w-full px-4 py-3"
+                      required
+                    >
+                      <option value="" disabled>
+                        {lang === "zh" ? "选择目标文件夹" : "Select folder"}
+                      </option>
+                      {DOCUMENT_ARCHIVE_FOLDERS.map((folder) => (
+                        <option key={folder.key} value={folder.key}>
+                          {folder.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className="toss-secondary-button px-4 py-3 text-sm font-semibold"
+                      >
+                        {lang === "zh" ? "放入文件夹" : "Move to Folder"}
                       </button>
                     </div>
                   </form>
