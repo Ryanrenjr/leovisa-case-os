@@ -4,6 +4,7 @@ import { useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
 import ContractSigningActions from "./ContractSigningActions";
+import { formatDateTime } from "../../../../lib/format-date";
 
 type ContractItem = {
   id: string;
@@ -226,7 +227,7 @@ export default function ContractsSection({
                       {lang === "zh" ? "生成时间" : "Generated At"}
                     </p>
                     <p className="text-[15px] text-[#4e5968]">
-                      {new Date(contract.generatedAt).toLocaleString()}
+                      {formatDateTime(contract.generatedAt)}
                     </p>
                   </div>
 
@@ -275,9 +276,7 @@ export default function ContractsSection({
                       {lang === "zh" ? "发送时间" : "Sent At"}
                     </p>
                     <p className="text-[15px] text-[#4e5968]">
-                      {contract.sentAt
-                        ? new Date(contract.sentAt).toLocaleString()
-                        : "-"}
+                      {formatDateTime(contract.sentAt)}
                     </p>
                   </div>
 
@@ -286,9 +285,7 @@ export default function ContractsSection({
                       {lang === "zh" ? "完成时间" : "Completed At"}
                     </p>
                     <p className="text-[15px] text-[#4e5968]">
-                      {contract.completedAt
-                        ? new Date(contract.completedAt).toLocaleString()
-                        : "-"}
+                      {formatDateTime(contract.completedAt)}
                     </p>
                   </div>
                 </div>

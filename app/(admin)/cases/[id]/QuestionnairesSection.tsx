@@ -11,6 +11,7 @@ import {
   type QuestionnaireSection,
   type QuestionnaireTemplate,
 } from "../../../../lib/questionnaires/templates";
+import { formatDateTime } from "../../../../lib/format-date";
 
 type QuestionnaireSubmissionItem = {
   id: string;
@@ -681,9 +682,7 @@ export default function QuestionnairesSection({
                       {lang === "zh" ? "过期时间" : "Expires At"}
                     </p>
                     <p className="text-[15px] text-[#4e5968]">
-                      {link.expiresAt
-                        ? new Date(link.expiresAt).toLocaleString()
-                        : "-"}
+                      {formatDateTime(link.expiresAt)}
                     </p>
                   </div>
                   <div>
@@ -750,11 +749,11 @@ export default function QuestionnairesSection({
                       </p>
                       <p className="mt-1 text-sm text-[#6b7684]">
                         {lang === "zh" ? "更新时间：" : "Updated: "}
-                        {new Date(submission.updatedAt).toLocaleString()}
+                        {formatDateTime(submission.updatedAt)}
                         {submission.submittedAt
-                          ? ` · ${lang === "zh" ? "提交时间：" : "Submitted: "}${new Date(
+                          ? ` · ${lang === "zh" ? "提交时间：" : "Submitted: "}${formatDateTime(
                               submission.submittedAt
-                            ).toLocaleString()}`
+                            )}`
                           : ""}
                       </p>
                     </div>

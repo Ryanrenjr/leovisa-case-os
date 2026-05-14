@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
 import { getServiceTypeLabel } from "../../../../lib/service-options";
 import { getQuestionnaireTemplateSnapshot } from "../../../../lib/questionnaires/templates";
+import { formatDateTime } from "../../../../lib/format-date";
 import IntakeFormContent from "./IntakeFormContent";
 
 type IntakePageProps = {
@@ -83,7 +84,7 @@ export default async function IntakePage({
       serviceType={getServiceTypeLabel(link.case.serviceType)}
       country={link.case.country}
       expiresAtText={
-        link.expiresAt ? new Date(link.expiresAt).toLocaleString() : "No expiry"
+        link.expiresAt ? formatDateTime(link.expiresAt) : "No expiry"
       }
     />
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
+import { formatDateTime } from "../../../../lib/format-date";
 
 type SubmissionItem = {
   id: string;
@@ -123,7 +124,7 @@ export default function SubmissionsSection({
                     {lang === "zh" ? "提交时间" : "Submitted At"}
                   </p>
                   <p className="text-[15px] text-[#4e5968]">
-                    {new Date(submission.submittedAt).toLocaleString()}
+                    {formatDateTime(submission.submittedAt)}
                   </p>
                 </div>
 

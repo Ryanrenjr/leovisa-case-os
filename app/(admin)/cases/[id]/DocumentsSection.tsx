@@ -7,6 +7,7 @@ import {
   DOCUMENT_ARCHIVE_FOLDERS,
   getDocumentArchiveLabel,
 } from "../../../../lib/document-archive";
+import { formatDateTime } from "../../../../lib/format-date";
 
 type DocumentItem = {
   id: string;
@@ -248,7 +249,7 @@ export default function DocumentsSection({
                     </p>
                     {document.archivedAt && (
                       <p className="mt-1 text-xs text-[#8b95a1]">
-                        {new Date(document.archivedAt).toLocaleString()}
+                        {formatDateTime(document.archivedAt)}
                       </p>
                     )}
                   </div>
@@ -258,7 +259,7 @@ export default function DocumentsSection({
                       {lang === "zh" ? "上传时间" : "Uploaded At"}
                     </p>
                     <p className="text-[15px] text-[#4e5968]">
-                      {new Date(document.createdAt).toLocaleString()}
+                      {formatDateTime(document.createdAt)}
                     </p>
                   </div>
 

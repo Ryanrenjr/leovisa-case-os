@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "../../../../lib/prisma";
 import { getServiceTypeLabel } from "../../../../lib/service-options";
+import { formatDateTime } from "../../../../lib/format-date";
 import UploadPortalContent from "./UploadPortalContent";
 
 type UploadPortalPageProps = {
@@ -102,7 +103,7 @@ export default async function UploadPortalPage({
       status={submissionLink.status}
       expiresAtText={
         submissionLink.expiresAt
-          ? new Date(submissionLink.expiresAt).toLocaleString()
+          ? formatDateTime(submissionLink.expiresAt)
           : "No expiry"
       }
       token={submissionLink.token}

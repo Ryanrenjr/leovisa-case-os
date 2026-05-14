@@ -3,6 +3,7 @@
 import UploadLinkActions from "./UploadLinkActions";
 import { useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
+import { formatDateTime } from "../../../../lib/format-date";
 
 type SubmissionLinkItem = {
   id: string;
@@ -129,9 +130,7 @@ export default function UploadLinksSection({
                     {lang === "zh" ? "过期时间" : "Expires At"}
                   </p>
                   <p className="text-[15px] text-[#4e5968]">
-                    {link.expiresAt
-                      ? new Date(link.expiresAt).toLocaleString()
-                      : "-"}
+                    {formatDateTime(link.expiresAt)}
                   </p>
                 </div>
 

@@ -5,6 +5,7 @@ import { prisma } from "../../../lib/prisma";
 import { getAdminSessionUserId } from "../../../lib/auth";
 import { getLangFromCookie } from "../../../lib/i18n";
 import ConfirmSubmitButton from "../../../components/ConfirmSubmitButton";
+import { formatDateTime } from "../../../lib/format-date";
 import {
   createAdminAction,
   toggleAdminStatusAction,
@@ -244,7 +245,7 @@ export default async function AdminsPage({ searchParams }: AdminsPageProps) {
                       </p>
                       <p className="mt-1 text-[14px] text-[#8b95a1]">
                         {lang === "zh" ? "创建时间" : "Created At"}:{" "}
-                        {new Date(admin.createdAt).toLocaleString()}
+                        {formatDateTime(admin.createdAt)}
                       </p>
                     </div>
 

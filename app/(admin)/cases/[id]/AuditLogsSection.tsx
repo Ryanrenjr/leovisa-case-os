@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
+import { formatDateTime } from "../../../../lib/format-date";
 
 type AuditLogItem = {
   id: string;
@@ -208,7 +209,7 @@ export default function AuditLogsSection({
                       {lang === "zh" ? "时间" : "Created At"}
                     </p>
                     <p className="text-[15px] text-[#4e5968]">
-                      {new Date(log.createdAt).toLocaleString()}
+                      {formatDateTime(log.createdAt)}
                     </p>
                   </div>
                 </div>
