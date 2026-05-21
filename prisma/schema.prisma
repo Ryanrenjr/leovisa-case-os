@@ -17,6 +17,7 @@ model User {
 
   createdLinks       SubmissionLink[] @relation("CreatedByUser")
   generatedContracts Contract[]       @relation("GeneratedByUser")
+  generatedInvoices  Invoice[]        @relation("GeneratedInvoiceByUser")
 }
 
 model Client {
@@ -63,6 +64,7 @@ model Case {
   documents            Document[]
   checklistItems       DocumentChecklistItem[]
   contracts            Contract[]
+  invoices             Invoice[]
   auditLogs            AuditLog[]
 }
 
@@ -203,6 +205,30 @@ model Contract {
 
   case            Case  @relation(fields: [caseId], references: [id])
   generatedByUser User? @relation("GeneratedByUser", fields: [generatedBy], references: [id])
+}
+
+model Invoice {
+  id           String   @id @default(uuid())
+  caseId       String
+  invoiceRef   String
+  invoiceDate  DateTime
+  billTo       String
+  instructions String
+  items        Json
+  subtotal     Decimal  @db.Decimal(10, 2)
+  total        Decimal  @db.Decimal(10, 2)
+  templateName String
+  versionNo    Int      @default(1)
+  generatedBy  String?
+  filePath     String?
+  fileUrl      String?
+  pdfPath      String?
+  pdfUrl       String?
+  status       String   @default("generated")
+  generatedAt  DateTime @default(now())
+
+  case            Case  @relation(fields: [caseId], references: [id])
+  generatedByUser User? @relation("GeneratedInvoiceByUser", fields: [generatedBy], references: [id])
 }
 
 model AuditLog {

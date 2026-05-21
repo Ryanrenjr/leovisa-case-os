@@ -237,6 +237,9 @@ export async function deleteCase(formData: FormData) {
       contracts: {
         select: { id: true },
       },
+      invoices: {
+        select: { id: true },
+      },
     },
   });
 
@@ -251,7 +254,8 @@ export async function deleteCase(formData: FormData) {
     existingCase.questionnaireLinks.length > 0 ||
     existingCase.questionnaireSubmissions.length > 0 ||
     existingCase.checklistItems.length > 0 ||
-    existingCase.contracts.length > 0;
+    existingCase.contracts.length > 0 ||
+    existingCase.invoices.length > 0;
 
   if (hasLinkedData) {
     redirect(`/cases/${caseId}?deleteError=linked_data`);

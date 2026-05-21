@@ -20,12 +20,14 @@ import UploadLinksSection from "./UploadLinksSection";
 import QuestionnairesSection from "./QuestionnairesSection";
 import SubmissionsSection from "./SubmissionsSection";
 import ContractsSection from "./ContractsSection";
+import InvoicesSection from "./InvoicesSection";
 import AuditLogsSection from "./AuditLogsSection";
 import ChecklistSection from "./ChecklistSection";
 import StatusBadge from "../../../../components/StatusBadge";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
 import { deleteSubmission } from "./submission-actions";
 import { deleteContract, sendContractForSignature } from "./contract-actions";
+import { deleteInvoice } from "./invoice-actions";
 import {
   createChecklistItem,
   updateChecklistItem,
@@ -126,6 +128,11 @@ export default async function CaseDetailPage({
           generatedAt: "desc",
         },
       },
+      invoices: {
+        orderBy: {
+          generatedAt: "desc",
+        },
+      },
       submissionLinks: true,
       questionnaireLinks: {
         orderBy: {
@@ -172,6 +179,11 @@ export default async function CaseDetailPage({
     lang
   );
   const defaultSignerEmail = caseItem.client.email?.trim() || "";
+  const invoices = caseItem.invoices.map((invoice) => ({
+    ...invoice,
+    subtotal: invoice.subtotal.toString(),
+    total: invoice.total.toString(),
+  }));
 
   return (
     <main className="toss-page">
@@ -239,6 +251,13 @@ export default async function CaseDetailPage({
 >
   {lang === "zh" ? "生成合同" : "Generate Contract"}
 </Link>
+
+              <Link
+                href={`/cases/${caseItem.id}/invoices/new`}
+                className="toss-secondary-button px-5 py-3 text-sm font-semibold"
+              >
+                {lang === "zh" ? "生成 Invoice" : "Generate Invoice"}
+              </Link>
 
               <form action={deleteCase}>
                 <input type="hidden" name="caseId" value={caseItem.id} />
@@ -369,7 +388,7 @@ export default async function CaseDetailPage({
           </div>
         </div>
 
-        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
           <a href="#documents-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "文件" : "Documents"}</p>
             <h2 className="toss-stat-number">{caseItem.documents.length}</h2>
@@ -378,6 +397,11 @@ export default async function CaseDetailPage({
           <a href="#contracts-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "合同" : "Contracts"}</p>
             <h2 className="toss-stat-number">{caseItem.contracts.length}</h2>
+          </a>
+
+          <a href="#invoices-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+            <p className="toss-label mb-3">Invoices</p>
+            <h2 className="toss-stat-number">{caseItem.invoices.length}</h2>
           </a>
 
           <a href="#upload-links-section" className="toss-card block p-6 hover:-translate-y-[1px]">
@@ -494,6 +518,13 @@ export default async function CaseDetailPage({
           onSendSignatureAction={sendContractForSignature}
           documensoConfigured={documensoConfigured}
           defaultSignerEmail={defaultSignerEmail}
+          lang={lang}
+        />
+
+        <InvoicesSection
+          caseId={caseItem.id}
+          invoices={invoices}
+          onDeleteAction={deleteInvoice}
           lang={lang}
         />
 
