@@ -262,46 +262,44 @@ export async function archiveDocument(formData: FormData) {
   }
 
   let nextStoragePath = existingDocument.storagePath;
+  let storageMoveError: string | null = null;
 
   if (
     existingDocument.storageProvider === "supabase_storage" &&
     existingDocument.storagePath
   ) {
     if (!supabaseUrl || !supabaseServiceRoleKey) {
-      throw new Error(
-        "Supabase environment variables are missing for storage archiving."
+      storageMoveError =
+        "Supabase environment variables are missing for storage archiving.";
+    } else {
+      const caseFolderName = buildCaseStorageFolder(
+        existingDocument.case.caseCode
       );
-    }
-
-    const caseFolderName = buildCaseStorageFolder(
-      existingDocument.case.caseCode
-    );
-    const filename = getStorageFilename(
-      existingDocument.storagePath,
-      existingDocument.normalizedFilename || existingDocument.originalFilename
-    );
-    nextStoragePath = `${caseFolderName}/${archiveFolder.label}/${filename}`;
-
-    if (nextStoragePath !== existingDocument.storagePath) {
-      const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-      const bucket = supabase.storage.from(bucketName);
-      const { error: copyError } = await bucket.copy(
+      const filename = getStorageFilename(
         existingDocument.storagePath,
-        nextStoragePath
+        existingDocument.normalizedFilename || existingDocument.originalFilename
       );
+      const targetStoragePath = `${caseFolderName}/archive/${archiveFolder.key}/${filename}`;
 
-      if (copyError) {
-        throw new Error(`Failed to copy Supabase file: ${copyError.message}`);
-      }
-
-      const { error: removeError } = await bucket.remove([
-        existingDocument.storagePath,
-      ]);
-
-      if (removeError) {
-        throw new Error(
-          `File archived, but failed to remove old Supabase file: ${removeError.message}`
+      if (targetStoragePath !== existingDocument.storagePath) {
+        const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+        const bucket = supabase.storage.from(bucketName);
+        const { error: moveError } = await bucket.move(
+          existingDocument.storagePath,
+          targetStoragePath
         );
+
+        if (moveError) {
+          storageMoveError = moveError.message;
+          console.error("Failed to move Supabase file during archive:", {
+            documentId: existingDocument.id,
+            from: existingDocument.storagePath,
+            to: targetStoragePath,
+            error: moveError.message,
+          });
+        } else {
+          nextStoragePath = targetStoragePath;
+        }
       }
     }
   }
@@ -339,6 +337,7 @@ export async function archiveDocument(formData: FormData) {
         archiveFolderLabel: archiveFolder.label,
         archivedAt: archivedAt.toISOString(),
         storagePath: nextStoragePath,
+        storageMoveError,
         originalFilename: existingDocument.originalFilename,
         normalizedFilename: existingDocument.normalizedFilename,
         displayName: existingDocument.displayName,
