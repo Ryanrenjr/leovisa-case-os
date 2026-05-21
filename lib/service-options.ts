@@ -14,6 +14,7 @@ const SERVICE_TYPE_LABEL_ALIASES: Record<string, string> = {
   "High Potential Individual": "High Potential Individual (HPI)",
   "Skilled Worker to Settlement": "Skilled Worker Route to Settlement",
   "Spouse to Settlement": "Spouse Route to Settlement",
+  Naturalisation: "British Citizenship / Naturalisation",
 };
 
 export function getServiceTypeLabel(serviceType: string) {
@@ -220,6 +221,19 @@ export const SERVICE_OPTIONS: ServiceOption[] = [
     businessLine: "uk_toc",
     label: "Spouse Route to Settlement",
     value: "Spouse to Settlement",
+    country: "UK",
+    isLegacy: true,
+  },
+  {
+    businessLine: "uk_toc",
+    label: "British Citizenship / Naturalisation",
+    value: "British Citizenship / Naturalisation",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
+    label: "British Citizenship / Naturalisation",
+    value: "Naturalisation",
     country: "UK",
     isLegacy: true,
   },

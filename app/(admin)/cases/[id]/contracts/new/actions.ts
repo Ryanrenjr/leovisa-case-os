@@ -28,6 +28,41 @@ function formatDateForLetter(value: string) {
   return date.toLocaleDateString("en-GB");
 }
 
+function getFormValues(formData: FormData, field: string) {
+  return formData
+    .getAll(field)
+    .map((value) => value.toString().trim());
+}
+
+function buildMainApplicantLine({
+  clientName,
+  nationality,
+  dateOfBirth,
+  passport,
+}: {
+  clientName: string;
+  nationality: string;
+  dateOfBirth: string;
+  passport: string;
+}) {
+  return `Name: ${clientName}; Nationality: ${nationality}; DoB. ${dateOfBirth}; Passport No. ${passport}`;
+}
+
+function getSelfApplicationBullet(serviceType: string, applicationLocation: string) {
+  const normalized = serviceType.toLowerCase();
+
+  if (normalized.includes("citizenship") || normalized.includes("naturalisation")) {
+    return "You want to apply for citizenship for yourself;";
+  }
+
+  const applicationName =
+    normalized.includes("visa") || normalized.includes("settlement")
+      ? serviceType
+      : `${serviceType} visa`;
+  const locationSuffix = applicationLocation ? ` ${applicationLocation}` : "";
+  return `You want to apply for ${applicationName} for yourself${locationSuffix};`;
+}
+
 export async function createClientCareLetterAction(
   _prevState: ActionState,
   formData: FormData
@@ -45,6 +80,12 @@ export async function createClientCareLetterAction(
   const deposit = formData.get("deposit")?.toString().trim() || "";
   const balance = formData.get("balance")?.toString().trim() || "";
   const caseSummary = formData.get("caseSummary")?.toString().trim() || "";
+  const dependantTypes = getFormValues(formData, "dependantType");
+  const dependantRelationships = getFormValues(formData, "dependantRelationship");
+  const dependantNames = getFormValues(formData, "dependantName");
+  const dependantNationalities = getFormValues(formData, "dependantNationality");
+  const dependantDatesOfBirth = getFormValues(formData, "dependantDateOfBirth");
+  const dependantPassports = getFormValues(formData, "dependantPassport");
 
   if (!caseId || !date || !dateOfBirth || !passport || !totalFee || !deposit || !balance) {
     return { error: "Please complete all required fields." };
@@ -69,14 +110,61 @@ export async function createClientCareLetterAction(
   try {
     const contractCaseRef =
       caseRefInput || caseItem.reference || caseItem.caseCode;
+    const visaType = getServiceTypeLabel(caseItem.serviceType);
+    const nationality = nationalityInput || caseItem.client.nationality || "";
+    const dependants = dependantNames
+      .map((name, index) => ({
+        type: dependantTypes[index] || "Dependant visa",
+        relationship: dependantRelationships[index] || "",
+        name,
+        nationality: dependantNationalities[index] || "",
+        dateOfBirth: dependantDatesOfBirth[index] || "",
+        passport: dependantPassports[index] || "",
+      }))
+      .filter(
+        (dependant) =>
+          dependant.name ||
+          dependant.nationality ||
+          dependant.dateOfBirth ||
+          dependant.passport
+      );
+    const dependantApplicationBullets = dependants.map((dependant) => {
+      const relationshipSuffix = dependant.relationship
+        ? ` for your ${dependant.relationship}`
+        : "";
+      const nameSuffix = dependant.name ? ` ${dependant.name}` : "";
+
+      return `You want to apply for ${dependant.type}${relationshipSuffix}${nameSuffix};`;
+    });
+    const applicantDetails = [
+      buildMainApplicantLine({
+        clientName,
+        nationality,
+        dateOfBirth,
+        passport,
+      }),
+      ...dependants.map((dependant) =>
+        buildMainApplicantLine({
+          clientName: dependant.name || "Dependant",
+          nationality: dependant.nationality,
+          dateOfBirth: dependant.dateOfBirth,
+          passport: dependant.passport,
+        })
+      ),
+    ].join("\n");
 
     const fileBuffer = await generateClientCareLetter({
       ClientName: clientName,
       Date: formatDateForLetter(date),
       CaseRef: contractCaseRef,
-      VisaType: getServiceTypeLabel(caseItem.serviceType),
+      VisaType: visaType,
+      InstructionBullets: [
+        getSelfApplicationBullet(visaType, applicationLocation),
+        ...dependantApplicationBullets,
+        applicantDetails,
+      ],
       ApplicationLocation: applicationLocation,
-      Nationality: nationalityInput || caseItem.client.nationality || "",
+      Nationality: nationality,
       DateOfBirth: dateOfBirth,
       Passport: passport,
       TotalFee: totalFee,

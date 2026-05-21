@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createClientCareLetterAction } from "./actions";
 
 type CreateContractFormProps = {
@@ -13,9 +13,56 @@ type CreateContractFormProps = {
   defaultDate: string;
 };
 
+type Dependant = {
+  id: string;
+  type: string;
+  relationship: string;
+  name: string;
+  nationality: string;
+  dateOfBirth: string;
+  passport: string;
+};
+
 const initialState = {
   error: "",
 };
+
+function createDependant(): Dependant {
+  return {
+    id: crypto.randomUUID(),
+    type: "Dependant visa",
+    relationship: "",
+    name: "",
+    nationality: "",
+    dateOfBirth: "",
+    passport: "",
+  };
+}
+
+function getDefaultCaseSummary(visaType: string) {
+  const normalized = visaType.toLowerCase();
+
+  if (normalized.includes("skilled worker")) {
+    return [
+      "The company [COMPANY NAME] is a private limited company, which was incorporated in the UK on [DATE] with company number [COMPANY NUMBER]",
+      "[COMPANY NAME] is qualified to provide skilled worker visas, with licence number [LICENCE NUMBER]",
+    ].join("\n");
+  }
+
+  if (normalized.includes("10 year") || normalized.includes("long residence")) {
+    return [
+      "You have been studying in the UK since [DATE].",
+      "Your current visa expires on [DATE].",
+      "Your visas for the last ten years have been consecutive.",
+    ].join("\n");
+  }
+
+  if (normalized.includes("citizenship") || normalized.includes("naturalisation")) {
+    return "Your status is settlement";
+  }
+
+  return "";
+}
 
 export default function CreateContractForm({
   caseId,
@@ -30,6 +77,29 @@ export default function CreateContractForm({
     createClientCareLetterAction,
     initialState
   );
+  const [dependants, setDependants] = useState<Dependant[]>([]);
+
+  function updateDependant(
+    id: string,
+    field: keyof Omit<Dependant, "id">,
+    value: string
+  ) {
+    setDependants((current) =>
+      current.map((dependant) =>
+        dependant.id === id ? { ...dependant, [field]: value } : dependant
+      )
+    );
+  }
+
+  function addDependant() {
+    setDependants((current) => [...current, createDependant()]);
+  }
+
+  function removeDependant(id: string) {
+    setDependants((current) =>
+      current.filter((dependant) => dependant.id !== id)
+    );
+  }
 
   return (
     <form action={formAction} className="space-y-8">
@@ -167,6 +237,148 @@ export default function CreateContractForm({
       </div>
 
       <div className="toss-soft-card p-6">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[#191f28]">
+            Dependants
+          </h2>
+          <button
+            type="button"
+            onClick={addDependant}
+            className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+          >
+            + Add Dependant
+          </button>
+        </div>
+
+        {dependants.length === 0 ? (
+          <p className="text-[15px] text-[#8b95a1]">
+            Add dependant applicants if they should appear in the contract
+            instructions.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {dependants.map((dependant, index) => (
+              <div
+                key={dependant.id}
+                className="rounded-[20px] border border-[#eef1f4] bg-white p-4"
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="text-[16px] font-bold text-[#191f28]">
+                    Dependant {index + 1}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => removeDependant(dependant.id)}
+                    className="toss-danger-button px-4 py-2 text-sm font-semibold"
+                  >
+                    Delete
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="toss-label mb-2 block">Application Type</label>
+                    <input
+                      type="text"
+                      name="dependantType"
+                      value={dependant.type}
+                      onChange={(event) =>
+                        updateDependant(dependant.id, "type", event.target.value)
+                      }
+                      className="w-full px-4 py-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="toss-label mb-2 block">Relationship</label>
+                    <input
+                      type="text"
+                      name="dependantRelationship"
+                      value={dependant.relationship}
+                      onChange={(event) =>
+                        updateDependant(
+                          dependant.id,
+                          "relationship",
+                          event.target.value
+                        )
+                      }
+                      placeholder="e.g. daughter, spouse"
+                      className="w-full px-4 py-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="toss-label mb-2 block">Name</label>
+                    <input
+                      type="text"
+                      name="dependantName"
+                      value={dependant.name}
+                      onChange={(event) =>
+                        updateDependant(dependant.id, "name", event.target.value)
+                      }
+                      className="w-full px-4 py-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="toss-label mb-2 block">Nationality</label>
+                    <input
+                      type="text"
+                      name="dependantNationality"
+                      value={dependant.nationality}
+                      onChange={(event) =>
+                        updateDependant(
+                          dependant.id,
+                          "nationality",
+                          event.target.value
+                        )
+                      }
+                      className="w-full px-4 py-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="toss-label mb-2 block">Date of Birth</label>
+                    <input
+                      type="text"
+                      name="dependantDateOfBirth"
+                      value={dependant.dateOfBirth}
+                      onChange={(event) =>
+                        updateDependant(
+                          dependant.id,
+                          "dateOfBirth",
+                          event.target.value
+                        )
+                      }
+                      placeholder="e.g. 04/05/2023"
+                      className="w-full px-4 py-3"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="toss-label mb-2 block">Passport Number</label>
+                    <input
+                      type="text"
+                      name="dependantPassport"
+                      value={dependant.passport}
+                      onChange={(event) =>
+                        updateDependant(
+                          dependant.id,
+                          "passport",
+                          event.target.value
+                        )
+                      }
+                      className="w-full px-4 py-3"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="toss-soft-card p-6">
         <h2 className="mb-4 text-[22px] font-bold tracking-[-0.02em] text-[#191f28]">
           Case Summary
         </h2>
@@ -179,6 +391,7 @@ export default function CreateContractForm({
             name="caseSummary"
             rows={8}
             className="w-full px-4 py-3"
+            defaultValue={getDefaultCaseSummary(visaType)}
             placeholder="Write the key elements of the case here..."
           />
         </div>
