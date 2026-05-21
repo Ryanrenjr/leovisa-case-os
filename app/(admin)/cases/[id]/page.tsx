@@ -480,15 +480,6 @@ export default async function CaseDetailPage({
           </form>
         </div>
 
-        <UploadLinksSection
-          caseId={caseItem.id}
-          links={caseItem.submissionLinks}
-          lang={lang}
-          onGenerateAction={generateUploadLink}
-          onDeactivateAction={deactivateUploadLink}
-          onDeleteAction={deleteUploadLink}
-        />
-
         <QuestionnairesSection
           caseId={caseItem.id}
           links={caseItem.questionnaireLinks}
@@ -497,6 +488,15 @@ export default async function CaseDetailPage({
           onDeactivateAction={deactivateQuestionnaireLink}
           onDeleteAction={deleteQuestionnaireLink}
           onReopenAction={reopenQuestionnaireSubmission}
+        />
+
+        <UploadLinksSection
+          caseId={caseItem.id}
+          links={caseItem.submissionLinks}
+          lang={lang}
+          onGenerateAction={generateUploadLink}
+          onDeactivateAction={deactivateUploadLink}
+          onDeleteAction={deleteUploadLink}
         />
 
         <ChecklistSection
