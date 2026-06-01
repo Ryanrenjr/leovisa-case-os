@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../../../../lib/prisma";
 import { normalizeReference } from "../../../../lib/case-reference";
+import { removeStorageFiles } from "../../../../lib/supabase-admin";
 
 function parseOptionalDate(value: string) {
   return value ? new Date(`${value}T00:00:00`) : null;
@@ -267,7 +268,10 @@ export async function deleteCase(formData: FormData) {
     where: { id: caseId },
     include: {
       documents: {
-        select: { id: true },
+        select: {
+          id: true,
+          storagePath: true,
+        },
       },
       submissions: {
         select: { id: true },
@@ -285,10 +289,19 @@ export async function deleteCase(formData: FormData) {
         select: { id: true },
       },
       contracts: {
-        select: { id: true },
+        select: {
+          id: true,
+          filePath: true,
+          pdfPath: true,
+          signedPdfPath: true,
+        },
       },
       invoices: {
-        select: { id: true },
+        select: {
+          id: true,
+          filePath: true,
+          pdfPath: true,
+        },
       },
       paymentRecords: {
         select: { id: true },
@@ -300,50 +313,100 @@ export async function deleteCase(formData: FormData) {
     throw new Error("Case not found.");
   }
 
-  const hasLinkedData =
-    existingCase.documents.length > 0 ||
-    existingCase.submissions.length > 0 ||
-    existingCase.submissionLinks.length > 0 ||
-    existingCase.questionnaireLinks.length > 0 ||
-    existingCase.questionnaireSubmissions.length > 0 ||
-    existingCase.checklistItems.length > 0 ||
-    existingCase.contracts.length > 0 ||
-    existingCase.invoices.length > 0 ||
-    existingCase.paymentRecords.length > 0;
+  const storagePaths = [
+    ...existingCase.documents.map((document) => document.storagePath),
+    ...existingCase.contracts.flatMap((contract) => [
+      contract.filePath,
+      contract.pdfPath,
+      contract.signedPdfPath,
+    ]),
+    ...existingCase.invoices.flatMap((invoice) => [
+      invoice.filePath,
+      invoice.pdfPath,
+    ]),
+  ].filter((value): value is string => Boolean(value));
 
-  if (hasLinkedData) {
-    redirect(`/cases/${caseId}?deleteError=linked_data`);
+  if (storagePaths.length > 0) {
+    await removeStorageFiles(Array.from(new Set(storagePaths)));
   }
 
-  await prisma.auditLog.create({
-    data: {
-      caseId: existingCase.id,
-      relatedEntityType: "case",
-      relatedEntityId: existingCase.id,
-      actionType: "delete_case",
-      actorType: "user",
-      success: true,
-      oldValue: {
-        caseId: existingCase.id,
-        caseCode: existingCase.caseCode,
-        reference: existingCase.reference,
-        clientId: existingCase.clientId,
-        serviceType: existingCase.serviceType,
-        country: existingCase.country,
-        assignedConsultantId: existingCase.assignedConsultantId,
-        status: existingCase.status,
-        contractStatus: existingCase.contractStatus,
-        intakeStatus: existingCase.intakeStatus,
-        paymentStatus: existingCase.paymentStatus,
-        notes: existingCase.notes,
+  await prisma.$transaction(async (tx) => {
+    await tx.auditLog.deleteMany({
+      where: { caseId },
+    });
+    await tx.document.deleteMany({
+      where: { caseId },
+    });
+    await tx.documentSubmission.deleteMany({
+      where: { caseId },
+    });
+    await tx.submissionLink.deleteMany({
+      where: { caseId },
+    });
+    await tx.questionnaireSubmission.deleteMany({
+      where: { caseId },
+    });
+    await tx.questionnaireLink.deleteMany({
+      where: { caseId },
+    });
+    await tx.documentChecklistItem.deleteMany({
+      where: { caseId },
+    });
+    await tx.contract.deleteMany({
+      where: { caseId },
+    });
+    await tx.invoice.deleteMany({
+      where: { caseId },
+    });
+    await tx.casePaymentRecord.deleteMany({
+      where: { caseId },
+    });
+    await tx.case.delete({
+      where: { id: caseId },
+    });
+    await tx.auditLog.create({
+      data: {
+        caseId: null,
+        relatedEntityType: "case",
+        relatedEntityId: existingCase.id,
+        actionType: "delete_case_with_related_data",
+        actorType: "user",
+        success: true,
+        oldValue: {
+          caseId: existingCase.id,
+          caseCode: existingCase.caseCode,
+          reference: existingCase.reference,
+          clientId: existingCase.clientId,
+          serviceType: existingCase.serviceType,
+          country: existingCase.country,
+          assignedConsultantId: existingCase.assignedConsultantId,
+          status: existingCase.status,
+          contractStatus: existingCase.contractStatus,
+          intakeStatus: existingCase.intakeStatus,
+          paymentStatus: existingCase.paymentStatus,
+          notes: existingCase.notes,
+        },
+        metadata: {
+          deletedCounts: {
+            documents: existingCase.documents.length,
+            submissions: existingCase.submissions.length,
+            submissionLinks: existingCase.submissionLinks.length,
+            questionnaireLinks: existingCase.questionnaireLinks.length,
+            questionnaireSubmissions:
+              existingCase.questionnaireSubmissions.length,
+            checklistItems: existingCase.checklistItems.length,
+            contracts: existingCase.contracts.length,
+            invoices: existingCase.invoices.length,
+            paymentRecords: existingCase.paymentRecords.length,
+            storageFiles: Array.from(new Set(storagePaths)).length,
+          },
+        },
       },
-    },
+    });
   });
 
-  await prisma.case.delete({
-    where: { id: caseId },
-  });
-
+  revalidatePath("/");
+  revalidatePath("/cases");
   redirect("/cases");
 }
 

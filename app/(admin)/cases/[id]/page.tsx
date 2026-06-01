@@ -345,8 +345,8 @@ export default async function CaseDetailPage({
                   label={lang === "zh" ? "删除案件" : "Delete Case"}
                   confirmMessage={
                     lang === "zh"
-                      ? "确认要删除这个案件吗？此操作无法撤销。"
-                      : "Are you sure you want to delete this case? This action cannot be undone."
+                      ? "确认删除这个案件吗？此操作会同时删除该案件下所有文件、材料清单、提交记录、上传链接、申请表、合同、Invoice、付款记录和日志，且无法撤销。"
+                      : "Delete this case? This will also delete all files, checklist items, submissions, upload links, questionnaires, contracts, invoices, payment records, and logs for this case. This cannot be undone."
                   }
                   className="toss-danger-button px-5 py-3 text-sm font-semibold leading-5"
                 />
