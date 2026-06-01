@@ -5,8 +5,13 @@ import { prisma } from "../lib/prisma";
 async function main() {
   // 先清空旧数据（按依赖顺序删）
   await prisma.auditLog.deleteMany();
+  await prisma.casePaymentRecord.deleteMany();
+  await prisma.invoice.deleteMany();
   await prisma.contract.deleteMany();
   await prisma.document.deleteMany();
+  await prisma.documentChecklistItem.deleteMany();
+  await prisma.questionnaireSubmission.deleteMany();
+  await prisma.questionnaireLink.deleteMany();
   await prisma.documentSubmission.deleteMany();
   await prisma.submissionLink.deleteMany();
   await prisma.case.deleteMany();

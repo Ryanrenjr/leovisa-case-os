@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "../../../../lib/prisma";
 import { getLangFromCookie } from "../../../../lib/i18n";
-import { updateCaseStatus, deleteCase } from "./actions";
+import {
+  createPaymentRecord,
+  deleteCase,
+  deletePaymentRecord,
+  updateCaseStatus,
+} from "./actions";
 import { generateUploadLink } from "./upload-actions";
 import {
   deactivateUploadLink,
@@ -14,6 +19,7 @@ import {
   updateDocumentReviewStatus,
   updateDocumentDisplayName,
   archiveDocument,
+  updateDocumentFinalStatus,
 } from "./document-actions";
 import DocumentsSection from "./DocumentsSection";
 import UploadLinksSection from "./UploadLinksSection";
@@ -21,8 +27,12 @@ import QuestionnairesSection from "./QuestionnairesSection";
 import SubmissionsSection from "./SubmissionsSection";
 import ContractsSection from "./ContractsSection";
 import InvoicesSection from "./InvoicesSection";
+import PaymentRecordsSection from "./PaymentRecordsSection";
 import AuditLogsSection from "./AuditLogsSection";
 import ChecklistSection from "./ChecklistSection";
+import ChecklistSummaryDialog from "./ChecklistSummaryDialog";
+import CasePageSectionsController from "./CasePageSectionsController";
+import ScrollTopButton from "../../../../components/ScrollTopButton";
 import StatusBadge from "../../../../components/StatusBadge";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
 import { deleteSubmission } from "./submission-actions";
@@ -30,6 +40,7 @@ import { deleteContract, sendContractForSignature } from "./contract-actions";
 import { deleteInvoice } from "./invoice-actions";
 import {
   createChecklistItem,
+  applyChecklistTemplate,
   updateChecklistItem,
   deleteChecklistItem,
   moveChecklistItemUp,
@@ -52,6 +63,23 @@ import {
 } from "./audit-log-actions";
 import { getServiceTypeLabel } from "../../../../lib/service-options";
 import { isDocumensoConfigured } from "../../../../lib/documenso/client";
+import {
+  PAYMENT_STATUS_OPTIONS,
+  getPaymentStatusLabel,
+  getPaymentStatusTone,
+} from "../../../../lib/payment-options";
+
+function formatDisplayDate(value: Date | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 function getContractActionFeedback(
   value: string,
@@ -92,6 +120,7 @@ type CaseDetailPageProps = {
     checklistExpanded?: string;
     contractActionError?: string;
     contractActionMessage?: string;
+    tab?: string;
   }>;
 };
 
@@ -105,6 +134,7 @@ export default async function CaseDetailPage({
   const checklistExpanded = query.checklistExpanded === "1";
   const contractActionError = query.contractActionError || "";
   const contractActionMessage = query.contractActionMessage || "";
+  const activeTab = query.tab || "overview";
 
   const cookieStore = await cookies();
   const lang = getLangFromCookie(cookieStore.get("lang")?.value);
@@ -133,6 +163,11 @@ export default async function CaseDetailPage({
           generatedAt: "desc",
         },
       },
+      paymentRecords: {
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
       submissionLinks: true,
       questionnaireLinks: {
         orderBy: {
@@ -150,6 +185,18 @@ export default async function CaseDetailPage({
       checklistItems: {
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
         include: {
+          documents: {
+            orderBy: {
+              createdAt: "desc",
+            },
+            select: {
+              id: true,
+              displayName: true,
+              originalFilename: true,
+              reviewStatus: true,
+              createdAt: true,
+            },
+          },
           _count: {
             select: {
               documents: true,
@@ -170,6 +217,30 @@ export default async function CaseDetailPage({
     notFound();
   }
 
+  const documentFinalRows = await prisma.$queryRaw<
+    Array<{
+      id: string;
+      isFinal: boolean;
+      finalizedAt: Date | null;
+    }>
+  >`
+    SELECT "id", "isFinal", "finalizedAt"
+    FROM "Document"
+    WHERE "caseId" = ${caseItem.id}
+  `;
+  const documentFinalMap = new Map(
+    documentFinalRows.map((document) => [document.id, document])
+  );
+  const documents = caseItem.documents.map((document) => {
+    const finalState = documentFinalMap.get(document.id);
+
+    return {
+      ...document,
+      isFinal: finalState?.isFinal ?? document.archiveFolder === "final",
+      finalizedAt: finalState?.finalizedAt ?? null,
+    };
+  });
+
   const displayContractActionError = getContractActionFeedback(
     contractActionError,
     lang
@@ -183,6 +254,10 @@ export default async function CaseDetailPage({
     ...invoice,
     subtotal: invoice.subtotal.toString(),
     total: invoice.total.toString(),
+  }));
+  const paymentRecords = caseItem.paymentRecords.map((record) => ({
+    ...record,
+    amount: record.amount.toString(),
   }));
 
   return (
@@ -238,23 +313,28 @@ export default async function CaseDetailPage({
             </div>
 
             <div className="flex flex-wrap gap-3">
+              <ChecklistSummaryDialog
+                items={caseItem.checklistItems}
+                lang={lang}
+              />
+
               <Link
                 href={`/cases/${caseItem.id}/edit`}
-                className="toss-secondary-button px-5 py-3 text-sm font-semibold"
+                className="toss-secondary-button px-5 py-3 text-sm font-semibold leading-5"
               >
                 {lang === "zh" ? "编辑案件" : "Edit Case"}
               </Link>
 
               <Link
   href={`/cases/${caseItem.id}/contracts/new`}
-  className="toss-primary-button px-5 py-3 text-sm font-semibold"
+  className="toss-primary-button px-5 py-3 text-sm font-semibold leading-5"
 >
   {lang === "zh" ? "生成合同" : "Generate Contract"}
 </Link>
 
               <Link
                 href={`/cases/${caseItem.id}/invoices/new`}
-                className="toss-secondary-button px-5 py-3 text-sm font-semibold"
+                className="toss-secondary-button px-5 py-3 text-sm font-semibold leading-5"
               >
                 {lang === "zh" ? "生成 Invoice" : "Generate Invoice"}
               </Link>
@@ -268,7 +348,7 @@ export default async function CaseDetailPage({
                       ? "确认要删除这个案件吗？此操作无法撤销。"
                       : "Are you sure you want to delete this case? This action cannot be undone."
                   }
-                  className="toss-danger-button px-5 py-3 text-sm font-semibold"
+                  className="toss-danger-button px-5 py-3 text-sm font-semibold leading-5"
                 />
               </form>
             </div>
@@ -325,6 +405,54 @@ export default async function CaseDetailPage({
                 {caseItem.assignedConsultant?.name ?? "-"}
               </p>
             </div>
+
+            <div>
+              <p className="toss-label mb-2">{lang === "zh" ? "签证到期日" : "Visa Expiry"}</p>
+              <p className="text-[15px] text-[#333d4b]">
+                {formatDisplayDate(caseItem.visaExpiryDate)}
+              </p>
+            </div>
+
+            <div>
+              <p className="toss-label mb-2">{lang === "zh" ? "递交日期" : "Submission Date"}</p>
+              <p className="text-[15px] text-[#333d4b]">
+                {formatDisplayDate(caseItem.submissionDate)}
+              </p>
+            </div>
+
+            <div>
+              <p className="toss-label mb-2">{lang === "zh" ? "预约日期" : "Appointment Date"}</p>
+              <p className="text-[15px] text-[#333d4b]">
+                {formatDisplayDate(caseItem.appointmentDate)}
+              </p>
+            </div>
+
+            <div>
+              <p className="toss-label mb-2">{lang === "zh" ? "申请中心" : "Application Centre"}</p>
+              <p className="text-[15px] text-[#333d4b]">
+                {caseItem.applicationCentre ?? "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="toss-label mb-2">{lang === "zh" ? "付款状态" : "Payment Status"}</p>
+              <span
+                className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getPaymentStatusTone(
+                  caseItem.paymentStatus
+                )}`}
+              >
+                {getPaymentStatusLabel(caseItem.paymentStatus, lang)}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <p className="toss-label mb-2">
+              {lang === "zh" ? "Dependants / 随行申请人" : "Dependants"}
+            </p>
+            <p className="whitespace-pre-wrap text-[15px] leading-7 text-[#4e5968]">
+              {caseItem.dependants ?? "-"}
+            </p>
           </div>
 
           <div className="mt-8">
@@ -388,7 +516,22 @@ export default async function CaseDetailPage({
           </div>
         </div>
 
-        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+        <CasePageSectionsController
+          initialTab={activeTab}
+          lang={lang}
+          counts={{
+            documents: documents.length,
+            forms: caseItem.questionnaireLinks.length,
+            contracts: caseItem.contracts.length,
+            invoices: invoices.length,
+            audit: caseItem.auditLogs.length,
+          }}
+        />
+
+        <div
+          id="case-overview-stats"
+          className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6"
+        >
           <a href="#documents-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "文件" : "Documents"}</p>
             <h2 className="toss-stat-number">{caseItem.documents.length}</h2>
@@ -420,12 +563,12 @@ export default async function CaseDetailPage({
           </a>
         </div>
 
-        <div className="toss-card mb-8 p-8">
+        <div id="case-status-section" className="toss-card mb-8 p-8">
           <h2 className="mb-6 text-[28px] font-bold tracking-[-0.02em] text-[#191f28]">
             {lang === "zh" ? "更新案件状态" : "Update Case Status"}
           </h2>
 
-          <form action={updateCaseStatus} className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <form action={updateCaseStatus} className="grid grid-cols-1 gap-6 md:grid-cols-4">
             <input type="hidden" name="caseId" value={caseItem.id} />
 
             <div>
@@ -469,7 +612,22 @@ export default async function CaseDetailPage({
               </select>
             </div>
 
-            <div className="pt-1 md:col-span-3">
+            <div>
+              <label className="toss-label mb-3 block">{lang === "zh" ? "付款状态" : "Payment Status"}</label>
+              <select
+                name="paymentStatus"
+                defaultValue={caseItem.paymentStatus}
+                className="w-full px-4 py-3"
+              >
+                {PAYMENT_STATUS_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {lang === "zh" ? item.zh : item.en}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="pt-1 md:col-span-4">
               <button
                 type="submit"
                 className="toss-primary-button px-6 py-3 text-sm font-semibold"
@@ -505,6 +663,7 @@ export default async function CaseDetailPage({
           lang={lang}
           defaultExpanded={checklistExpanded}
           onCreateAction={createChecklistItem}
+          onApplyTemplateAction={applyChecklistTemplate}
           onUpdateAction={updateChecklistItem}
           onDeleteAction={deleteChecklistItem}
           onMoveUpAction={moveChecklistItemUp}
@@ -528,6 +687,14 @@ export default async function CaseDetailPage({
           lang={lang}
         />
 
+        <PaymentRecordsSection
+          caseId={caseItem.id}
+          paymentRecords={paymentRecords}
+          onCreateAction={createPaymentRecord}
+          onDeleteAction={deletePaymentRecord}
+          lang={lang}
+        />
+
         <SubmissionsSection
           caseId={caseItem.id}
           submissions={caseItem.submissions}
@@ -537,11 +704,12 @@ export default async function CaseDetailPage({
 
         <DocumentsSection
           caseId={caseItem.id}
-          documents={caseItem.documents}
+          documents={documents}
           onDeleteAction={deleteDocument}
           onUpdateReviewStatusAction={updateDocumentReviewStatus}
           onUpdateDisplayNameAction={updateDocumentDisplayName}
           onArchiveAction={archiveDocument}
+          onUpdateFinalStatusAction={updateDocumentFinalStatus}
           lang={lang}
         />
 
@@ -553,6 +721,7 @@ export default async function CaseDetailPage({
           onDeleteSelectedAction={deleteSelectedAuditLogs}
         />
       </div>
+      <ScrollTopButton lang={lang} />
     </main>
   );
 }

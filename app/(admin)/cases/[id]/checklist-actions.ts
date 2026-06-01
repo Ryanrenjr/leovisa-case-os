@@ -8,6 +8,32 @@ function buildChecklistRedirect(caseId: string, preserveExpanded: boolean) {
   return `/cases/${caseId}${search}#document-checklist-section`;
 }
 
+type ChecklistTemplatePayloadItem = {
+  label?: unknown;
+  description?: unknown;
+  isRequired?: unknown;
+};
+
+function parseTemplateItems(value: string) {
+  const parsed = JSON.parse(value) as unknown;
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Checklist template payload must be an array.");
+  }
+
+  return parsed
+    .map((item): ChecklistTemplatePayloadItem =>
+      item && typeof item === "object" ? item : {}
+    )
+    .map((item) => ({
+      label: typeof item.label === "string" ? item.label.trim() : "",
+      description:
+        typeof item.description === "string" ? item.description.trim() : "",
+      isRequired: item.isRequired !== false,
+    }))
+    .filter((item) => item.label);
+}
+
 export async function createChecklistItem(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
   const label = formData.get("label")?.toString().trim() || "";
@@ -58,6 +84,90 @@ export async function createChecklistItem(formData: FormData) {
         description: item.description,
         isRequired: item.isRequired,
         sortOrder: item.sortOrder,
+      },
+    },
+  });
+
+  redirect(buildChecklistRedirect(caseId, preserveExpanded));
+}
+
+export async function applyChecklistTemplate(formData: FormData) {
+  const caseId = formData.get("caseId")?.toString().trim() || "";
+  const templateKey = formData.get("templateKey")?.toString().trim() || "";
+  const rawItems = formData.get("templateItems")?.toString().trim() || "";
+  const mode = formData.get("templateMode")?.toString().trim() || "append";
+  const preserveExpanded =
+    formData.get("preserveExpanded")?.toString().trim() === "1";
+
+  if (!caseId || !rawItems) {
+    throw new Error("Case ID and checklist template items are required.");
+  }
+
+  const existingCase = await prisma.case.findUnique({
+    where: { id: caseId },
+    select: { id: true },
+  });
+
+  if (!existingCase) {
+    throw new Error("Case not found.");
+  }
+
+  let items: ReturnType<typeof parseTemplateItems>;
+
+  try {
+    items = parseTemplateItems(rawItems);
+  } catch {
+    throw new Error("Checklist template items are invalid.");
+  }
+
+  if (items.length === 0) {
+    throw new Error("Please keep at least one checklist item.");
+  }
+
+  const shouldReplace = mode === "replace";
+  const lastItem = shouldReplace
+    ? null
+    : await prisma.documentChecklistItem.findFirst({
+        where: { caseId },
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
+  const startSortOrder = (lastItem?.sortOrder ?? -1) + 1;
+
+  const results = await prisma.$transaction([
+    ...(shouldReplace
+      ? [
+          prisma.documentChecklistItem.deleteMany({
+            where: { caseId },
+          }),
+        ]
+      : []),
+    prisma.documentChecklistItem.createMany({
+      data: items.map((item, index) => ({
+        caseId,
+        label: item.label,
+        description: item.description || null,
+        isRequired: item.isRequired,
+        sortOrder: startSortOrder + index,
+      })),
+    }),
+  ]);
+  const createResult = results.at(-1);
+
+  await prisma.auditLog.create({
+    data: {
+      caseId,
+      relatedEntityType: "document_checklist",
+      relatedEntityId: caseId,
+      actionType: shouldReplace
+        ? "replace_document_checklist_from_template"
+        : "append_document_checklist_from_template",
+      actorType: "user",
+      success: true,
+      newValue: {
+        templateKey,
+        itemCount: createResult?.count ?? items.length,
+        mode: shouldReplace ? "replace" : "append",
       },
     },
   });

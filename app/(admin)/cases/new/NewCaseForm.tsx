@@ -12,6 +12,7 @@ import {
   CONTRACT_STATUS_OPTIONS,
   INTAKE_STATUS_OPTIONS,
 } from "../../../../lib/status-options";
+import { PAYMENT_STATUS_OPTIONS } from "../../../../lib/payment-options";
 
 type Client = {
   id: string;
@@ -269,6 +270,88 @@ export default function NewCaseForm({
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="toss-label mb-3 block">
+                    {lang === "zh" ? "付款状态" : "Payment Status"}
+                  </label>
+                  <select
+                    name="paymentStatus"
+                    defaultValue="unpaid"
+                    className="w-full px-4 py-3"
+                  >
+                    {PAYMENT_STATUS_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {lang === "zh" ? item.zh : item.en}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="toss-label mb-3 block">
+                    {lang === "zh" ? "签证到期日" : "Visa Expiry Date"}
+                  </label>
+                  <input
+                    type="date"
+                    name="visaExpiryDate"
+                    className="w-full px-4 py-3"
+                  />
+                </div>
+
+                <div>
+                  <label className="toss-label mb-3 block">
+                    {lang === "zh" ? "递交日期" : "Submission Date"}
+                  </label>
+                  <input
+                    type="date"
+                    name="submissionDate"
+                    className="w-full px-4 py-3"
+                  />
+                </div>
+
+                <div>
+                  <label className="toss-label mb-3 block">
+                    {lang === "zh" ? "预约日期" : "Appointment Date"}
+                  </label>
+                  <input
+                    type="date"
+                    name="appointmentDate"
+                    className="w-full px-4 py-3"
+                  />
+                </div>
+
+                <div>
+                  <label className="toss-label mb-3 block">
+                    {lang === "zh" ? "申请中心" : "Application Centre"}
+                  </label>
+                  <input
+                    type="text"
+                    name="applicationCentre"
+                    className="w-full px-4 py-3"
+                    placeholder={
+                      lang === "zh"
+                        ? "例如：London / Beijing"
+                        : "e.g. London / Beijing"
+                    }
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="toss-label mb-3 block">
+                    {lang === "zh" ? "Dependants / 随行申请人" : "Dependants"}
+                  </label>
+                  <textarea
+                    name="dependants"
+                    rows={3}
+                    className="w-full px-4 py-3"
+                    placeholder={
+                      lang === "zh"
+                        ? "可填写配偶、孩子或其他随行申请人姓名"
+                        : "Spouse, children, or other dependant applicants"
+                    }
+                  />
                 </div>
 
                 <div className="md:col-span-2">

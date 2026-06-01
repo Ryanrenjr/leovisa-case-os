@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import { prisma } from "../../../../lib/prisma";
 import {
@@ -338,6 +339,102 @@ export async function archiveDocument(formData: FormData) {
         archivedAt: archivedAt.toISOString(),
         storagePath: nextStoragePath,
         storageMoveError,
+        originalFilename: existingDocument.originalFilename,
+        normalizedFilename: existingDocument.normalizedFilename,
+        displayName: existingDocument.displayName,
+        docType: existingDocument.docType,
+      },
+    },
+  });
+
+  revalidatePath(`/cases/${caseId}`);
+  redirect(`/cases/${caseId}?documentsUpdated=${Date.now()}#documents-section`);
+}
+
+export async function updateDocumentFinalStatus(formData: FormData) {
+  const caseId = formData.get("caseId")?.toString().trim() || "";
+  const documentId = formData.get("documentId")?.toString().trim() || "";
+  const finalStatus = formData.get("finalStatus")?.toString().trim() || "";
+  const isFinal = finalStatus === "1";
+
+  if (!caseId || !documentId) {
+    throw new Error("Case ID and document ID are required.");
+  }
+
+  const [existingDocument] = await prisma.$queryRaw<
+    Array<{
+      id: string;
+      caseId: string;
+      isFinal: boolean;
+      finalizedAt: Date | null;
+      reviewStatus: string;
+      originalFilename: string;
+      normalizedFilename: string | null;
+      displayName: string | null;
+      docType: string;
+      archiveFolder: string | null;
+    }>
+  >`
+    SELECT
+      "id",
+      "caseId",
+      "isFinal",
+      "finalizedAt",
+      "reviewStatus",
+      "originalFilename",
+      "normalizedFilename",
+      "displayName",
+      "docType",
+      "archiveFolder"
+    FROM "Document"
+    WHERE "id" = ${documentId}
+    LIMIT 1
+  `;
+
+  if (!existingDocument) {
+    throw new Error("Document not found.");
+  }
+
+  if (existingDocument.caseId !== caseId) {
+    throw new Error("Document does not belong to this case.");
+  }
+
+  if (isFinal && existingDocument.reviewStatus !== "approved") {
+    throw new Error("Only approved documents can be added to Final.");
+  }
+
+  const finalizedAt = isFinal ? new Date() : null;
+
+  await prisma.$executeRaw`
+    UPDATE "Document"
+    SET "isFinal" = ${isFinal},
+        "finalizedAt" = ${finalizedAt}
+    WHERE "id" = ${documentId}
+  `;
+
+  await prisma.auditLog.create({
+    data: {
+      caseId: existingDocument.caseId,
+      relatedEntityType: "document",
+      relatedEntityId: existingDocument.id,
+      actionType: isFinal ? "add_document_to_final" : "remove_document_from_final",
+      actorType: "user",
+      success: true,
+      oldValue: {
+        isFinal: existingDocument.isFinal,
+        finalizedAt: existingDocument.finalizedAt?.toISOString() ?? null,
+        reviewStatus: existingDocument.reviewStatus,
+        archiveFolder: existingDocument.archiveFolder,
+        originalFilename: existingDocument.originalFilename,
+        normalizedFilename: existingDocument.normalizedFilename,
+        displayName: existingDocument.displayName,
+        docType: existingDocument.docType,
+      },
+      newValue: {
+        isFinal,
+        finalizedAt: finalizedAt?.toISOString() ?? null,
+        reviewStatus: existingDocument.reviewStatus,
+        archiveFolder: existingDocument.archiveFolder,
         originalFilename: existingDocument.originalFilename,
         normalizedFilename: existingDocument.normalizedFilename,
         displayName: existingDocument.displayName,

@@ -7,6 +7,10 @@ import {
   generateUniqueCaseReference,
 } from "../../../../lib/case-reference";
 
+function parseOptionalDate(value: string) {
+  return value ? new Date(`${value}T00:00:00`) : null;
+}
+
 export async function createCase(formData: FormData) {
   const clientId = formData.get("clientId")?.toString().trim() || "";
   const serviceType = formData.get("serviceType")?.toString().trim() || "";
@@ -18,6 +22,17 @@ export async function createCase(formData: FormData) {
     formData.get("contractStatus")?.toString().trim() || "not_started";
   const intakeStatus =
     formData.get("intakeStatus")?.toString().trim() || "pending";
+  const paymentStatus =
+    formData.get("paymentStatus")?.toString().trim() || "unpaid";
+  const visaExpiryDate =
+    formData.get("visaExpiryDate")?.toString().trim() || "";
+  const submissionDate =
+    formData.get("submissionDate")?.toString().trim() || "";
+  const appointmentDate =
+    formData.get("appointmentDate")?.toString().trim() || "";
+  const applicationCentre =
+    formData.get("applicationCentre")?.toString().trim() || "";
+  const dependants = formData.get("dependants")?.toString().trim() || "";
   const notes = formData.get("notes")?.toString().trim() || "";
 
   if (!clientId || !serviceType || !country) {
@@ -88,6 +103,12 @@ export async function createCase(formData: FormData) {
       status,
       contractStatus,
       intakeStatus,
+      visaExpiryDate: parseOptionalDate(visaExpiryDate),
+      submissionDate: parseOptionalDate(submissionDate),
+      appointmentDate: parseOptionalDate(appointmentDate),
+      applicationCentre: applicationCentre || null,
+      dependants: dependants || null,
+      paymentStatus,
       notes: notes || null,
     },
   });
@@ -106,6 +127,7 @@ export async function createCase(formData: FormData) {
         serviceType: caseItem.serviceType,
         country: caseItem.country,
         status: caseItem.status,
+        paymentStatus: caseItem.paymentStatus,
       },
     },
   });

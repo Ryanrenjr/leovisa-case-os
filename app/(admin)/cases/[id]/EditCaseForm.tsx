@@ -12,6 +12,7 @@ import {
   CONTRACT_STATUS_OPTIONS,
   INTAKE_STATUS_OPTIONS,
 } from "../../../../lib/status-options";
+import { PAYMENT_STATUS_OPTIONS } from "../../../../lib/payment-options";
 
 type EditCaseFormProps = {
   caseItem: {
@@ -24,6 +25,12 @@ type EditCaseFormProps = {
     status: string;
     contractStatus: string;
     intakeStatus: string;
+    visaExpiryDate: Date | null;
+    submissionDate: Date | null;
+    appointmentDate: Date | null;
+    applicationCentre: string | null;
+    dependants: string | null;
+    paymentStatus: string;
     notes: string | null;
     immigrationPortalUrl: string | null;
     immigrationPortalUsername: string | null;
@@ -41,6 +48,14 @@ type EditCaseFormProps = {
   error?: string;
   lang: "en" | "zh";
 };
+
+function formatDateInput(value: Date | string | null) {
+  if (!value) {
+    return "";
+  }
+
+  return new Date(value).toISOString().slice(0, 10);
+}
 
 export default function EditCaseForm({
   caseItem,
@@ -289,12 +304,89 @@ export default function EditCaseForm({
                   defaultValue={caseItem.intakeStatus}
                   className="w-full px-4 py-3"
                 >
-                  {INTAKE_STATUS_OPTIONS.map((item) => (
+                    {INTAKE_STATUS_OPTIONS.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {lang === "zh" ? item.zh : item.en}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+              <div>
+                <label className="toss-label mb-3 block">
+                  {lang === "zh" ? "付款状态" : "Payment Status"}
+                </label>
+                <select
+                  name="paymentStatus"
+                  defaultValue={caseItem.paymentStatus}
+                  className="w-full px-4 py-3"
+                >
+                  {PAYMENT_STATUS_OPTIONS.map((item) => (
                     <option key={item.value} value={item.value}>
                       {lang === "zh" ? item.zh : item.en}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="toss-label mb-3 block">
+                  {lang === "zh" ? "签证到期日" : "Visa Expiry Date"}
+                </label>
+                <input
+                  type="date"
+                  name="visaExpiryDate"
+                  defaultValue={formatDateInput(caseItem.visaExpiryDate)}
+                  className="w-full px-4 py-3"
+                />
+              </div>
+
+              <div>
+                <label className="toss-label mb-3 block">
+                  {lang === "zh" ? "递交日期" : "Submission Date"}
+                </label>
+                <input
+                  type="date"
+                  name="submissionDate"
+                  defaultValue={formatDateInput(caseItem.submissionDate)}
+                  className="w-full px-4 py-3"
+                />
+              </div>
+
+              <div>
+                <label className="toss-label mb-3 block">
+                  {lang === "zh" ? "预约日期" : "Appointment Date"}
+                </label>
+                <input
+                  type="date"
+                  name="appointmentDate"
+                  defaultValue={formatDateInput(caseItem.appointmentDate)}
+                  className="w-full px-4 py-3"
+                />
+              </div>
+
+              <div>
+                <label className="toss-label mb-3 block">
+                  {lang === "zh" ? "申请中心" : "Application Centre"}
+                </label>
+                <input
+                  type="text"
+                  name="applicationCentre"
+                  defaultValue={caseItem.applicationCentre ?? ""}
+                  className="w-full px-4 py-3"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="toss-label mb-3 block">
+                  {lang === "zh" ? "Dependants / 随行申请人" : "Dependants"}
+                </label>
+                <textarea
+                  name="dependants"
+                  rows={3}
+                  defaultValue={caseItem.dependants ?? ""}
+                  className="w-full px-4 py-3"
+                />
               </div>
 
               <div className="md:col-span-2">

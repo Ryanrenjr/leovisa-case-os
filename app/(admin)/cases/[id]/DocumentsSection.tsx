@@ -23,6 +23,8 @@ type DocumentItem = {
   storagePath: string | null;
   archiveFolder: string | null;
   archivedAt: Date | null;
+  isFinal: boolean;
+  finalizedAt: Date | null;
   createdAt: Date;
   submission: {
     submittedByName: string | null;
@@ -36,6 +38,7 @@ type DocumentsSectionProps = {
   onUpdateReviewStatusAction: (formData: FormData) => void;
   onUpdateDisplayNameAction: (formData: FormData) => void;
   onArchiveAction: (formData: FormData) => void;
+  onUpdateFinalStatusAction: (formData: FormData) => void;
   lang: "en" | "zh";
 };
 
@@ -46,6 +49,7 @@ export default function DocumentsSection({
   onUpdateReviewStatusAction,
   onUpdateDisplayNameAction,
   onArchiveAction,
+  onUpdateFinalStatusAction,
   lang,
 }: DocumentsSectionProps) {
   const [expanded, setExpanded] = useState(false);
@@ -69,10 +73,23 @@ export default function DocumentsSection({
         (document) => document.archiveFolder === folder.key
       ).length,
     })),
+    {
+      key: "final",
+      label: "7.Final",
+      count: documents.filter(
+        (document) => document.isFinal || document.archiveFolder === "final"
+      ).length,
+    },
   ];
   const filteredDocuments = documents.filter((document) => {
+    const isFinal = document.isFinal || document.archiveFolder === "final";
+
     if (archiveFilter === "all") {
       return true;
+    }
+
+    if (archiveFilter === "final") {
+      return isFinal;
     }
 
     if (archiveFilter === "unfiled") {
@@ -149,9 +166,50 @@ export default function DocumentsSection({
                     <p className="break-all text-[16px] font-semibold text-[#191f28]">
                       {document.displayName || document.originalFilename}
                     </p>
+                    <div className="mt-4">
+                      {document.isFinal || document.archiveFolder === "final" ? (
+                        <form action={onUpdateFinalStatusAction}>
+                          <input type="hidden" name="caseId" value={caseId} />
+                          <input
+                            type="hidden"
+                            name="documentId"
+                            value={document.id}
+                          />
+                          <input type="hidden" name="finalStatus" value="0" />
+                          <button
+                            type="submit"
+                            className="inline-flex items-center justify-center rounded-2xl border border-[#dbe7ff] bg-[#eef4ff] px-5 py-3 text-sm font-bold text-[#1b64da] shadow-[0_8px_20px_rgba(49,130,246,0.12)]"
+                          >
+                            {lang === "zh" ? "已在 Final · 点击移出" : "In Final · Remove"}
+                          </button>
+                        </form>
+                      ) : document.reviewStatus === "approved" ? (
+                        <form action={onUpdateFinalStatusAction}>
+                          <input type="hidden" name="caseId" value={caseId} />
+                          <input
+                            type="hidden"
+                            name="documentId"
+                            value={document.id}
+                          />
+                          <input type="hidden" name="finalStatus" value="1" />
+                          <button
+                            type="submit"
+                            className="inline-flex items-center justify-center rounded-2xl bg-[#16a34a] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(22,163,74,0.24)] hover:bg-[#15803d]"
+                          >
+                            {lang === "zh" ? "放入 Final" : "Add to Final"}
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="inline-flex items-center rounded-2xl border border-[#eef1f4] bg-[#fafbfc] px-4 py-2 text-sm font-semibold text-[#8b95a1]">
+                          {lang === "zh"
+                            ? "审核通过后可放入 Final"
+                            : "Approve before adding to Final"}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="shrink-0 flex gap-2">
+                  <div className="shrink-0 flex flex-wrap justify-end gap-2">
                   {document.storagePath || document.storageUrl ? (
   <a
     href={`/cases/${caseId}/documents/${document.id}/open`}
@@ -166,6 +224,44 @@ export default function DocumentsSection({
     {lang === "zh" ? "无文件" : "No File"}
   </span>
 )}
+
+                    {false && (
+                      <>
+                    {document.isFinal || document.archiveFolder === "final" ? (
+                      <form action={onUpdateFinalStatusAction}>
+                        <input type="hidden" name="caseId" value={caseId} />
+                        <input
+                          type="hidden"
+                          name="documentId"
+                          value={document.id}
+                        />
+                        <input type="hidden" name="finalStatus" value="0" />
+                        <button
+                          type="submit"
+                          className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+                        >
+                          {lang === "zh" ? "移出 Final" : "Remove Final"}
+                        </button>
+                      </form>
+                    ) : document.reviewStatus === "approved" ? (
+                      <form action={onUpdateFinalStatusAction}>
+                        <input type="hidden" name="caseId" value={caseId} />
+                        <input
+                          type="hidden"
+                          name="documentId"
+                          value={document.id}
+                        />
+                        <input type="hidden" name="finalStatus" value="1" />
+                        <button
+                          type="submit"
+                          className="toss-secondary-button px-4 py-2 text-sm font-semibold"
+                        >
+                          {lang === "zh" ? "放入 Final" : "Add Final"}
+                        </button>
+                      </form>
+                    ) : null}
+                      </>
+                    )}
 
                     <form action={onDeleteAction}>
   <input type="hidden" name="caseId" value={caseId} />
@@ -261,6 +357,22 @@ export default function DocumentsSection({
                     <p className="text-[15px] text-[#4e5968]">
                       {formatDateTime(document.createdAt)}
                     </p>
+                  </div>
+
+                  <div>
+                    <p className="toss-label mb-2">Final</p>
+                    <p className="text-[15px] font-semibold text-[#4e5968]">
+                      {document.isFinal || document.archiveFolder === "final"
+                        ? lang === "zh"
+                          ? "已放入 Final"
+                          : "In Final"
+                        : "-"}
+                    </p>
+                    {document.finalizedAt && (
+                      <p className="mt-1 text-xs text-[#8b95a1]">
+                        {formatDateTime(document.finalizedAt)}
+                      </p>
+                    )}
                   </div>
 
                   <div>

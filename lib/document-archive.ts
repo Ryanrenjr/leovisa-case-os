@@ -3,8 +3,7 @@ export type DocumentArchiveFolderKey =
   | "id"
   | "supporting"
   | "others"
-  | "application_qa"
-  | "final";
+  | "application_qa";
 
 export type DocumentArchiveFolder = {
   key: DocumentArchiveFolderKey;
@@ -17,7 +16,6 @@ export const DOCUMENT_ARCHIVE_FOLDERS: DocumentArchiveFolder[] = [
   { key: "supporting", label: "3. Supporting doc_支持材料" },
   { key: "others", label: "4. Others_其他" },
   { key: "application_qa", label: "5. Application form Q&A_申请表问答" },
-  { key: "final", label: "7.Final" },
 ];
 
 export function getDocumentArchiveFolder(key: string) {

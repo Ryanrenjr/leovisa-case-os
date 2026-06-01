@@ -98,6 +98,15 @@ function replaceCells(
   });
 }
 
+function clearRowCells(rowXml: string) {
+  return replaceCells(rowXml, [
+    { text: "" },
+    { text: "" },
+    { text: "" },
+    { text: "" },
+  ]);
+}
+
 function getRows(tableXml: string) {
   return tableXml.match(rowPattern) ?? [];
 }
@@ -153,6 +162,7 @@ function replaceLineItemsTable(tableXml: string, items: InvoiceLineItem[]) {
   }
 
   const templateRow = rows[1]!;
+  const trailingBlankRows = rows.slice(2).map(clearRowCells);
   const itemRows = items.map((item) =>
     replaceCells(templateRow, [
       { text: item.quantity || "1" },
@@ -162,7 +172,7 @@ function replaceLineItemsTable(tableXml: string, items: InvoiceLineItem[]) {
     ])
   );
 
-  return setTableRows(tableXml, [rows[0]!, ...itemRows]);
+  return setTableRows(tableXml, [rows[0]!, ...itemRows, ...trailingBlankRows]);
 }
 
 function replaceTotalsTable(tableXml: string, data: InvoiceData) {

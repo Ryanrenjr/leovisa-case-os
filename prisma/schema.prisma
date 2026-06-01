@@ -47,6 +47,12 @@ model Case {
   status               String
   contractStatus       String
   intakeStatus         String
+  visaExpiryDate       DateTime?
+  submissionDate       DateTime?
+  appointmentDate      DateTime?
+  applicationCentre    String?
+  dependants           String?
+  paymentStatus        String     @default("unpaid")
   notes                String?
   immigrationPortalUrl String?
   immigrationPortalUsername String?
@@ -65,7 +71,26 @@ model Case {
   checklistItems       DocumentChecklistItem[]
   contracts            Contract[]
   invoices             Invoice[]
+  paymentRecords       CasePaymentRecord[]
   auditLogs            AuditLog[]
+}
+
+model CasePaymentRecord {
+  id          String   @id @default(cuid())
+  caseId      String
+  label       String?
+  amount      Decimal  @db.Decimal(10, 2)
+  currency    String   @default("GBP")
+  paymentDate DateTime?
+  method      String?
+  status      String   @default("received")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  case Case @relation(fields: [caseId], references: [id])
+
+  @@index([caseId])
 }
 
 model SubmissionLink {
@@ -149,6 +174,8 @@ model Document {
   storageUrl         String?
   archiveFolder      String?
   archivedAt         DateTime?
+  isFinal            Boolean  @default(false)
+  finalizedAt        DateTime?
   reviewStatus       String   @default("uploaded")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
