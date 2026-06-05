@@ -61,7 +61,7 @@ export default async function UploadPortalPage({
             orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
             include: {
               documents: {
-                select: { id: true },
+                select: { id: true, reviewStatus: true },
               },
             },
           },
@@ -85,12 +85,17 @@ export default async function UploadPortalPage({
   const isUnavailable = Boolean(isExpired || isInactive || isMaxedOut);
   const checklistItems = submissionLink.case.checklistItems;
   const pendingChecklistItems = checklistItems
-    .filter((item) => item.documents.length === 0)
+    .filter((item) =>
+      item.documents.every(
+        (document) => document.reviewStatus === "needs_resubmission"
+      )
+    )
     .map((item) => ({
       id: item.id,
       label: item.label,
       description: item.description,
       isRequired: item.isRequired,
+      needsResubmission: item.documents.length > 0,
     }));
 
   return (

@@ -76,6 +76,11 @@ export async function POST(request: Request, context: RouteContext) {
           client: true,
           checklistItems: {
             orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+            include: {
+              documents: {
+                select: { id: true, reviewStatus: true },
+              },
+            },
           },
         },
       },
@@ -198,7 +203,12 @@ export async function POST(request: Request, context: RouteContext) {
     );
     const missingChecklistItems = checklistItems
       .filter(
-        (item) => item.isRequired && !selectedChecklistItemIdSet.has(item.id)
+        (item) =>
+          item.isRequired &&
+          item.documents.every(
+            (document) => document.reviewStatus === "needs_resubmission"
+          ) &&
+          !selectedChecklistItemIdSet.has(item.id)
       )
       .map((item) => item.label);
 

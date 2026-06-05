@@ -25,6 +25,7 @@ type UploadPortalContentProps = {
     label: string;
     description: string | null;
     isRequired: boolean;
+    needsResubmission: boolean;
   }[];
 };
 
@@ -632,12 +633,23 @@ export default function UploadPortalContent({
                 {checklistItems.map((item, index) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-[#eef1f4] bg-white p-4"
+                    className={`rounded-2xl border p-4 ${
+                      item.needsResubmission
+                        ? "border-red-200 bg-red-50"
+                        : "border-[#eef1f4] bg-white"
+                    }`}
                   >
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
                       <p className="text-[16px] font-semibold text-[#191f28]">
                         {index + 1}. {item.label}
                       </p>
+                      {item.needsResubmission && (
+                        <span className="inline-flex items-center justify-center rounded-2xl border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-600">
+                          {lang === "zh"
+                            ? "需重新上传"
+                            : "Resubmission required"}
+                        </span>
+                      )}
                       <span
                         className={`inline-flex items-center justify-center rounded-2xl px-3 py-1 text-xs font-semibold ${
                           item.isRequired
@@ -654,6 +666,14 @@ export default function UploadPortalContent({
                           : "Optional"}
                       </span>
                     </div>
+
+                    {item.needsResubmission && (
+                      <p className="mb-2 text-[14px] font-semibold leading-6 text-red-600">
+                        {lang === "zh"
+                          ? "顾问已要求重新提交此项，请上传新的合格文件。"
+                          : "Your consultant has requested a new file for this item."}
+                      </p>
+                    )}
 
                     {!!item.description && (
                       <p className="text-[14px] leading-6 text-[#6b7684]">
@@ -803,6 +823,11 @@ export default function UploadPortalContent({
                                   ? lang === "zh"
                                     ? "（必传）"
                                     : " (Required)"
+                                  : ""}
+                                {item.needsResubmission
+                                  ? lang === "zh"
+                                    ? " - 需重新上传"
+                                    : " - Resubmission required"
                                   : ""}
                               </option>
                             ))}
