@@ -67,6 +67,7 @@ export async function POST(request: Request, context: RouteContext) {
             orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
             include: {
               documents: {
+                orderBy: { createdAt: "desc" },
                 select: { id: true, reviewStatus: true },
               },
             },
@@ -142,10 +143,11 @@ export async function POST(request: Request, context: RouteContext) {
     const alreadyUploadedChecklistItems = selectedChecklistItemIds
       .filter((itemId) => {
         const checklistItem = checklistItemMap.get(itemId);
-        return (
-          checklistItem?.documents.some(
-            (document) => document.reviewStatus !== "needs_resubmission"
-          ) ?? false
+        const latestDocument = checklistItem?.documents[0];
+
+        return Boolean(
+          latestDocument &&
+            latestDocument.reviewStatus !== "needs_resubmission"
         );
       })
       .map((itemId) => checklistItemMap.get(itemId)?.label || itemId);

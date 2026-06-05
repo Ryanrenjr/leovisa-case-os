@@ -22,7 +22,9 @@ function getStorageFilename(storagePath: string, fallbackName: string) {
 function redirectToDocuments(caseId: string) {
   revalidatePath(`/cases/${caseId}`);
   revalidatePath("/");
-  redirect(`/cases/${caseId}?documentsUpdated=${Date.now()}#documents-section`);
+  redirect(
+    `/cases/${caseId}?tab=documents&documentsUpdated=${Date.now()}#documents-section`
+  );
 }
 
 export async function deleteDocument(formData: FormData) {

@@ -22,6 +22,7 @@ function buildContractsRedirect(
   }
 ) {
   const searchParams = new URLSearchParams();
+  searchParams.set("tab", "contracts");
 
   if (options?.error) {
     searchParams.set("contractActionError", options.error);

@@ -7,7 +7,7 @@ import { prisma } from "../../../../lib/prisma";
 function redirectToUploadLinks(caseId: string) {
   revalidatePath(`/cases/${caseId}`);
   revalidatePath("/");
-  redirect(`/cases/${caseId}#upload-links-section`);
+  redirect(`/cases/${caseId}?tab=documents#upload-links-section`);
 }
 
 export async function deactivateUploadLink(formData: FormData) {

@@ -532,32 +532,32 @@ export default async function CaseDetailPage({
           id="case-overview-stats"
           className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6"
         >
-          <a href="#documents-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <a href="?tab=documents#documents-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "文件" : "Documents"}</p>
             <h2 className="toss-stat-number">{caseItem.documents.length}</h2>
           </a>
 
-          <a href="#contracts-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <a href="?tab=contracts#contracts-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "合同" : "Contracts"}</p>
             <h2 className="toss-stat-number">{caseItem.contracts.length}</h2>
           </a>
 
-          <a href="#invoices-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <a href="?tab=invoices#invoices-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">Invoices</p>
             <h2 className="toss-stat-number">{caseItem.invoices.length}</h2>
           </a>
 
-          <a href="#upload-links-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <a href="?tab=documents#upload-links-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "上传链接" : "Upload Links"}</p>
             <h2 className="toss-stat-number">{caseItem.submissionLinks.length}</h2>
           </a>
 
-          <a href="#questionnaires-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <a href="?tab=forms#questionnaires-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "申请表" : "Forms"}</p>
             <h2 className="toss-stat-number">{caseItem.questionnaireLinks.length}</h2>
           </a>
 
-          <a href="#submissions-section" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <a href="?tab=documents#submissions-section" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{lang === "zh" ? "提交记录" : "Submissions"}</p>
             <h2 className="toss-stat-number">{caseItem.submissions.length}</h2>
           </a>

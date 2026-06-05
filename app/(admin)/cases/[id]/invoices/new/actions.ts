@@ -195,7 +195,7 @@ export async function createInvoiceAction(
       },
     });
 
-    redirect(`/cases/${caseItem.id}#invoices-section`);
+    redirect(`/cases/${caseItem.id}?tab=invoices#invoices-section`);
   } catch (error) {
     if (isRedirectError(error)) {
       throw error;

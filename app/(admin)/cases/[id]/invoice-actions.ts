@@ -75,5 +75,5 @@ export async function deleteInvoice(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}#invoices-section`);
+  redirect(`/cases/${caseId}?tab=invoices#invoices-section`);
 }

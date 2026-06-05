@@ -78,6 +78,7 @@ export async function POST(request: Request, context: RouteContext) {
             orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
             include: {
               documents: {
+                orderBy: { createdAt: "desc" },
                 select: { id: true, reviewStatus: true },
               },
             },
@@ -203,12 +204,16 @@ export async function POST(request: Request, context: RouteContext) {
     );
     const missingChecklistItems = checklistItems
       .filter(
-        (item) =>
-          item.isRequired &&
-          item.documents.every(
-            (document) => document.reviewStatus === "needs_resubmission"
-          ) &&
-          !selectedChecklistItemIdSet.has(item.id)
+        (item) => {
+          const latestDocument = item.documents[0];
+
+          return (
+            item.isRequired &&
+            (!latestDocument ||
+              latestDocument.reviewStatus === "needs_resubmission") &&
+            !selectedChecklistItemIdSet.has(item.id)
+          );
+        }
       )
       .map((item) => item.label);
 

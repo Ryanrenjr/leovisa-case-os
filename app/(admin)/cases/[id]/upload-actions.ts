@@ -58,5 +58,5 @@ export async function generateUploadLink(formData: FormData) {
 
   revalidatePath(`/cases/${caseItem.id}`);
   revalidatePath("/");
-  redirect(`/cases/${caseItem.id}#upload-links-section`);
+  redirect(`/cases/${caseItem.id}?tab=documents#upload-links-section`);
 }

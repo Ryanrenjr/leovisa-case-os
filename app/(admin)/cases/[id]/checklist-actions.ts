@@ -5,8 +5,13 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "../../../../lib/prisma";
 
 function buildChecklistRedirect(caseId: string, preserveExpanded: boolean) {
-  const search = preserveExpanded ? "?checklistExpanded=1" : "";
-  return `/cases/${caseId}${search}#document-checklist-section`;
+  const searchParams = new URLSearchParams({ tab: "documents" });
+
+  if (preserveExpanded) {
+    searchParams.set("checklistExpanded", "1");
+  }
+
+  return `/cases/${caseId}?${searchParams.toString()}#document-checklist-section`;
 }
 
 function redirectToChecklist(caseId: string, preserveExpanded: boolean) {

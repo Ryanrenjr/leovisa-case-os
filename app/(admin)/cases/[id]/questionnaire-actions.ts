@@ -9,7 +9,7 @@ import {
 } from "../../../../lib/questionnaires/templates";
 
 function buildRedirect(caseId: string) {
-  return `/cases/${caseId}#questionnaires-section`;
+  return `/cases/${caseId}?tab=forms#questionnaires-section`;
 }
 
 export async function generateQuestionnaireLink(formData: FormData) {
