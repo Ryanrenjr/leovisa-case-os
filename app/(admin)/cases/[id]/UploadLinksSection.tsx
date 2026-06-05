@@ -16,6 +16,7 @@ type SubmissionLinkItem = {
 type UploadLinksSectionProps = {
   caseId: string;
   links: SubmissionLinkItem[];
+  clientInstructionItems: string[];
   lang: "en" | "zh";
   onGenerateAction: (formData: FormData) => void;
   onDeactivateAction: (formData: FormData) => void;
@@ -75,6 +76,7 @@ function getLinkAvailability(link: SubmissionLinkItem, lang: "en" | "zh") {
 export default function UploadLinksSection({
   caseId,
   links,
+  clientInstructionItems,
   lang,
   onGenerateAction,
   onDeactivateAction,
@@ -143,7 +145,11 @@ export default function UploadLinksSection({
                 </div>
 
                 <div className="shrink-0 flex flex-col gap-2">
-                  <UploadLinkActions token={link.token} lang={lang} />
+                  <UploadLinkActions
+                    token={link.token}
+                    clientInstructionItems={clientInstructionItems}
+                    lang={lang}
+                  />
 
                   {link.status === "active" ? (
                     <form action={onDeactivateAction}>

@@ -111,6 +111,49 @@ function getContractActionFeedback(
   return messages[value]?.[lang] ?? value;
 }
 
+function getDocumentActionFeedback(value: string, lang: "en" | "zh") {
+  const messages: Record<string, { zh: string; en: string }> = {
+    needs_resubmission: {
+      zh: "已标记为需重新上传，客户上传链接已恢复该清单项。",
+      en: "Marked as needing resubmission. The client upload link now shows this checklist item again.",
+    },
+    review_approved: {
+      zh: "文件已审核通过。",
+      en: "Document approved.",
+    },
+    review_rejected: {
+      zh: "文件已拒绝。",
+      en: "Document rejected.",
+    },
+    review_uploaded: {
+      zh: "文件已标记为已上传。",
+      en: "Document marked as uploaded.",
+    },
+    deleted: {
+      zh: "文件已删除。",
+      en: "Document deleted.",
+    },
+    renamed: {
+      zh: "文件显示名称已保存。",
+      en: "Document display name saved.",
+    },
+    archived: {
+      zh: "文件已移动到目标文件夹。",
+      en: "Document moved to the selected folder.",
+    },
+    final_added: {
+      zh: "文件已放入 Final。",
+      en: "Document added to Final.",
+    },
+    final_removed: {
+      zh: "文件已移出 Final。",
+      en: "Document removed from Final.",
+    },
+  };
+
+  return messages[value]?.[lang] ?? "";
+}
+
 type CaseDetailPageProps = {
   params: Promise<{
     id: string;
@@ -120,6 +163,7 @@ type CaseDetailPageProps = {
     checklistExpanded?: string;
     contractActionError?: string;
     contractActionMessage?: string;
+    documentAction?: string;
     tab?: string;
   }>;
 };
@@ -134,6 +178,7 @@ export default async function CaseDetailPage({
   const checklistExpanded = query.checklistExpanded === "1";
   const contractActionError = query.contractActionError || "";
   const contractActionMessage = query.contractActionMessage || "";
+  const documentAction = query.documentAction || "";
   const activeTab = query.tab || "overview";
 
   const cookieStore = await cookies();
@@ -249,6 +294,10 @@ export default async function CaseDetailPage({
     contractActionMessage,
     lang
   );
+  const displayDocumentActionMessage = getDocumentActionFeedback(
+    documentAction,
+    lang
+  );
   const defaultSignerEmail = caseItem.client.email?.trim() || "";
   const invoices = caseItem.invoices.map((invoice) => ({
     ...invoice,
@@ -259,6 +308,27 @@ export default async function CaseDetailPage({
     ...record,
     amount: record.amount.toString(),
   }));
+  const resubmissionChecklistLabels = caseItem.checklistItems
+    .filter((item) =>
+      item.documents.some(
+        (document) => document.reviewStatus === "needs_resubmission"
+      )
+    )
+    .map((item) => item.label);
+  const missingChecklistLabels = caseItem.checklistItems
+    .filter(
+      (item) =>
+        item.isRequired &&
+        !item.documents.some(
+          (document) =>
+            document.reviewStatus !== "rejected" &&
+            document.reviewStatus !== "needs_resubmission"
+        )
+    )
+    .map((item) => item.label);
+  const clientInstructionItems = [
+    ...new Set([...resubmissionChecklistLabels, ...missingChecklistLabels]),
+  ];
 
   return (
     <main className="toss-page">
@@ -292,6 +362,14 @@ export default async function CaseDetailPage({
           <div className="mb-6 rounded-[24px] border border-[#d7f0df] bg-[#eefbf3] p-4">
             <p className="text-sm font-medium text-[#1f8f55]">
               {displayContractActionMessage}
+            </p>
+          </div>
+        )}
+
+        {!!displayDocumentActionMessage && (
+          <div className="mb-6 rounded-[24px] border border-[#d7f0df] bg-[#eefbf3] p-4">
+            <p className="text-sm font-medium text-[#1f8f55]">
+              {displayDocumentActionMessage}
             </p>
           </div>
         )}
@@ -651,6 +729,7 @@ export default async function CaseDetailPage({
         <UploadLinksSection
           caseId={caseItem.id}
           links={caseItem.submissionLinks}
+          clientInstructionItems={clientInstructionItems}
           lang={lang}
           onGenerateAction={generateUploadLink}
           onDeactivateAction={deactivateUploadLink}
@@ -705,6 +784,7 @@ export default async function CaseDetailPage({
         <DocumentsSection
           caseId={caseItem.id}
           documents={documents}
+          checklistItems={caseItem.checklistItems}
           onDeleteAction={deleteDocument}
           onUpdateReviewStatusAction={updateDocumentReviewStatus}
           onUpdateDisplayNameAction={updateDocumentDisplayName}

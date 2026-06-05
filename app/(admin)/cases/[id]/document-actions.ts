@@ -19,11 +19,12 @@ function getStorageFilename(storagePath: string, fallbackName: string) {
   return filename || fallbackName.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
-function redirectToDocuments(caseId: string) {
+function redirectToDocuments(caseId: string, action?: string) {
   revalidatePath(`/cases/${caseId}`);
   revalidatePath("/");
+  const actionParam = action ? `&documentAction=${action}` : "";
   redirect(
-    `/cases/${caseId}?tab=documents&documentsUpdated=${Date.now()}#documents-section`
+    `/cases/${caseId}?tab=documents&documentsUpdated=${Date.now()}${actionParam}#documents-section`
   );
 }
 
@@ -105,7 +106,7 @@ export async function deleteDocument(formData: FormData) {
     },
   });
 
-  redirectToDocuments(caseId);
+  redirectToDocuments(caseId, "deleted");
 }
 
 export async function updateDocumentReviewStatus(formData: FormData) {
@@ -196,7 +197,12 @@ export async function updateDocumentReviewStatus(formData: FormData) {
     },
   });
 
-  redirectToDocuments(caseId);
+  redirectToDocuments(
+    caseId,
+    reviewStatus === "needs_resubmission"
+      ? "needs_resubmission"
+      : `review_${reviewStatus}`
+  );
 }
 
 export async function updateDocumentDisplayName(formData: FormData) {
@@ -254,7 +260,7 @@ export async function updateDocumentDisplayName(formData: FormData) {
     },
   });
 
-  redirectToDocuments(caseId);
+  redirectToDocuments(caseId, "renamed");
 }
 
 export async function archiveDocument(formData: FormData) {
@@ -388,7 +394,7 @@ export async function archiveDocument(formData: FormData) {
     },
   });
 
-  redirectToDocuments(caseId);
+  redirectToDocuments(caseId, "archived");
 }
 
 export async function updateDocumentFinalStatus(formData: FormData) {
@@ -483,5 +489,5 @@ export async function updateDocumentFinalStatus(formData: FormData) {
     },
   });
 
-  redirectToDocuments(caseId);
+  redirectToDocuments(caseId, isFinal ? "final_added" : "final_removed");
 }

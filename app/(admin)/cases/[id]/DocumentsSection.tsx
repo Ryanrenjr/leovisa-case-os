@@ -33,9 +33,20 @@ type DocumentItem = {
   } | null;
 };
 
+type ChecklistItem = {
+  id: string;
+  label: string;
+  isRequired: boolean;
+  documents: {
+    id: string;
+    reviewStatus: string;
+  }[];
+};
+
 type DocumentsSectionProps = {
   caseId: string;
   documents: DocumentItem[];
+  checklistItems: ChecklistItem[];
   onDeleteAction: (formData: FormData) => void;
   onUpdateReviewStatusAction: (formData: FormData) => void;
   onUpdateDisplayNameAction: (formData: FormData) => void;
@@ -47,6 +58,7 @@ type DocumentsSectionProps = {
 export default function DocumentsSection({
   caseId,
   documents,
+  checklistItems,
   onDeleteAction,
   onUpdateReviewStatusAction,
   onUpdateDisplayNameAction,
@@ -104,6 +116,23 @@ export default function DocumentsSection({
     ? filteredDocuments
     : filteredDocuments.slice(0, 3);
   const hasMore = filteredDocuments.length > 3;
+  const pendingReviewDocuments = documents.filter(
+    (document) => document.reviewStatus === "uploaded"
+  );
+  const resubmissionDocuments = documents.filter(
+    (document) => document.reviewStatus === "needs_resubmission"
+  );
+  const missingChecklistItems = checklistItems.filter((item) => {
+    if (!item.isRequired) {
+      return false;
+    }
+
+    return !item.documents.some(
+      (document) =>
+        document.reviewStatus !== "rejected" &&
+        document.reviewStatus !== "needs_resubmission"
+    );
+  });
 
   return (
     <div id="documents-section" className="toss-card mb-8 p-8">
@@ -114,6 +143,73 @@ export default function DocumentsSection({
         <p className="text-sm font-medium text-[#8b95a1]">
           {documents.length} {lang === "zh" ? "个文件" : "file(s)"}
         </p>
+      </div>
+
+      <div className="mb-6 rounded-[24px] border border-[#e8edf3] bg-[#fafbfc] p-5">
+        <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="toss-label mb-2">
+              {lang === "zh" ? "待处理事项" : "Action Items"}
+            </p>
+            <h3 className="text-[22px] font-bold tracking-[-0.02em] text-[#191f28]">
+              {lang === "zh"
+                ? "文件相关事项集中处理"
+                : "Document work in one place"}
+            </h3>
+          </div>
+          <p className="text-sm text-[#6b7684]">
+            {lang === "zh"
+              ? "先处理这些，再看下面的链接、清单、提交记录和归档。"
+              : "Handle these first, then review links, checklist, submissions, and archive."}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-[#eef1f4] bg-white p-4">
+            <p className="text-sm font-semibold text-[#6b7684]">
+              {lang === "zh" ? "待审核" : "Pending Review"}
+            </p>
+            <p className="mt-2 text-[28px] font-extrabold text-[#191f28]">
+              {pendingReviewDocuments.length}
+            </p>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#8b95a1]">
+              {pendingReviewDocuments
+                .slice(0, 3)
+                .map((document) => document.displayName || document.originalFilename)
+                .join(", ") || (lang === "zh" ? "暂无待审核文件" : "No pending files")}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+            <p className="text-sm font-semibold text-red-700">
+              {lang === "zh" ? "需重传" : "Needs Resubmission"}
+            </p>
+            <p className="mt-2 text-[28px] font-extrabold text-red-700">
+              {resubmissionDocuments.length}
+            </p>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-red-600">
+              {resubmissionDocuments
+                .slice(0, 3)
+                .map((document) => document.displayName || document.originalFilename)
+                .join(", ") || (lang === "zh" ? "暂无需重传文件" : "No resubmission requests")}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+            <p className="text-sm font-semibold text-amber-700">
+              {lang === "zh" ? "缺失材料" : "Missing Required"}
+            </p>
+            <p className="mt-2 text-[28px] font-extrabold text-amber-700">
+              {missingChecklistItems.length}
+            </p>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-amber-700">
+              {missingChecklistItems
+                .slice(0, 3)
+                .map((item) => item.label)
+                .join(", ") || (lang === "zh" ? "必传材料已覆盖" : "Required items covered")}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
@@ -572,41 +668,7 @@ export default function DocumentsSection({
                     </div>
                   </form>
 
-                  <form
-                    action={onUpdateReviewStatusAction}
-                    className="hidden"
-                  >
-                    <input type="hidden" name="caseId" value={caseId} />
-                    <input
-                      type="hidden"
-                      name="documentId"
-                      value={document.id}
-                    />
 
-                    <select
-                      name="reviewStatus"
-                      defaultValue={document.reviewStatus}
-                      className="w-full px-4 py-3"
-                    >
-                      <option value="uploaded">uploaded</option>
-                      <option value="approved">approved</option>
-                      <option value="rejected">rejected</option>
-                      <option value="needs_resubmission">
-                        needs_resubmission
-                      </option>
-                    </select>
-
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        className="toss-secondary-button px-4 py-3 text-sm font-semibold"
-                      >
-                        {lang === "zh"
-                          ? "更新审核状态"
-                          : "Update Review Status"}
-                      </button>
-                    </div>
-                  </form>
                 </div>
               </div>
             ))}
