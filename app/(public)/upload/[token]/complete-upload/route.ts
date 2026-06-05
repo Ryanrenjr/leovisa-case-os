@@ -5,6 +5,8 @@ import {
 } from "../../../../../lib/supabase-admin";
 import { prisma } from "../../../../../lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 type RouteContext = {
   params: Promise<{
     token: string;
@@ -143,11 +145,13 @@ export async function POST(request: Request, context: RouteContext) {
     const alreadyUploadedChecklistItems = selectedChecklistItemIds
       .filter((itemId) => {
         const checklistItem = checklistItemMap.get(itemId);
-        const latestDocument = checklistItem?.documents[0];
 
         return Boolean(
-          latestDocument &&
-            latestDocument.reviewStatus !== "needs_resubmission"
+          checklistItem &&
+            checklistItem.documents.length > 0 &&
+            !checklistItem.documents.some(
+              (document) => document.reviewStatus === "needs_resubmission"
+            )
         );
       })
       .map((itemId) => checklistItemMap.get(itemId)?.label || itemId);
@@ -208,6 +212,18 @@ export async function POST(request: Request, context: RouteContext) {
         const displayName = checklistMode
           ? checklistItem?.label || item.displayName
           : item.displayName;
+
+        if (item.checklistItemId) {
+          await tx.document.updateMany({
+            where: {
+              checklistItemId: item.checklistItemId,
+              reviewStatus: "needs_resubmission",
+            },
+            data: {
+              reviewStatus: "rejected",
+            },
+          });
+        }
 
         await tx.document.create({
           data: {

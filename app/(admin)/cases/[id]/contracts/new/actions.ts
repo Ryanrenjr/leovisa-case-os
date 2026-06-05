@@ -238,7 +238,7 @@ export async function createClientCareLetterAction(
       },
     });
 
-    redirect(`/cases/${caseItem.id}`);
+    redirect(`/cases/${caseItem.id}?tab=contracts#contracts-section`);
     } catch (error) {
     if (isRedirectError(error)) {
       throw error;

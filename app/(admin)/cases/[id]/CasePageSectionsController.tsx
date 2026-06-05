@@ -46,6 +46,21 @@ function getTabFromHash(hash: string) {
   return hashToTab[hash.replace(/^#/, "")] ?? null;
 }
 
+function getInitialLocationTab(
+  fallbackTab: string,
+  validTabIds: Set<string>
+) {
+  if (typeof window === "undefined") {
+    return validTabIds.has(fallbackTab) ? fallbackTab : "overview";
+  }
+
+  const hashTab = getTabFromHash(window.location.hash);
+  const searchTab = new URLSearchParams(window.location.search).get("tab");
+  const nextTab = hashTab || searchTab || fallbackTab;
+
+  return validTabIds.has(nextTab) ? nextTab : "overview";
+}
+
 export default function CasePageSectionsController({
   initialTab = "overview",
   lang,
@@ -80,7 +95,7 @@ export default function CasePageSectionsController({
   );
   const validTabIds = useMemo(() => new Set(tabs.map((tab) => tab.id)), [tabs]);
   const [activeTab, setActiveTab] = useState(() =>
-    validTabIds.has(initialTab) ? initialTab : "overview"
+    getInitialLocationTab(initialTab, validTabIds)
   );
 
   useEffect(() => {

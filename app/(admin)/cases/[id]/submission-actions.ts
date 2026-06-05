@@ -62,5 +62,5 @@ export async function deleteSubmission(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}`);
+  redirect(`/cases/${caseId}?tab=documents#submissions-section`);
 }

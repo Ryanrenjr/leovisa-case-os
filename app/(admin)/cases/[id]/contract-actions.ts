@@ -337,5 +337,5 @@ export async function deleteContract(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}`);
+  redirect(buildContractsRedirect(caseId));
 }

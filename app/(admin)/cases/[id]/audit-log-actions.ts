@@ -15,7 +15,7 @@ export async function deleteAuditLog(formData: FormData) {
     where: { id: logId },
   });
 
-  redirect(`/cases/${caseId}`);
+  redirect(`/cases/${caseId}?tab=audit#audit-logs-section`);
 }
 
 export async function deleteSelectedAuditLogs(formData: FormData) {
@@ -38,5 +38,5 @@ export async function deleteSelectedAuditLogs(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}`);
+  redirect(`/cases/${caseId}?tab=audit#audit-logs-section`);
 }

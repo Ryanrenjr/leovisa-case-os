@@ -4,6 +4,9 @@ import { getServiceTypeLabel } from "../../../../lib/service-options";
 import { formatDateTime } from "../../../../lib/format-date";
 import UploadPortalContent from "./UploadPortalContent";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type UploadPortalPageProps = {
   params: Promise<{
     token: string;
@@ -86,23 +89,22 @@ export default async function UploadPortalPage({
   const isUnavailable = Boolean(isExpired || isInactive || isMaxedOut);
   const checklistItems = submissionLink.case.checklistItems;
   const pendingChecklistItems = checklistItems
-    .filter((item) => {
-      const latestDocument = item.documents[0];
-      return (
-        !latestDocument ||
-        latestDocument.reviewStatus === "needs_resubmission"
-      );
-    })
+    .filter(
+      (item) =>
+        item.documents.length === 0 ||
+        item.documents.some(
+          (document) => document.reviewStatus === "needs_resubmission"
+        )
+    )
     .map((item) => {
-      const latestDocument = item.documents[0];
-
       return {
         id: item.id,
         label: item.label,
         description: item.description,
         isRequired: item.isRequired,
-        needsResubmission:
-          latestDocument?.reviewStatus === "needs_resubmission",
+        needsResubmission: item.documents.some(
+          (document) => document.reviewStatus === "needs_resubmission"
+        ),
       };
     });
 

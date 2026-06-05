@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { prisma } from "../../../../../lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 type RouteContext = {
   params: Promise<{
     token: string;
@@ -205,12 +207,12 @@ export async function POST(request: Request, context: RouteContext) {
     const missingChecklistItems = checklistItems
       .filter(
         (item) => {
-          const latestDocument = item.documents[0];
-
           return (
             item.isRequired &&
-            (!latestDocument ||
-              latestDocument.reviewStatus === "needs_resubmission") &&
+            (item.documents.length === 0 ||
+              item.documents.some(
+                (document) => document.reviewStatus === "needs_resubmission"
+              )) &&
             !selectedChecklistItemIdSet.has(item.id)
           );
         }
@@ -279,6 +281,18 @@ export async function POST(request: Request, context: RouteContext) {
 
       if (uploadError) {
         throw uploadError;
+      }
+
+      if (item.checklistItemId) {
+        await prisma.document.updateMany({
+          where: {
+            checklistItemId: item.checklistItemId,
+            reviewStatus: "needs_resubmission",
+          },
+          data: {
+            reviewStatus: "rejected",
+          },
+        });
       }
 
       await prisma.document.create({
