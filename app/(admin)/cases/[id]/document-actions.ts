@@ -112,9 +112,21 @@ export async function updateDocumentReviewStatus(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
   const documentId = formData.get("documentId")?.toString().trim() || "";
   const reviewStatus = formData.get("reviewStatus")?.toString().trim() || "";
+  const resubmissionReason =
+    formData.get("resubmissionReason")?.toString().trim() || "";
+  const allowedStatuses = new Set([
+    "uploaded",
+    "approved",
+    "rejected",
+    "needs_resubmission",
+  ]);
 
   if (!caseId || !documentId || !reviewStatus) {
     throw new Error("Case ID, document ID, and review status are required.");
+  }
+
+  if (!allowedStatuses.has(reviewStatus)) {
+    throw new Error("Review status is invalid.");
   }
 
   const existingDocument = await prisma.document.findUnique({
@@ -123,6 +135,8 @@ export async function updateDocumentReviewStatus(formData: FormData) {
       id: true,
       caseId: true,
       reviewStatus: true,
+      resubmissionReason: true,
+      resubmissionRequestedAt: true,
       originalFilename: true,
       normalizedFilename: true,
       docType: true,
@@ -133,10 +147,21 @@ export async function updateDocumentReviewStatus(formData: FormData) {
     throw new Error("Document not found.");
   }
 
+  if (existingDocument.caseId !== caseId) {
+    throw new Error("Document does not belong to this case.");
+  }
+
+  const isResubmissionRequest = reviewStatus === "needs_resubmission";
+  const resubmissionRequestedAt = isResubmissionRequest ? new Date() : null;
+
   await prisma.document.update({
     where: { id: documentId },
     data: {
       reviewStatus,
+      resubmissionReason: isResubmissionRequest
+        ? resubmissionReason || null
+        : null,
+      resubmissionRequestedAt,
     },
   });
 
@@ -150,12 +175,20 @@ export async function updateDocumentReviewStatus(formData: FormData) {
       success: true,
       oldValue: {
         reviewStatus: existingDocument.reviewStatus,
+        resubmissionReason: existingDocument.resubmissionReason,
+        resubmissionRequestedAt:
+          existingDocument.resubmissionRequestedAt?.toISOString() ?? null,
         originalFilename: existingDocument.originalFilename,
         normalizedFilename: existingDocument.normalizedFilename,
         docType: existingDocument.docType,
       },
       newValue: {
         reviewStatus,
+        resubmissionReason: isResubmissionRequest
+          ? resubmissionReason || null
+          : null,
+        resubmissionRequestedAt:
+          resubmissionRequestedAt?.toISOString() ?? null,
         originalFilename: existingDocument.originalFilename,
         normalizedFilename: existingDocument.normalizedFilename,
         docType: existingDocument.docType,

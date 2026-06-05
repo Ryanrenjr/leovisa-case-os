@@ -18,6 +18,8 @@ type DocumentItem = {
   mimeType: string | null;
   fileSize: bigint | null;
   reviewStatus: string;
+  resubmissionReason: string | null;
+  resubmissionRequestedAt: Date | null;
   storageProvider: string;
   storageUrl: string | null;
   storagePath: string | null;
@@ -331,6 +333,26 @@ export default function DocumentsSection({
                       {lang === "zh" ? "审核状态" : "Review Status"}
                     </p>
                     <StatusBadge value={document.reviewStatus} lang={lang} />
+                    {document.reviewStatus === "needs_resubmission" && (
+                      <div className="mt-3 rounded-2xl border border-red-100 bg-red-50 p-3">
+                        <p className="text-sm font-semibold text-red-700">
+                          {lang === "zh"
+                            ? "需要重新上传"
+                            : "Resubmission required"}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-red-700">
+                          {document.resubmissionReason ||
+                            (lang === "zh"
+                              ? "未填写具体原因。"
+                              : "No specific reason provided.")}
+                        </p>
+                        {document.resubmissionRequestedAt && (
+                          <p className="mt-1 text-xs text-red-500">
+                            {formatDateTime(document.resubmissionRequestedAt)}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -475,9 +497,84 @@ export default function DocumentsSection({
                     {lang === "zh" ? "审核操作" : "Review Action"}
                   </p>
 
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <form action={onUpdateReviewStatusAction}>
+                      <input type="hidden" name="caseId" value={caseId} />
+                      <input type="hidden" name="documentId" value={document.id} />
+                      <input type="hidden" name="reviewStatus" value="approved" />
+                      <button
+                        type="submit"
+                        className="w-full rounded-2xl bg-[#16a34a] px-4 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(22,163,74,0.18)] hover:bg-[#15803d]"
+                      >
+                        {lang === "zh" ? "审核通过" : "Approve"}
+                      </button>
+                    </form>
+
+                    <form action={onUpdateReviewStatusAction}>
+                      <input type="hidden" name="caseId" value={caseId} />
+                      <input type="hidden" name="documentId" value={document.id} />
+                      <input type="hidden" name="reviewStatus" value="rejected" />
+                      <button
+                        type="submit"
+                        className="w-full rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50"
+                      >
+                        {lang === "zh" ? "拒绝" : "Reject"}
+                      </button>
+                    </form>
+
+                    <form action={onUpdateReviewStatusAction}>
+                      <input type="hidden" name="caseId" value={caseId} />
+                      <input type="hidden" name="documentId" value={document.id} />
+                      <input type="hidden" name="reviewStatus" value="uploaded" />
+                      <button
+                        type="submit"
+                        className="w-full toss-secondary-button px-4 py-3 text-sm font-semibold"
+                      >
+                        {lang === "zh" ? "标记为已上传" : "Mark Uploaded"}
+                      </button>
+                    </form>
+                  </div>
+
                   <form
                     action={onUpdateReviewStatusAction}
-                    className="space-y-3"
+                    className="mt-4 rounded-2xl border border-red-100 bg-white p-4"
+                  >
+                    <input type="hidden" name="caseId" value={caseId} />
+                    <input type="hidden" name="documentId" value={document.id} />
+                    <input
+                      type="hidden"
+                      name="reviewStatus"
+                      value="needs_resubmission"
+                    />
+                    <label className="mb-2 block text-sm font-semibold text-[#4e5968]">
+                      {lang === "zh" ? "重新上传原因" : "Resubmission reason"}
+                    </label>
+                    <textarea
+                      name="resubmissionReason"
+                      defaultValue={document.resubmissionReason ?? ""}
+                      rows={3}
+                      placeholder={
+                        lang === "zh"
+                          ? "例如：照片模糊、信息页缺失、文件过期等"
+                          : "e.g. image is blurry, missing information page, expired document"
+                      }
+                      className="w-full px-4 py-3"
+                    />
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        type="submit"
+                        className="rounded-2xl bg-red-600 px-4 py-3 text-sm font-bold text-white hover:bg-red-700"
+                      >
+                        {lang === "zh"
+                          ? "要求重新上传"
+                          : "Request Resubmission"}
+                      </button>
+                    </div>
+                  </form>
+
+                  <form
+                    action={onUpdateReviewStatusAction}
+                    className="hidden"
                   >
                     <input type="hidden" name="caseId" value={caseId} />
                     <input

@@ -65,7 +65,14 @@ export default async function UploadPortalPage({
             include: {
               documents: {
                 orderBy: { createdAt: "desc" },
-                select: { id: true, reviewStatus: true },
+                select: {
+                  id: true,
+                  reviewStatus: true,
+                  originalFilename: true,
+                  resubmissionReason: true,
+                  resubmissionRequestedAt: true,
+                  createdAt: true,
+                },
               },
             },
           },
@@ -97,14 +104,27 @@ export default async function UploadPortalPage({
         )
     )
     .map((item) => {
+      const resubmissionDocument =
+        item.documents.find(
+          (document) => document.reviewStatus === "needs_resubmission"
+        ) ?? null;
+
       return {
         id: item.id,
         label: item.label,
         description: item.description,
         isRequired: item.isRequired,
-        needsResubmission: item.documents.some(
-          (document) => document.reviewStatus === "needs_resubmission"
-        ),
+        needsResubmission: Boolean(resubmissionDocument),
+        resubmissionReason:
+          resubmissionDocument?.resubmissionReason ?? null,
+        resubmissionOriginalFilename:
+          resubmissionDocument?.originalFilename ?? null,
+        resubmissionRequestedAtText:
+          resubmissionDocument?.resubmissionRequestedAt
+            ? formatDateTime(resubmissionDocument.resubmissionRequestedAt)
+            : resubmissionDocument?.createdAt
+            ? formatDateTime(resubmissionDocument.createdAt)
+            : null,
       };
     });
 

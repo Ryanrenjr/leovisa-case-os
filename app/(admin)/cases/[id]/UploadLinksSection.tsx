@@ -2,7 +2,6 @@
 
 import UploadLinkActions from "./UploadLinkActions";
 import { useState } from "react";
-import StatusBadge from "@/components/StatusBadge";
 import { formatDateTime } from "../../../../lib/format-date";
 
 type SubmissionLinkItem = {
@@ -22,6 +21,56 @@ type UploadLinksSectionProps = {
   onDeactivateAction: (formData: FormData) => void;
   onDeleteAction: (formData: FormData) => void;
 };
+
+function getLinkAvailability(link: SubmissionLinkItem, lang: "en" | "zh") {
+  const isExpired = Boolean(
+    link.expiresAt && new Date(link.expiresAt) < new Date()
+  );
+  const isMaxedOut =
+    link.maxUses !== null && link.currentUses >= link.maxUses;
+
+  if (link.status !== "active") {
+    return {
+      label: lang === "zh" ? "已停用" : "Inactive",
+      description:
+        lang === "zh"
+          ? "此链接已被停用，客户不能继续上传。"
+          : "This link has been deactivated and cannot accept uploads.",
+      className: "border-[#eef1f4] bg-[#f8fafc] text-[#6b7684]",
+    };
+  }
+
+  if (isExpired) {
+    return {
+      label: lang === "zh" ? "已过期" : "Expired",
+      description:
+        lang === "zh"
+          ? "此链接已超过失效时间，客户需要新的上传链接。"
+          : "This link is past its expiry time. The client needs a new link.",
+      className: "border-amber-200 bg-amber-50 text-amber-700",
+    };
+  }
+
+  if (isMaxedOut) {
+    return {
+      label: lang === "zh" ? "次数已满" : "Usage limit reached",
+      description:
+        lang === "zh"
+          ? "此链接已达到最大使用次数，客户需要新的上传链接。"
+          : "This link has reached its usage limit. The client needs a new link.",
+      className: "border-amber-200 bg-amber-50 text-amber-700",
+    };
+  }
+
+  return {
+    label: lang === "zh" ? "可上传" : "Available",
+    description:
+      lang === "zh"
+        ? "此链接当前可用，客户可以继续上传待补材料。"
+        : "This link is available and can accept uploads.",
+    className: "border-green-200 bg-green-50 text-green-700",
+  };
+}
 
 export default function UploadLinksSection({
   caseId,
@@ -67,7 +116,10 @@ export default function UploadLinksSection({
         </p>
       ) : (
         <div className="space-y-4">
-          {visibleLinks.map((link) => (
+          {visibleLinks.map((link) => {
+            const availability = getLinkAvailability(link, lang);
+
+            return (
             <div
               key={link.id}
               className="toss-soft-card p-5"
@@ -79,6 +131,14 @@ export default function UploadLinksSection({
                   </p>
                   <p className="break-all text-[15px] font-semibold text-[#191f28]">
                     {`${baseUrl}/upload/${link.token}`}
+                  </p>
+                  <div
+                    className={`inline-flex rounded-2xl border px-3 py-1 text-xs font-bold ${availability.className}`}
+                  >
+                    {availability.label}
+                  </div>
+                  <p className="max-w-2xl text-sm leading-6 text-[#6b7684]">
+                    {availability.description}
                   </p>
                 </div>
 
@@ -122,7 +182,11 @@ export default function UploadLinksSection({
                   <p className="toss-label mb-2">
                     {lang === "zh" ? "状态" : "Status"}
                   </p>
-                  <StatusBadge value={link.status} lang={lang} />
+                  <span
+                    className={`inline-flex rounded-2xl border px-3 py-1 text-xs font-bold ${availability.className}`}
+                  >
+                    {availability.label}
+                  </span>
                 </div>
 
                 <div>
@@ -144,7 +208,8 @@ export default function UploadLinksSection({
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

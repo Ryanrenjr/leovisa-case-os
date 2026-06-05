@@ -26,6 +26,9 @@ type UploadPortalContentProps = {
     description: string | null;
     isRequired: boolean;
     needsResubmission: boolean;
+    resubmissionReason: string | null;
+    resubmissionOriginalFilename: string | null;
+    resubmissionRequestedAtText: string | null;
   }[];
 };
 
@@ -673,6 +676,34 @@ export default function UploadPortalContent({
                           ? "顾问已要求重新提交此项，请上传新的合格文件。"
                           : "Your consultant has requested a new file for this item."}
                       </p>
+                    )}
+
+                    {item.needsResubmission && (
+                      <div className="mb-3 rounded-2xl border border-red-100 bg-white p-3 text-[14px] leading-6 text-red-700">
+                        {item.resubmissionOriginalFilename && (
+                          <p>
+                            <span className="font-semibold">
+                              {lang === "zh" ? "原文件：" : "Previous file: "}
+                            </span>
+                            {item.resubmissionOriginalFilename}
+                          </p>
+                        )}
+                        <p className={item.resubmissionOriginalFilename ? "mt-2" : ""}>
+                          <span className="font-semibold">
+                            {lang === "zh" ? "原因：" : "Reason: "}
+                          </span>
+                          {item.resubmissionReason ||
+                            (lang === "zh"
+                              ? "顾问未填写具体原因，请按要求重新上传清晰文件。"
+                              : "No specific reason was provided. Please upload a clear replacement file.")}
+                        </p>
+                        {item.resubmissionRequestedAtText && (
+                          <p className="mt-2 text-xs text-red-500">
+                            {lang === "zh" ? "要求时间：" : "Requested: "}
+                            {item.resubmissionRequestedAtText}
+                          </p>
+                        )}
+                      </div>
                     )}
 
                     {!!item.description && (
