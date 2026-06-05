@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getLangFromCookie, messages } from "../../lib/i18n";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import SidebarDateTime from "../../components/SidebarDateTime";
+import FormSubmitFeedback from "../../components/FormSubmitFeedback";
 import { setLanguage } from "../actions/set-language";
 import { prisma } from "../../lib/prisma";
 import { getAdminSessionUserId } from "../../lib/auth";
@@ -42,6 +43,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-[#f5f6f8] text-[#111827]">
+      <FormSubmitFeedback />
       <div className="mx-auto flex min-h-screen max-w-[1680px]">
         <aside className="w-[340px] shrink-0 border-r border-[#e9edf3] bg-[#f7f8fa] px-6 py-8">
           <div className="rounded-[32px] border border-[#e8edf3] bg-white p-7 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">

@@ -1,11 +1,18 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { prisma } from "../../../../lib/prisma";
 
 function buildChecklistRedirect(caseId: string, preserveExpanded: boolean) {
   const search = preserveExpanded ? "?checklistExpanded=1" : "";
   return `/cases/${caseId}${search}#document-checklist-section`;
+}
+
+function redirectToChecklist(caseId: string, preserveExpanded: boolean) {
+  revalidatePath(`/cases/${caseId}`);
+  revalidatePath("/");
+  redirect(buildChecklistRedirect(caseId, preserveExpanded));
 }
 
 type ChecklistTemplatePayloadItem = {
@@ -88,7 +95,7 @@ export async function createChecklistItem(formData: FormData) {
     },
   });
 
-  redirect(buildChecklistRedirect(caseId, preserveExpanded));
+  redirectToChecklist(caseId, preserveExpanded);
 }
 
 export async function applyChecklistTemplate(formData: FormData) {
@@ -172,7 +179,7 @@ export async function applyChecklistTemplate(formData: FormData) {
     },
   });
 
-  redirect(buildChecklistRedirect(caseId, preserveExpanded));
+  redirectToChecklist(caseId, preserveExpanded);
 }
 
 export async function updateChecklistItem(formData: FormData) {
@@ -258,7 +265,7 @@ export async function updateChecklistItem(formData: FormData) {
     },
   });
 
-  redirect(buildChecklistRedirect(caseId, preserveExpanded));
+  redirectToChecklist(caseId, preserveExpanded);
 }
 
 export async function deleteChecklistItem(formData: FormData) {
@@ -314,7 +321,7 @@ export async function deleteChecklistItem(formData: FormData) {
     },
   });
 
-  redirect(buildChecklistRedirect(caseId, preserveExpanded));
+  redirectToChecklist(caseId, preserveExpanded);
 }
 
 export async function moveChecklistItemUp(formData: FormData) {
@@ -354,7 +361,7 @@ export async function moveChecklistItemUp(formData: FormData) {
   const currentIndex = orderedItems.findIndex((item) => item.id === itemId);
 
   if (currentIndex <= 0) {
-    redirect(buildChecklistRedirect(caseId, preserveExpanded));
+    redirectToChecklist(caseId, preserveExpanded);
   }
 
   const targetItem = orderedItems[currentIndex - 1];
@@ -391,7 +398,7 @@ export async function moveChecklistItemUp(formData: FormData) {
     },
   });
 
-  redirect(buildChecklistRedirect(caseId, preserveExpanded));
+  redirectToChecklist(caseId, preserveExpanded);
 }
 
 export async function moveChecklistItemDown(formData: FormData) {
@@ -431,7 +438,7 @@ export async function moveChecklistItemDown(formData: FormData) {
   const currentIndex = orderedItems.findIndex((item) => item.id === itemId);
 
   if (currentIndex === -1 || currentIndex >= orderedItems.length - 1) {
-    redirect(buildChecklistRedirect(caseId, preserveExpanded));
+    redirectToChecklist(caseId, preserveExpanded);
   }
 
   const targetItem = orderedItems[currentIndex + 1];
@@ -468,5 +475,5 @@ export async function moveChecklistItemDown(formData: FormData) {
     },
   });
 
-  redirect(buildChecklistRedirect(caseId, preserveExpanded));
+  redirectToChecklist(caseId, preserveExpanded);
 }

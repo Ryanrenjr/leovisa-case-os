@@ -1,7 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { prisma } from "../../../../lib/prisma";
+
+function redirectToUploadLinks(caseId: string) {
+  revalidatePath(`/cases/${caseId}`);
+  revalidatePath("/");
+  redirect(`/cases/${caseId}#upload-links-section`);
+}
 
 export async function deactivateUploadLink(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
@@ -50,7 +57,7 @@ export async function deactivateUploadLink(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}`);
+  redirectToUploadLinks(caseId);
 }
 
 export async function deleteUploadLink(formData: FormData) {
@@ -96,5 +103,5 @@ export async function deleteUploadLink(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}`);
+  redirectToUploadLinks(caseId);
 }

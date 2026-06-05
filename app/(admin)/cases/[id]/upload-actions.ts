@@ -2,6 +2,7 @@
 
 import crypto from "crypto";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { prisma } from "../../../../lib/prisma";
 
 export async function generateUploadLink(formData: FormData) {
@@ -55,5 +56,7 @@ export async function generateUploadLink(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseItem.id}`);
+  revalidatePath(`/cases/${caseItem.id}`);
+  revalidatePath("/");
+  redirect(`/cases/${caseItem.id}#upload-links-section`);
 }

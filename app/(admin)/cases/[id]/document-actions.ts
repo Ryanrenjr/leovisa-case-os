@@ -19,6 +19,12 @@ function getStorageFilename(storagePath: string, fallbackName: string) {
   return filename || fallbackName.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
+function redirectToDocuments(caseId: string) {
+  revalidatePath(`/cases/${caseId}`);
+  revalidatePath("/");
+  redirect(`/cases/${caseId}?documentsUpdated=${Date.now()}#documents-section`);
+}
+
 export async function deleteDocument(formData: FormData) {
   const caseId = formData.get("caseId")?.toString().trim() || "";
   const documentId = formData.get("documentId")?.toString().trim() || "";
@@ -97,7 +103,7 @@ export async function deleteDocument(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}`);
+  redirectToDocuments(caseId);
 }
 
 export async function updateDocumentReviewStatus(formData: FormData) {
@@ -155,7 +161,7 @@ export async function updateDocumentReviewStatus(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}`);
+  redirectToDocuments(caseId);
 }
 
 export async function updateDocumentDisplayName(formData: FormData) {
@@ -213,7 +219,7 @@ export async function updateDocumentDisplayName(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}`);
+  redirectToDocuments(caseId);
 }
 
 export async function archiveDocument(formData: FormData) {
@@ -347,8 +353,7 @@ export async function archiveDocument(formData: FormData) {
     },
   });
 
-  revalidatePath(`/cases/${caseId}`);
-  redirect(`/cases/${caseId}?documentsUpdated=${Date.now()}#documents-section`);
+  redirectToDocuments(caseId);
 }
 
 export async function updateDocumentFinalStatus(formData: FormData) {
@@ -443,5 +448,5 @@ export async function updateDocumentFinalStatus(formData: FormData) {
     },
   });
 
-  redirect(`/cases/${caseId}#documents-section`);
+  redirectToDocuments(caseId);
 }
