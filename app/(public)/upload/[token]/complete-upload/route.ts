@@ -30,6 +30,7 @@ const allowedMimeTypes = [
   "image/jpeg",
   "image/png",
 ];
+const maxFilesPerChecklistItem = 20;
 
 function buildValidationPayload(
   errorCode: string,
@@ -45,6 +46,23 @@ function buildValidationPayload(
     duplicateChecklistItems: options?.duplicateChecklistItems ?? [],
     alreadyUploadedChecklistItems: options?.alreadyUploadedChecklistItems ?? [],
   };
+}
+
+async function cleanupUploadedItems(uploadItems: CompletedUploadItem[]) {
+  try {
+    const storagePaths = uploadItems
+      .map((item) => item.storagePath)
+      .filter(Boolean);
+
+    if (storagePaths.length === 0) {
+      return;
+    }
+
+    const supabase = getSupabaseAdminClient();
+    await supabase.storage.from(STORAGE_BUCKET_NAME).remove(storagePaths);
+  } catch (cleanupError) {
+    console.error("Failed to clean up rejected uploaded files:", cleanupError);
+  }
 }
 
 export async function POST(request: Request, context: RouteContext) {
@@ -127,22 +145,24 @@ export async function POST(request: Request, context: RouteContext) {
     );
 
     if (invalidChecklistItem) {
+      await cleanupUploadedItems(uploadItems);
       return NextResponse.json({ error: "invalid_files" }, { status: 400 });
     }
 
     const selectedChecklistItemIds = uploadItems
       .map((item) => item.checklistItemId)
       .filter((item): item is string => Boolean(item));
-    const duplicateChecklistItems = Array.from(
-      new Set(
-        selectedChecklistItemIds
-          .filter(
-            (itemId, index) => selectedChecklistItemIds.indexOf(itemId) !== index
-          )
-          .map((itemId) => checklistItemMap.get(itemId)?.label || itemId)
-      )
+    const selectedUniqueChecklistItemIds = Array.from(
+      new Set(selectedChecklistItemIds)
     );
-    const alreadyUploadedChecklistItems = selectedChecklistItemIds
+    const overLimitChecklistItems = selectedUniqueChecklistItemIds
+      .filter(
+        (itemId) =>
+          selectedChecklistItemIds.filter((selectedId) => selectedId === itemId)
+            .length > maxFilesPerChecklistItem
+      )
+      .map((itemId) => checklistItemMap.get(itemId)?.label || itemId);
+    const alreadyUploadedChecklistItems = selectedUniqueChecklistItemIds
       .filter((itemId) => {
         const checklistItem = checklistItemMap.get(itemId);
 
@@ -157,17 +177,18 @@ export async function POST(request: Request, context: RouteContext) {
       .map((itemId) => checklistItemMap.get(itemId)?.label || itemId);
 
     if (
-      duplicateChecklistItems.length > 0 ||
+      overLimitChecklistItems.length > 0 ||
       alreadyUploadedChecklistItems.length > 0
     ) {
       const errorCode =
-        duplicateChecklistItems.length > 0
+        overLimitChecklistItems.length > 0
           ? "duplicate_checklist_items"
           : "checklist_items_already_uploaded";
 
+      await cleanupUploadedItems(uploadItems);
       return NextResponse.json(
         buildValidationPayload(errorCode, {
-          duplicateChecklistItems,
+          duplicateChecklistItems: overLimitChecklistItems,
           alreadyUploadedChecklistItems,
         }),
         { status: 400 }
@@ -179,6 +200,7 @@ export async function POST(request: Request, context: RouteContext) {
     );
 
     if (invalidDocType) {
+      await cleanupUploadedItems(uploadItems);
       return NextResponse.json({ error: "invalid_files" }, { status: 400 });
     }
   }

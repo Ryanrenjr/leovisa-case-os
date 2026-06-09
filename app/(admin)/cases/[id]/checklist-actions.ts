@@ -482,3 +482,76 @@ export async function moveChecklistItemDown(formData: FormData) {
 
   redirectToChecklist(caseId, preserveExpanded);
 }
+
+export async function reorderChecklistItems(formData: FormData) {
+  const caseId = formData.get("caseId")?.toString().trim() || "";
+  const rawItemIds = formData.get("itemIds")?.toString().trim() || "";
+
+  if (!caseId || !rawItemIds) {
+    throw new Error("Case ID and checklist item order are required.");
+  }
+
+  let itemIds: string[];
+
+  try {
+    const parsed = JSON.parse(rawItemIds) as unknown;
+    itemIds = Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    throw new Error("Checklist item order is invalid.");
+  }
+
+  if (itemIds.length === 0) {
+    throw new Error("Checklist item order is empty.");
+  }
+
+  const existingItems = await prisma.documentChecklistItem.findMany({
+    where: { caseId },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      label: true,
+      sortOrder: true,
+    },
+  });
+  const existingIds = new Set(existingItems.map((item) => item.id));
+  const hasSameItems =
+    existingItems.length === itemIds.length &&
+    itemIds.every((itemId) => existingIds.has(itemId)) &&
+    new Set(itemIds).size === itemIds.length;
+
+  if (!hasSameItems) {
+    throw new Error("Checklist item order does not match this case.");
+  }
+
+  await prisma.$transaction(
+    itemIds.map((itemId, index) =>
+      prisma.documentChecklistItem.update({
+        where: { id: itemId },
+        data: { sortOrder: index },
+      })
+    )
+  );
+
+  await prisma.auditLog.create({
+    data: {
+      caseId,
+      relatedEntityType: "document_checklist",
+      relatedEntityId: caseId,
+      actionType: "reorder_document_checklist_items",
+      actorType: "user",
+      success: true,
+      oldValue: {
+        itemIds: existingItems.map((item) => item.id),
+        labels: existingItems.map((item) => item.label),
+      },
+      newValue: {
+        itemIds,
+      },
+    },
+  });
+
+  revalidatePath(`/cases/${caseId}`);
+  revalidatePath("/");
+}

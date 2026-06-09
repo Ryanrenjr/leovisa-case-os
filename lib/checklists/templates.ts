@@ -173,6 +173,103 @@ export const documentChecklistTemplates: DocumentChecklistTemplate[] = [
     ],
   },
   {
+    key: "skilled_worker_2023",
+    titleZh: "英国工签材料清单（2023）",
+    titleEn: "Skilled Worker Documents Checklist, 2023",
+    descriptionZh: "用于英国 Skilled Worker 工签申请，包含主申请人个人文件、旅行史、资金、TB 和雇主 CoS/合同材料。",
+    descriptionEn:
+      "For UK Skilled Worker applications, covering applicant identity, travel history, maintenance, TB, and employer CoS/contract documents.",
+    sections: [
+      {
+        id: "applicant_documents",
+        titleZh: "主申请人文件和信息",
+        titleEn: "Applicant Documents and Information",
+        items: [
+          item("所有护照原件"),
+          item("目前的英国签证或 BRP 卡正反面"),
+          item("过去 10 年的世界旅行史和相关签证", "包含英国或其他国家的旅行史。"),
+          item("英语证书（雅思 B1）"),
+          item("申请人的生活费证明", "最近 3 个月银行对账单或存款证明，每人不低于 1270 英镑，并有不低于 3 个月存款历史。"),
+          item("中国身份证（正反面）"),
+          item("肺结核检查报告 (Tuberculosis test)", "如适用，请到 UKVI 认可诊所预约并完成检查。"),
+          item("预计的英国住址", "用于入境后在附近邮局取居留卡。"),
+          item("计划来英的时间", "会决定入境许可开始的时间。"),
+        ],
+      },
+      {
+        id: "employer_documents",
+        titleZh: "雇主文件和信息",
+        titleEn: "Employer Documents and Information",
+        items: [
+          item("担保函（CoS letter）", "需包含工作合同开始和结束时间、年薪、分红或补助、工作具体内容。"),
+          item("雇佣合同"),
+        ],
+      },
+    ],
+  },
+  {
+    key: "set_lr_10_year",
+    titleZh: "十年永居材料清单（SET LR）",
+    titleEn: "SET (LR) 10-Year Long Residence Checklist",
+    descriptionZh: "用于十年合法居留永居申请，覆盖护照、BRP、Life in the UK、出入境记录、银行账单、学历、住宿和支持信。",
+    descriptionEn:
+      "For SET (LR) 10-year long residence applications, covering passports, BRP, Life in the UK, absences, bank statements, degrees, accommodation, and supporting letters.",
+    sections: [
+      {
+        id: "set_lr_documents",
+        titleZh: "申请材料",
+        titleEn: "Application Documents",
+        items: [
+          item("申请人的所有护照原件"),
+          item("BRP card / 签证卡"),
+          item("Life in the UK"),
+          item("过去十年的出入境记录清单", "按照护照列表，包含出境和入境的具体年月日及原因。"),
+          item("申请人银行对账单", "过去 3 个月，最后一张必须更新到申请前一个月内。"),
+          item("在英期间的所有学位证明"),
+          item("住宿证明", "房产所有权证明或租房合同。"),
+          item("支持信", "可由配偶、朋友、老师、同事、雇主/前雇主或当地议员出信，说明支持申请人继续在英国生活。", false),
+          item("犯罪记录说明", "如有任何犯罪记录或交通违法，请详细说明。", false),
+        ],
+      },
+    ],
+  },
+  {
+    key: "visitor_visa",
+    titleZh: "Visitor 访问签证材料清单",
+    titleEn: "Visitor Visa Documents Checklist",
+    descriptionZh: "用于英国访问签证申请，覆盖护照、婚姻关系、资金、收入、住宿行程、资产、犯罪记录和邀请人材料。",
+    descriptionEn:
+      "For UK visitor visa applications, covering passports, relationship evidence, funds, income, accommodation/travel plans, assets, criminal history, and invitation evidence.",
+    sections: [
+      {
+        id: "visitor_documents",
+        titleZh: "访问签证文件",
+        titleEn: "Visitor Documents",
+        items: [
+          item("所有护照原件（全本）"),
+          item("结婚证和翻译认证或公证", "如适用。", false),
+          item("资金证明", "如银行存折、流水单；不含机票和住宿，建议按每人每天 100 镑或两人每天 150 镑乘以行程天数准备，并提供翻译。"),
+          item("工资收入以及雇主证明", "Evidence of total monthly income from all employment or occupation after tax."),
+          item("其他收入来源证明", "例如朋友/家人资助、存款、房租、房产等。", false),
+          item("在英期间住宿和行程安排", "例如住宿预订、行程安排、担保人的租房合同。"),
+          item("资产或房产证明", "如房产证等及翻译件。", false),
+          item("犯罪记录说明", "如有任何犯罪记录或交通违法，请详细说明。", false),
+          item("邀请函及担保人材料", "如在英有直系亲属作为担保人，需提供担保人邀请函、护照、BRP 及亲属关系证明。", false),
+        ],
+      },
+      {
+        id: "visitor_notes",
+        titleZh: "文件备注",
+        titleEn: "Document Notes",
+        items: [
+          item("中文文件翻译或公证件", "所有中文文件如户口本、存折、各类证明信等需要正规翻译或公证件。"),
+          item("抬头纸证明信", "官方或雇主开具的证明信必须用有完整联系方式的抬头纸打印。"),
+          item("所有提交文件复印件", "所有文件必须同时提交一份复印件。"),
+        ],
+      },
+    ],
+  },
+  {
     key: "skilled_worker_sponsor_documents",
     titleZh: "工签雇主材料清单",
     titleEn: "Skilled Worker Sponsor Documents Checklist",

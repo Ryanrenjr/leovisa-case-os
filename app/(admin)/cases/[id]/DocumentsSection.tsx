@@ -136,13 +136,27 @@ export default function DocumentsSection({
 
   return (
     <div id="documents-section" className="toss-card mb-8 p-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <h2 className="text-[28px] font-bold tracking-[-0.02em] text-[#191f28]">
           {lang === "zh" ? "文件" : "Documents"}
         </h2>
-        <p className="text-sm font-medium text-[#8b95a1]">
-          {documents.length} {lang === "zh" ? "个文件" : "file(s)"}
-        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm font-medium text-[#8b95a1]">
+            {documents.length} {lang === "zh" ? "个文件" : "file(s)"}
+          </p>
+          {documents.length > 0 ? (
+            <a
+              href={`/cases/${caseId}/documents/download`}
+              className="toss-primary-button px-4 py-2 text-sm font-semibold"
+            >
+              {lang === "zh" ? "打包下载" : "Download ZIP"}
+            </a>
+          ) : (
+            <span className="inline-flex items-center justify-center rounded-2xl border border-[#eef1f4] bg-white px-4 py-2 text-sm font-semibold text-[#c2c8cf]">
+              {lang === "zh" ? "暂无可下载文件" : "No files to download"}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="mb-6 rounded-[24px] border border-[#e8edf3] bg-[#fafbfc] p-5">

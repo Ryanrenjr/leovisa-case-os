@@ -45,6 +45,7 @@ import {
   deleteChecklistItem,
   moveChecklistItemUp,
   moveChecklistItemDown,
+  reorderChecklistItems,
 } from "./checklist-actions";
 import {
   deactivateQuestionnaireLink,
@@ -392,6 +393,7 @@ export default async function CaseDetailPage({
 
             <div className="flex flex-wrap gap-3">
               <ChecklistSummaryDialog
+                caseId={caseItem.id}
                 items={caseItem.checklistItems}
                 lang={lang}
               />
@@ -747,6 +749,26 @@ export default async function CaseDetailPage({
           onDeleteAction={deleteChecklistItem}
           onMoveUpAction={moveChecklistItemUp}
           onMoveDownAction={moveChecklistItemDown}
+          onReorderAction={reorderChecklistItems}
+        />
+
+        <DocumentsSection
+          caseId={caseItem.id}
+          documents={documents}
+          checklistItems={caseItem.checklistItems}
+          onDeleteAction={deleteDocument}
+          onUpdateReviewStatusAction={updateDocumentReviewStatus}
+          onUpdateDisplayNameAction={updateDocumentDisplayName}
+          onArchiveAction={archiveDocument}
+          onUpdateFinalStatusAction={updateDocumentFinalStatus}
+          lang={lang}
+        />
+
+        <SubmissionsSection
+          caseId={caseItem.id}
+          submissions={caseItem.submissions}
+          onDeleteAction={deleteSubmission}
+          lang={lang}
         />
 
         <ContractsSection
@@ -771,25 +793,6 @@ export default async function CaseDetailPage({
           paymentRecords={paymentRecords}
           onCreateAction={createPaymentRecord}
           onDeleteAction={deletePaymentRecord}
-          lang={lang}
-        />
-
-        <SubmissionsSection
-          caseId={caseItem.id}
-          submissions={caseItem.submissions}
-          onDeleteAction={deleteSubmission}
-          lang={lang}
-        />
-
-        <DocumentsSection
-          caseId={caseItem.id}
-          documents={documents}
-          checklistItems={caseItem.checklistItems}
-          onDeleteAction={deleteDocument}
-          onUpdateReviewStatusAction={updateDocumentReviewStatus}
-          onUpdateDisplayNameAction={updateDocumentDisplayName}
-          onArchiveAction={archiveDocument}
-          onUpdateFinalStatusAction={updateDocumentFinalStatus}
           lang={lang}
         />
 

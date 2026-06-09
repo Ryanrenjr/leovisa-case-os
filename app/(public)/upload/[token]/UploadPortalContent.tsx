@@ -38,6 +38,11 @@ type UploadRow = {
   checklistItemId: string;
 };
 
+type SelectedUploadFile = {
+  id: string;
+  file: File;
+};
+
 type PreparedUpload = {
   originalFilename: string;
   normalizedFilename: string;
@@ -46,6 +51,8 @@ type PreparedUpload = {
   storagePath: string;
   signedUrl: string;
 };
+
+const MAX_FILES_PER_ITEM = 20;
 
 type UploadErrorPayload = {
   error?: string;
@@ -136,9 +143,9 @@ const copy: Record<Language, CopyContent> = {
     ],
     checklistGuideItems: [
       "请严格按照顾问创建的文件清单逐项上传。",
-      "每一行只对应一个清单项和一个文件，请不要重复选择同一项。",
+      "每一行对应一个清单项，可为同一项一次上传最多 20 个文件，请不要重复选择同一项。",
       "可以先提交手头已有的材料，已提交项目会从清单中隐藏。",
-      "如一个清单项有多页或多份材料，请先合并为一个清晰文件后再上传。",
+      "如一个清单项有多页或多份材料，可以直接多选文件上传。",
     ],
     guideNoteTitle: "温馨提示",
     guideNote:
@@ -161,12 +168,12 @@ const copy: Record<Language, CopyContent> = {
     errorUnavailable: "该上传链接当前不可用。",
     errorUploadFailed: "提交失败，请稍后再试或联系顾问。",
     errorMissingRequiredChecklistItems: "请先完成所有必传清单项后再提交。",
-    errorDuplicateChecklistItems: "同一个清单项在一次提交中只能上传一次。",
+    errorDuplicateChecklistItems: "同一个清单项一次最多上传 20 个文件，请减少后再提交。",
     errorAlreadyUploadedChecklistItems:
       "部分清单项已经提交，请刷新页面后继续上传剩余项目。",
     errorChecklistValidationFailed: "请先修正清单上传中的重复项和缺失项。",
     missingChecklistItemsLabel: "未提交的必传项",
-    duplicateChecklistItemsLabel: "重复选择的清单项",
+    duplicateChecklistItemsLabel: "超过文件数量上限的清单项",
     alreadyUploadedChecklistItemsLabel: "已经提交的清单项",
     supportedFormats: "支持文件格式：PDF、JPG、JPEG、PNG。",
     uploadFormatHint: "请上传 PDF、JPG、JPEG 或 PNG 文件。",
@@ -206,9 +213,9 @@ const copy: Record<Language, CopyContent> = {
     ],
     checklistGuideItems: [
       "Please upload strictly against the checklist created by your consultant.",
-      "Each row should contain one checklist item and one file. Do not select the same item twice.",
+      "Each row should contain one checklist item and up to 20 files. Do not select the same item twice.",
       "You can submit the documents you have now. Submitted items will be hidden from the checklist.",
-      "If one checklist item contains multiple pages or supporting files, please combine them into one clear file before uploading.",
+      "If one checklist item contains multiple pages or supporting files, you can select multiple files for that item.",
     ],
     guideNoteTitle: "Important Note",
     guideNote:
@@ -236,13 +243,13 @@ const copy: Record<Language, CopyContent> = {
     errorMissingRequiredChecklistItems:
       "Please upload all required checklist items before submitting.",
     errorDuplicateChecklistItems:
-      "Each checklist item can only be uploaded once per submission.",
+      "Each checklist item can include up to 20 files per submission.",
     errorAlreadyUploadedChecklistItems:
       "Some checklist items have already been submitted. Please refresh the page and continue with the remaining items.",
     errorChecklistValidationFailed:
       "Please fix the duplicate and missing checklist items before submitting.",
     missingChecklistItemsLabel: "Missing required items",
-    duplicateChecklistItemsLabel: "Duplicate checklist items",
+    duplicateChecklistItemsLabel: "Checklist items over file limit",
     alreadyUploadedChecklistItemsLabel: "Already submitted checklist items",
     supportedFormats: "Supported formats: PDF, JPG, JPEG, PNG.",
     uploadFormatHint: "Please upload a PDF, JPG, JPEG, or PNG file.",
@@ -308,10 +315,13 @@ export default function UploadPortalContent({
   const t = useMemo(() => copy[lang], [lang]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
+  const [selectedFilesByRowId, setSelectedFilesByRowId] = useState<
+    Record<number, SelectedUploadFile[]>
+  >({});
   const guideIntro = checklistMode
     ? lang === "zh"
-      ? "请按照顾问创建的文件清单逐项上传。每一行请选择一个清单项并上传对应文件。"
-      : "Please upload documents against the checklist created by your consultant. Each row should match one checklist item and one file."
+      ? "请按照顾问创建的文件清单逐项上传。每一行请选择一个清单项，并可上传最多 20 个对应文件。"
+      : "Please upload documents against the checklist created by your consultant. Each row should match one checklist item and can include up to 20 files."
     : t.guideIntro;
   const guideItems = checklistMode ? t.checklistGuideItems : t.guideItems;
 
@@ -347,6 +357,11 @@ export default function UploadPortalContent({
       }
       return prev.filter((row) => row.id !== id);
     });
+    setSelectedFilesByRowId((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   }
 
   function updateRowDocType(id: number, value: string) {
@@ -367,6 +382,27 @@ export default function UploadPortalContent({
     return rows.some(
       (row) => row.id !== currentRowId && row.checklistItemId === itemId
     );
+  }
+
+  function updateRowFiles(id: number, files: FileList | null) {
+    const selectedFiles = Array.from(files ?? [])
+      .slice(0, MAX_FILES_PER_ITEM)
+      .map((file, index) => ({
+        id: `${file.name}_${file.size}_${file.lastModified}_${index}`,
+        file,
+      }));
+
+    setSelectedFilesByRowId((prev) => ({
+      ...prev,
+      [id]: selectedFiles,
+    }));
+  }
+
+  function removeRowFile(rowId: number, fileId: string) {
+    setSelectedFilesByRowId((prev) => ({
+      ...prev,
+      [rowId]: (prev[rowId] ?? []).filter((item) => item.id !== fileId),
+    }));
   }
 
   function redirectWithError(payload: UploadErrorPayload) {
@@ -435,21 +471,34 @@ export default function UploadPortalContent({
     const form = event.currentTarget;
     const formData = new FormData(form);
     const localItems = rows.map((row, index) => {
-      const file = formData.get(`file_${index}`);
+      const files = (selectedFilesByRowId[row.id] ?? []).map(
+        (item) => item.file
+      );
       const otherName =
         formData.get(`otherName_${index}`)?.toString().trim() || "";
 
       return {
         row,
-        file: file instanceof File ? file : null,
+        files,
         otherName,
       };
     });
 
-    if (localItems.some((item) => !item.file || item.file.size <= 0)) {
+    if (
+      localItems.some(
+        (item) =>
+          item.files.length === 0 || item.files.length > MAX_FILES_PER_ITEM
+      )
+    ) {
       redirectWithError({ error: "invalid_files" });
       return;
     }
+    const uploadFiles = localItems.flatMap((item, rowIndex) =>
+      item.files.map((file) => ({
+        rowIndex,
+        file,
+      }))
+    );
 
     setIsSubmitting(true);
     setUploadProgress(lang === "zh" ? "正在准备上传..." : "Preparing upload...");
@@ -461,10 +510,10 @@ export default function UploadPortalContent({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          files: localItems.map((item) => ({
-            originalFilename: item.file?.name,
-            mimeType: item.file?.type,
-            fileSize: item.file?.size,
+          files: uploadFiles.map((item) => ({
+            originalFilename: item.file.name,
+            mimeType: item.file.type,
+            fileSize: item.file.size,
           })),
         }),
       });
@@ -472,28 +521,24 @@ export default function UploadPortalContent({
         uploads: PreparedUpload[];
       };
 
-      if (preparePayload.uploads.length !== localItems.length) {
+      if (preparePayload.uploads.length !== uploadFiles.length) {
         throw { error: "upload_failed" };
       }
 
       const completedItems = [];
 
-      for (let index = 0; index < localItems.length; index++) {
-        const localItem = localItems[index];
+      for (let index = 0; index < uploadFiles.length; index++) {
+        const uploadFile = uploadFiles[index];
+        const localItem = localItems[uploadFile.rowIndex];
         const preparedUpload = preparePayload.uploads[index];
-        const file = localItem.file;
-
-        if (!file) {
-          throw { error: "invalid_files" };
-        }
 
         setUploadProgress(
           lang === "zh"
-            ? `正在上传 ${index + 1}/${localItems.length}...`
-            : `Uploading ${index + 1}/${localItems.length}...`
+            ? `正在上传 ${index + 1}/${uploadFiles.length}...`
+            : `Uploading ${index + 1}/${uploadFiles.length}...`
         );
 
-        await uploadToSignedUrl(preparedUpload.signedUrl, file);
+        await uploadToSignedUrl(preparedUpload.signedUrl, uploadFile.file);
 
         completedItems.push({
           docType: checklistMode ? "" : localItem.row.docType,
@@ -901,13 +946,52 @@ export default function UploadPortalContent({
                           type="file"
                           name={`file_${index}`}
                           accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                          multiple
+                          onChange={(event) => {
+                            updateRowFiles(row.id, event.currentTarget.files);
+                            event.currentTarget.value = "";
+                          }}
                           className="w-full rounded-2xl border border-[#dfe3e8] bg-white px-4 py-3 text-[15px] text-[#191f28] outline-none"
                           disabled={isSubmitting}
-                          required
                         />
                         <p className="mt-2 text-[13px] text-[#8b95a1]">
-                          {t.uploadFormatHint}
+                          {checklistMode
+                            ? lang === "zh"
+                              ? `${t.uploadFormatHint} 每项最多 20 个文件。`
+                              : `${t.uploadFormatHint} Up to 20 files per item.`
+                            : t.uploadFormatHint}
                         </p>
+                        {(selectedFilesByRowId[row.id]?.length ?? 0) > 0 ? (
+                          <div className="mt-3 space-y-2">
+                            {(selectedFilesByRowId[row.id] ?? []).map(
+                              (selectedFile, fileIndex) => (
+                                <div
+                                  key={selectedFile.id}
+                                  className="flex items-center justify-between gap-3 rounded-xl border border-[#eef1f4] bg-[#fafbfc] px-3 py-2"
+                                >
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-[#333d4b]">
+                                      {fileIndex + 1}. {selectedFile.file.name}
+                                    </p>
+                                    <p className="mt-1 text-xs text-[#8b95a1]">
+                                      {selectedFile.file.size.toLocaleString()} bytes
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      removeRowFile(row.id, selectedFile.id)
+                                    }
+                                    disabled={isSubmitting}
+                                    className="shrink-0 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {lang === "zh" ? "删除" : "Delete"}
+                                  </button>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
 

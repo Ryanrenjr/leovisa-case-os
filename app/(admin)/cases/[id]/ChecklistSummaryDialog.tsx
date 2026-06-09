@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 type ChecklistSummaryDocument = {
   id: string;
@@ -20,6 +21,7 @@ type ChecklistSummaryItem = {
 };
 
 type ChecklistSummaryDialogProps = {
+  caseId: string;
   items: ChecklistSummaryItem[];
   lang: "en" | "zh";
 };
@@ -35,22 +37,72 @@ function formatDate(value: Date | string) {
 }
 
 export default function ChecklistSummaryDialog({
+  caseId,
   items,
   lang,
 }: ChecklistSummaryDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [isReordering, startReorderTransition] = useTransition();
+  const [draggedItemId, setDraggedItemId] = useState("");
+  const [orderedItems, setOrderedItems] = useState(() =>
+    [...items].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label)
+    )
+  );
   const uploadedCount = items.filter((item) => item.documents.length > 0).length;
   const requiredCount = items.filter((item) => item.isRequired).length;
   const missingRequiredCount = items.filter(
     (item) => item.isRequired && item.documents.length === 0
   ).length;
-  const sortedItems = useMemo(
-    () =>
-      [...items].sort(
-        (a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label)
-      ),
-    [items]
-  );
+
+  function persistChecklistOrder(nextItems: ChecklistSummaryItem[]) {
+    startReorderTransition(async () => {
+      const response = await fetch(`/cases/${caseId}/checklist/reorder`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          itemIds: nextItems.map((item) => item.id),
+        }),
+      });
+
+      if (!response.ok) {
+        setOrderedItems(
+          [...items].sort(
+            (a, b) =>
+              a.sortOrder - b.sortOrder || a.label.localeCompare(b.label)
+          )
+        );
+        return;
+      }
+
+      router.refresh();
+    });
+  }
+
+  function handleDrop(targetItemId: string) {
+    if (!draggedItemId || draggedItemId === targetItemId) {
+      setDraggedItemId("");
+      return;
+    }
+
+    const fromIndex = orderedItems.findIndex((item) => item.id === draggedItemId);
+    const toIndex = orderedItems.findIndex((item) => item.id === targetItemId);
+
+    if (fromIndex === -1 || toIndex === -1) {
+      setDraggedItemId("");
+      return;
+    }
+
+    const nextItems = [...orderedItems];
+    const [movedItem] = nextItems.splice(fromIndex, 1);
+    nextItems.splice(toIndex, 0, movedItem);
+    setOrderedItems(nextItems);
+    setDraggedItemId("");
+    persistChecklistOrder(nextItems);
+  }
 
   return (
     <>
@@ -114,20 +166,27 @@ export default function ChecklistSummaryDialog({
             </div>
 
             <div className="max-h-[58vh] space-y-3 overflow-auto p-6">
-              {sortedItems.length === 0 ? (
+              {orderedItems.length === 0 ? (
                 <p className="rounded-2xl border border-dashed border-[#dfe3e8] p-5 text-sm text-[#8b95a1]">
                   {lang === "zh"
                     ? "还没有配置材料清单。"
                     : "No checklist has been configured yet."}
                 </p>
               ) : (
-                sortedItems.map((item, index) => {
+                orderedItems.map((item, index) => {
                   const uploaded = item.documents.length > 0;
 
                   return (
                     <div
                       key={item.id}
-                      className="rounded-2xl border border-[#eef1f4] bg-white p-4"
+                      draggable
+                      onDragStart={() => setDraggedItemId(item.id)}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={() => handleDrop(item.id)}
+                      onDragEnd={() => setDraggedItemId("")}
+                      className={`cursor-move rounded-2xl border border-[#eef1f4] bg-white p-4 transition ${
+                        draggedItemId === item.id ? "opacity-60" : ""
+                      }`}
                     >
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
@@ -140,6 +199,13 @@ export default function ChecklistSummaryDialog({
                               : lang === "zh"
                               ? "可选"
                               : "Optional"}
+                            {" · "}
+                            {lang === "zh" ? "拖拽调整顺序" : "Drag to reorder"}
+                            {isReordering
+                              ? lang === "zh"
+                                ? " · 保存中"
+                                : " · saving"
+                              : ""}
                           </p>
                           <p className="mt-1 text-[16px] font-semibold text-[#191f28]">
                             {item.label}

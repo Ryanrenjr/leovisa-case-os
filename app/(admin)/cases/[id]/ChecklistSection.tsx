@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
 import {
   documentChecklistTemplates,
@@ -30,6 +31,7 @@ type ChecklistSectionProps = {
   onDeleteAction: (formData: FormData) => void;
   onMoveUpAction: (formData: FormData) => void;
   onMoveDownAction: (formData: FormData) => void;
+  onReorderAction: (formData: FormData) => Promise<void>;
 };
 
 function cloneTemplateItems(templateKey: string) {
@@ -62,7 +64,12 @@ export default function ChecklistSection({
   onDeleteAction,
   onMoveUpAction,
   onMoveDownAction,
+  onReorderAction,
 }: ChecklistSectionProps) {
+  const router = useRouter();
+  const [isReordering, startReorderTransition] = useTransition();
+  const [orderedItems, setOrderedItems] = useState(items);
+  const [draggedItemId, setDraggedItemId] = useState("");
   const [selectedTemplateKey, setSelectedTemplateKey] = useState(
     documentChecklistTemplates[0]?.key ?? ""
   );
@@ -74,8 +81,8 @@ export default function ChecklistSection({
   );
   const requiredCount = items.filter((item) => item.isRequired).length;
   const uploadedCount = items.filter((item) => item._count.documents > 0).length;
-  const visibleItems = items.slice(0, 3);
-  const hiddenItems = items.slice(3);
+  const visibleItems = orderedItems.slice(0, 3);
+  const hiddenItems = orderedItems.slice(3);
   const selectedTemplate = useMemo(
     () =>
       documentChecklistTemplates.find(
@@ -96,6 +103,10 @@ export default function ChecklistSection({
       ),
     [editableTemplateItems]
   );
+
+  useEffect(() => {
+    setOrderedItems(items);
+  }, [items]);
 
   function selectTemplate(templateKey: string) {
     setSelectedTemplateKey(templateKey);
@@ -120,13 +131,56 @@ export default function ChecklistSection({
     setEditableTemplateItems((prev) => [...prev, makeCustomTemplateItem()]);
   }
 
+  function persistChecklistOrder(nextItems: ChecklistItem[]) {
+    const formData = new FormData();
+    formData.set("caseId", caseId);
+    formData.set("itemIds", JSON.stringify(nextItems.map((item) => item.id)));
+
+    startReorderTransition(async () => {
+      await onReorderAction(formData);
+      router.refresh();
+    });
+  }
+
+  function handleDrop(targetItemId: string) {
+    if (!draggedItemId || draggedItemId === targetItemId) {
+      setDraggedItemId("");
+      return;
+    }
+
+    const fromIndex = orderedItems.findIndex((item) => item.id === draggedItemId);
+    const toIndex = orderedItems.findIndex((item) => item.id === targetItemId);
+
+    if (fromIndex === -1 || toIndex === -1) {
+      setDraggedItemId("");
+      return;
+    }
+
+    const nextItems = [...orderedItems];
+    const [movedItem] = nextItems.splice(fromIndex, 1);
+    nextItems.splice(toIndex, 0, movedItem);
+    setOrderedItems(nextItems);
+    setDraggedItemId("");
+    persistChecklistOrder(nextItems);
+  }
+
   function renderChecklistItem(item: ChecklistItem, index: number) {
     const preserveExpanded = defaultExpanded || index >= 3;
     const isFirst = index === 0;
-    const isLast = index === items.length - 1;
+    const isLast = index === orderedItems.length - 1;
 
     return (
-      <div key={item.id} className="toss-soft-card p-5">
+      <div
+        key={item.id}
+        draggable
+        onDragStart={() => setDraggedItemId(item.id)}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={() => handleDrop(item.id)}
+        onDragEnd={() => setDraggedItemId("")}
+        className={`toss-soft-card cursor-move p-5 transition ${
+          draggedItemId === item.id ? "opacity-60" : ""
+        }`}
+      >
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className="toss-label mb-2">
@@ -134,6 +188,10 @@ export default function ChecklistSection({
             </p>
             <p className="text-[18px] font-semibold text-[#191f28]">
               {item.label}
+            </p>
+            <p className="mt-2 text-xs font-semibold text-[#8b95a1]">
+              {lang === "zh" ? "拖拽调整顺序" : "Drag to reorder"}
+              {isReordering ? (lang === "zh" ? " · 保存中" : " · saving") : ""}
             </p>
           </div>
 
