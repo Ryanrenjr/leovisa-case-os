@@ -5,6 +5,11 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "../../../../lib/prisma";
 import { normalizeReference } from "../../../../lib/case-reference";
 import { removeStorageFiles } from "../../../../lib/supabase-admin";
+import {
+  buildLegacyDependantsText,
+  parseDependantInputs,
+  syncCasePeople,
+} from "../../../../lib/case-people";
 
 function parseOptionalDate(value: string) {
   return value ? new Date(`${value}T00:00:00`) : null;
@@ -101,7 +106,8 @@ export async function updateCase(formData: FormData) {
     formData.get("appointmentDate")?.toString().trim() || "";
   const applicationCentre =
     formData.get("applicationCentre")?.toString().trim() || "";
-  const dependants = formData.get("dependants")?.toString().trim() || "";
+  const dependantPeople = parseDependantInputs(formData);
+  const dependants = buildLegacyDependantsText(dependantPeople);
   const immigrationPortalUrl =
     formData.get("immigrationPortalUrl")?.toString().trim() || "";
   const immigrationPortalUsername =
@@ -123,27 +129,33 @@ export async function updateCase(formData: FormData) {
 
   const existingCase = await prisma.case.findUnique({
     where: { id: caseId },
-    select: {
-      id: true,
-      caseCode: true,
-      reference: true,
-      clientId: true,
-      serviceType: true,
-      country: true,
-      assignedConsultantId: true,
-      status: true,
-      contractStatus: true,
-      intakeStatus: true,
-      visaExpiryDate: true,
-      submissionDate: true,
-      appointmentDate: true,
-      applicationCentre: true,
-      dependants: true,
-      paymentStatus: true,
-      notes: true,
-      immigrationPortalUrl: true,
-      immigrationPortalUsername: true,
-      immigrationPortalPassword: true,
+    include: {
+      client: {
+        select: {
+          chineseName: true,
+          englishName: true,
+          email: true,
+          phone: true,
+          nationality: true,
+        },
+      },
+      people: {
+        where: {
+          role: "dependant",
+        },
+        select: {
+          id: true,
+          relationship: true,
+          fullName: true,
+          dateOfBirth: true,
+          nationality: true,
+          passportNumber: true,
+          email: true,
+          phone: true,
+          notes: true,
+          sortOrder: true,
+        },
+      },
     },
   });
 
@@ -173,28 +185,47 @@ export async function updateCase(formData: FormData) {
     redirect(`/cases/${caseId}/edit?error=duplicate_reference`);
   }
 
-  await prisma.case.update({
-    where: { id: caseId },
-    data: {
-      reference,
-      clientId,
-      serviceType,
-      country,
-      assignedConsultantId: assignedConsultantId || null,
-      status,
-      contractStatus,
-      intakeStatus,
-      visaExpiryDate: parseOptionalDate(visaExpiryDate),
-      submissionDate: parseOptionalDate(submissionDate),
-      appointmentDate: parseOptionalDate(appointmentDate),
-      applicationCentre: applicationCentre || null,
-      dependants: dependants || null,
-      paymentStatus,
-      notes: notes || null,
-      immigrationPortalUrl: immigrationPortalUrl || null,
-      immigrationPortalUsername: immigrationPortalUsername || null,
-      immigrationPortalPassword: immigrationPortalPassword || null,
+  const nextClient = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: {
+      chineseName: true,
+      englishName: true,
+      email: true,
+      phone: true,
+      nationality: true,
     },
+  });
+
+  if (!nextClient) {
+    throw new Error("Client not found.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.case.update({
+      where: { id: caseId },
+      data: {
+        reference,
+        clientId,
+        serviceType,
+        country,
+        assignedConsultantId: assignedConsultantId || null,
+        status,
+        contractStatus,
+        intakeStatus,
+        visaExpiryDate: parseOptionalDate(visaExpiryDate),
+        submissionDate: parseOptionalDate(submissionDate),
+        appointmentDate: parseOptionalDate(appointmentDate),
+        applicationCentre: applicationCentre || null,
+        dependants: dependants || null,
+        paymentStatus,
+        notes: notes || null,
+        immigrationPortalUrl: immigrationPortalUrl || null,
+        immigrationPortalUsername: immigrationPortalUsername || null,
+        immigrationPortalPassword: immigrationPortalPassword || null,
+      },
+    });
+
+    await syncCasePeople(tx, caseId, nextClient, dependantPeople);
   });
 
   await prisma.auditLog.create({
@@ -227,6 +258,7 @@ export async function updateCase(formData: FormData) {
         immigrationPortalPassword: existingCase.immigrationPortalPassword
           ? "[stored]"
           : null,
+        people: existingCase.people,
       },
       newValue: {
         caseCode: existingCase.caseCode,
@@ -248,6 +280,7 @@ export async function updateCase(formData: FormData) {
         immigrationPortalUrl: immigrationPortalUrl || null,
         immigrationPortalUsername: immigrationPortalUsername || null,
         immigrationPortalPassword: immigrationPortalPassword ? "[stored]" : null,
+        dependantCount: dependantPeople.length,
       },
     },
   });

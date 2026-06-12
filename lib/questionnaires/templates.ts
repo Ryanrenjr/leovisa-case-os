@@ -193,6 +193,103 @@ const parentDetailsField: QuestionnaireField = {
   ],
 };
 
+const maritalStatusOptions: QuestionnaireFieldOption[] = [
+  { value: "single", labelZh: "未婚", labelEn: "Single" },
+  { value: "married", labelZh: "已婚", labelEn: "Married" },
+  { value: "civil_partner", labelZh: "民事伴侣", labelEn: "Civil partner" },
+  { value: "divorced", labelZh: "离婚", labelEn: "Divorced" },
+  { value: "widowed", labelZh: "丧偶", labelEn: "Widowed" },
+  { value: "separated", labelZh: "分居", labelEn: "Separated" },
+];
+
+const naturalisationAddressHistoryField: QuestionnaireField = {
+  id: "addressHistory",
+  type: "repeater",
+  labelZh: "申请人近 5 年地址记录",
+  labelEn: "Applicant address history in the last 5 years",
+  helperZh: "请填写近 5 年所有居住地址；如以英国公民配偶/民事伴侣身份申请，至少覆盖近 3 年。请尽量填写搬入和搬出年月。",
+  helperEn:
+    "Add all residential addresses in the last 5 years; if applying as the spouse or civil partner of a British citizen, cover at least the last 3 years. Include move-in and move-out months where possible.",
+  required: true,
+  fields: [
+    { id: "address", type: "textarea", labelZh: "详细地址", labelEn: "Full address", required: true },
+    { id: "moveIn", type: "month", labelZh: "搬入时间", labelEn: "Move-in month", required: true },
+    { id: "moveOut", type: "month", labelZh: "搬出时间（仍居住可留空）", labelEn: "Move-out month, leave blank if current" },
+  ],
+};
+
+const naturalisationAbsenceHistoryField: QuestionnaireField = {
+  id: "ukAbsenceHistory",
+  type: "repeater",
+  labelZh: "过去 5 年离开英国记录",
+  labelEn: "Absences from the UK in the last 5 years",
+  helperZh:
+    "请按时间顺序填写每次离开英国的国家/地区、原因、离境日期、返英日期和离境天数。如以英国公民配偶/民事伴侣身份申请，通常只需近 3 年。",
+  helperEn:
+    "List each absence from the UK in date order with country, reason, departure date, return date, and total days absent. If applying as the spouse or civil partner of a British citizen, the usual qualifying period is 3 years.",
+  required: true,
+  fields: [
+    { id: "country", type: "text", labelZh: "前往国家/地区", labelEn: "Country or region visited", required: true },
+    { id: "reason", type: "text", labelZh: "离境原因", labelEn: "Reason for absence", required: true },
+    { id: "departureDate", type: "date", labelZh: "离开英国日期", labelEn: "Date of departure from the UK", required: true },
+    { id: "returnDate", type: "date", labelZh: "返回英国日期", labelEn: "Date of return to the UK", required: true },
+    { id: "totalDays", type: "text", labelZh: "离境总天数", labelEn: "Total days absent" },
+  ],
+};
+
+const naturalisationRefereesField: QuestionnaireField = {
+  id: "referees",
+  type: "repeater",
+  labelZh: "2 位推荐人信息",
+  labelEn: "Details of 2 referees",
+  helperZh:
+    "请提供 2 位符合入籍要求的推荐人。在线申请提交后，系统可能会通过邮箱联系推荐人确认身份或信息，请提前征得推荐人同意，并确保邮箱准确。",
+  helperEn:
+    "Provide 2 referees who meet the citizenship referee requirements. After the online application is submitted, the system may contact referees by email to confirm identity or information, so please get their consent and check the email address carefully.",
+  required: true,
+  fields: [
+    { id: "fullName", type: "text", labelZh: "推荐人姓名", labelEn: "Referee full name", required: true },
+    { id: "gender", type: "text", labelZh: "性别", labelEn: "Gender" },
+    { id: "dateOfBirth", type: "date", labelZh: "出生日期", labelEn: "Date of birth", required: true },
+    { id: "phone", type: "tel", labelZh: "联系电话", labelEn: "Phone number", required: true },
+    { id: "email", type: "email", labelZh: "邮箱", labelEn: "Email", required: true },
+    { id: "passportNumber", type: "text", labelZh: "护照号", labelEn: "Passport number" },
+    { id: "occupation", type: "text", labelZh: "职业/专业身份", labelEn: "Occupation or professional status" },
+    { id: "isBritishPassportHolder", type: "select", labelZh: "是否持有英国护照？", labelEn: "British passport holder?", options: yesNoOptions },
+    {
+      id: "addressHistory",
+      type: "textarea",
+      labelZh: "近 3 年地址",
+      labelEn: "Address history in the last 3 years",
+      required: true,
+    },
+    {
+      id: "howKnownApplicant",
+      type: "textarea",
+      labelZh: "如何认识申请人，以及认识多久",
+      labelEn: "How they know the applicant and for how long",
+      required: true,
+    },
+  ],
+};
+
+const naturalisationPartnerField: QuestionnaireField = {
+  id: "partnerDetails",
+  type: "repeater",
+  labelZh: "配偶/民事伴侣信息（如适用）",
+  labelEn: "Spouse or civil partner details, if applicable",
+  helperZh: "如婚姻状态为已婚或民事伴侣，请填写现任配偶/民事伴侣信息。",
+  helperEn: "If you are married or in a civil partnership, provide details of your current spouse or civil partner.",
+  fields: [
+    { id: "fullName", type: "text", labelZh: "姓名", labelEn: "Full name" },
+    { id: "dateOfBirth", type: "date", labelZh: "出生日期", labelEn: "Date of birth" },
+    { id: "placeOfBirth", type: "text", labelZh: "出生地点", labelEn: "Place of birth" },
+    { id: "nationality", type: "text", labelZh: "国籍", labelEn: "Nationality" },
+    { id: "currentAddress", type: "textarea", labelZh: "现在地址", labelEn: "Current address" },
+    { id: "marriageDatePlace", type: "textarea", labelZh: "何时何地结婚/登记民事伴侣", labelEn: "Date and place of marriage or civil partnership" },
+  ],
+};
+
 const visaAndCharacterFields: QuestionnaireField[] = [
   {
     id: "currentUkVisa",
@@ -699,6 +796,141 @@ const visitorAdditionalSection: QuestionnaireSection = {
   ],
 };
 
+const naturalisationSections: QuestionnaireSection[] = [
+  {
+    id: "personal",
+    titleZh: "个人信息",
+    titleEn: "Personal Details",
+    fields: [
+      ...contactFields,
+      ...previousNameFields,
+      {
+        id: "maritalStatus",
+        type: "select",
+        labelZh: "婚姻状态",
+        labelEn: "Marital status",
+        options: maritalStatusOptions,
+        required: true,
+      },
+    ],
+  },
+  {
+    id: "addresses",
+    titleZh: "地址信息",
+    titleEn: "Address Details",
+    fields: [naturalisationAddressHistoryField],
+  },
+  {
+    id: "immigration_status",
+    titleZh: "永居与入籍资格",
+    titleEn: "Settlement and Citizenship Eligibility",
+    fields: [
+      {
+        id: "settlementRoute",
+        type: "textarea",
+        labelZh: "何时通过何种途径（route）获得永居/settled status？",
+        labelEn: "When and through which route did you obtain ILR or settled status?",
+        helperZh: "请写明获批日期、路线（例如 Skilled Worker 5 years、10-year long residence、spouse route、EU Settlement Scheme 等）和可用证明。",
+        helperEn:
+          "Include the grant date, route (for example Skilled Worker 5 years, 10-year long residence, spouse route, EU Settlement Scheme), and available evidence.",
+        required: true,
+      },
+      {
+        id: "lifeInUkReference",
+        type: "text",
+        labelZh: "Life in the UK test reference number",
+        labelEn: "Life in the UK test reference number",
+      },
+      {
+        id: "englishDegree",
+        type: "select",
+        labelZh: "是否有英语授课学位？",
+        labelEn: "Do you have a degree taught in English?",
+        options: yesNoOptions,
+      },
+      {
+        id: "englishTest",
+        type: "textarea",
+        labelZh: "是否提供英语 B1 或以上考试？请说明考试名称、等级和 reference number",
+        labelEn: "Will you provide an English test at B1 or above? Add test name, level, and reference number",
+      },
+    ],
+  },
+  {
+    id: "travel_character",
+    titleZh: "出入境与品格记录",
+    titleEn: "Travel and Good Character",
+    fields: [
+      ...visaAndCharacterFields,
+      naturalisationAbsenceHistoryField,
+      worldTravelHistoryField,
+    ],
+  },
+  {
+    id: "family",
+    titleZh: "家庭信息",
+    titleEn: "Family Details",
+    fields: [
+      parentDetailsField,
+      naturalisationPartnerField,
+      {
+        id: "previousPartners",
+        type: "repeater",
+        labelZh: "以前的婚姻/民事伴侣信息（如有）",
+        labelEn: "Previous marriage or civil partnership details, if any",
+        fields: [
+          { id: "fullName", type: "text", labelZh: "姓名", labelEn: "Full name" },
+          { id: "dateOfBirth", type: "date", labelZh: "出生日期", labelEn: "Date of birth" },
+          { id: "placeOfBirth", type: "text", labelZh: "出生地点", labelEn: "Place of birth" },
+          { id: "nationality", type: "text", labelZh: "国籍", labelEn: "Nationality" },
+          { id: "marriageDatePlace", type: "textarea", labelZh: "结婚/登记时间和地点", labelEn: "Marriage or civil partnership date and place" },
+          { id: "endDatePlaceReason", type: "textarea", labelZh: "关系结束时间、地点和原因", labelEn: "Date, place, and reason the relationship ended" },
+        ],
+      },
+      {
+        id: "ukFamilyMembers",
+        type: "repeater",
+        labelZh: "在英国的其他家人（如有）",
+        labelEn: "Other family members in the UK, if any",
+        fields: [
+          { id: "fullName", type: "text", labelZh: "姓名", labelEn: "Full name" },
+          { id: "relationship", type: "text", labelZh: "关系", labelEn: "Relationship" },
+          { id: "nationality", type: "text", labelZh: "国籍", labelEn: "Nationality" },
+          { id: "visaType", type: "text", labelZh: "签证/身份类型", labelEn: "Visa or status type" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "referees",
+    titleZh: "推荐人信息",
+    titleEn: "Referees",
+    descriptionZh: "入籍申请通常需要 2 位推荐人，其中至少 1 位应为专业人士，推荐人通常需要认识成年申请人至少 3 年。",
+    descriptionEn:
+      "Naturalisation applications usually require 2 referees. At least one should be a professional person, and referees should normally have known an adult applicant for at least 3 years.",
+    fields: [naturalisationRefereesField],
+  },
+  {
+    id: "additional",
+    titleZh: "补充信息",
+    titleEn: "Additional Details",
+    fields: [
+      {
+        id: "mainHomeAfterNaturalisation",
+        type: "textarea",
+        labelZh: "入籍后主要居住地计划",
+        labelEn: "Where do you intend to have your main home after naturalisation?",
+      },
+      {
+        id: "additionalInfo",
+        type: "textarea",
+        labelZh: "其他需要顾问了解的入籍申请信息",
+        labelEn: "Any other information your consultant should know for the citizenship application",
+      },
+    ],
+  },
+];
+
 export const questionnaireTemplates: QuestionnaireTemplate[] = [
   {
     key: "settlement",
@@ -711,6 +943,15 @@ export const questionnaireTemplates: QuestionnaireTemplate[] = [
       includeLifeInUk: true,
       includeChinaTies: true,
     }),
+  },
+  {
+    key: "naturalisation",
+    titleZh: "英国入籍问题清单",
+    titleEn: "British Citizenship Naturalisation Questionnaire",
+    descriptionZh: "用于英国 Form AN 入籍申请前的信息收集，覆盖居住、离境、永居路线、配偶/家庭、推荐人、语言和品格信息。",
+    descriptionEn:
+      "Information collection for British citizenship by naturalisation (Form AN), covering residence, absences, settlement route, spouse/family details, referees, language, and good character information.",
+    sections: naturalisationSections,
   },
   {
     key: "spouse_visa_overseas",

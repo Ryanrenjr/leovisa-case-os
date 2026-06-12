@@ -46,6 +46,23 @@ export default async function EditCasePage({
       immigrationPortalUrl: true,
       immigrationPortalUsername: true,
       immigrationPortalPassword: true,
+      people: {
+        where: {
+          role: "dependant",
+        },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          relationship: true,
+          fullName: true,
+          dateOfBirth: true,
+          nationality: true,
+          passportNumber: true,
+          email: true,
+          phone: true,
+          notes: true,
+        },
+      },
     },
   });
 

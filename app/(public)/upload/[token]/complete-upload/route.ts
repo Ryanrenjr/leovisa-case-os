@@ -253,6 +253,7 @@ export async function POST(request: Request, context: RouteContext) {
             submissionId: createdSubmission.id,
             docType,
             checklistItemId: item.checklistItemId,
+            casePersonId: checklistItem?.casePersonId ?? null,
             displayName,
             originalFilename: item.originalFilename,
             normalizedFilename: item.normalizedFilename,
@@ -291,6 +292,11 @@ export async function POST(request: Request, context: RouteContext) {
             fileCount: uploadItems.length,
             docTypes: uploadItems.map((item) => item.docType),
             checklistItemIds: uploadItems.map((item) => item.checklistItemId),
+            casePersonIds: uploadItems.map((item) =>
+              item.checklistItemId
+                ? checklistItemMap.get(item.checklistItemId)?.casePersonId ?? null
+                : null
+            ),
             otherNames: uploadItems.map((item) => item.otherName || null),
             fileNames: uploadItems.map((item) => item.originalFilename),
           },

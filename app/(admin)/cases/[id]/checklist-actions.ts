@@ -24,7 +24,47 @@ type ChecklistTemplatePayloadItem = {
   label?: unknown;
   description?: unknown;
   isRequired?: unknown;
+  scope?: unknown;
 };
+
+type ChecklistScope =
+  | "case"
+  | "main_applicant"
+  | "dependants"
+  | "per_person"
+  | "shared";
+
+type CasePersonSummary = {
+  id: string;
+  role: string;
+  relationship: string | null;
+  fullName: string;
+  sortOrder: number;
+};
+
+type ParsedChecklistItem = {
+  label: string;
+  description: string;
+  isRequired: boolean;
+  scope: ChecklistScope;
+};
+
+type ExpandedChecklistItem = {
+  label: string;
+  description: string | null;
+  isRequired: boolean;
+  casePersonId: string | null;
+};
+
+function isChecklistScope(value: unknown): value is ChecklistScope {
+  return (
+    value === "case" ||
+    value === "main_applicant" ||
+    value === "dependants" ||
+    value === "per_person" ||
+    value === "shared"
+  );
+}
 
 function parseTemplateItems(value: string) {
   const parsed = JSON.parse(value) as unknown;
@@ -42,8 +82,92 @@ function parseTemplateItems(value: string) {
       description:
         typeof item.description === "string" ? item.description.trim() : "",
       isRequired: item.isRequired !== false,
+      scope: isChecklistScope(item.scope) ? item.scope : "case",
     }))
     .filter((item) => item.label);
+}
+
+function getPersonPrefix(person: CasePersonSummary) {
+  const roleLabel =
+    person.role === "main_applicant"
+      ? "Main Applicant"
+      : person.relationship || "Dependant";
+
+  return `${roleLabel} - ${person.fullName}`;
+}
+
+function expandChecklistItemsForPeople(
+  items: ParsedChecklistItem[],
+  people: CasePersonSummary[]
+): ExpandedChecklistItem[] {
+  const sortedPeople = [...people].sort(
+    (a, b) => a.sortOrder - b.sortOrder || a.fullName.localeCompare(b.fullName)
+  );
+  const mainApplicants = sortedPeople.filter(
+    (person) => person.role === "main_applicant"
+  );
+  const dependants = sortedPeople.filter((person) => person.role === "dependant");
+
+  return items.flatMap((item) => {
+    const withPerson = (person: CasePersonSummary): ExpandedChecklistItem => ({
+      label: `${getPersonPrefix(person)} - ${item.label}`,
+      description: item.description || null,
+      isRequired: item.isRequired,
+      casePersonId: person.id,
+    });
+
+    if (item.scope === "per_person") {
+      const targetPeople = sortedPeople.length > 0 ? sortedPeople : [];
+      return targetPeople.length > 0
+        ? targetPeople.map(withPerson)
+        : [
+            {
+              label: item.label,
+              description: item.description || null,
+              isRequired: item.isRequired,
+              casePersonId: null,
+            },
+          ];
+    }
+
+    if (item.scope === "main_applicant") {
+      return mainApplicants.length > 0
+        ? mainApplicants.map(withPerson)
+        : [
+            {
+              label: item.label,
+              description: item.description || null,
+              isRequired: item.isRequired,
+              casePersonId: null,
+            },
+          ];
+    }
+
+    if (item.scope === "dependants") {
+      return dependants.map(withPerson);
+    }
+
+    if (item.scope === "shared") {
+      return [
+        {
+          label:
+            sortedPeople.length > 1 ? `Shared / Family - ${item.label}` : item.label,
+          description: item.description || null,
+          isRequired: item.isRequired,
+          casePersonId: null,
+        },
+      ];
+    }
+
+    return [
+      {
+        label: item.label,
+        description: item.description || null,
+        isRequired: item.isRequired,
+        casePersonId: null,
+      },
+    ];
+  });
 }
 
 export async function createChecklistItem(formData: FormData) {
@@ -60,7 +184,19 @@ export async function createChecklistItem(formData: FormData) {
 
   const existingCase = await prisma.case.findUnique({
     where: { id: caseId },
-    select: { id: true },
+    select: {
+      id: true,
+      people: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          role: true,
+          relationship: true,
+          fullName: true,
+          sortOrder: true,
+        },
+      },
+    },
   });
 
   if (!existingCase) {
@@ -117,7 +253,19 @@ export async function applyChecklistTemplate(formData: FormData) {
 
   const existingCase = await prisma.case.findUnique({
     where: { id: caseId },
-    select: { id: true },
+    select: {
+      id: true,
+      people: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          role: true,
+          relationship: true,
+          fullName: true,
+          sortOrder: true,
+        },
+      },
+    },
   });
 
   if (!existingCase) {
@@ -135,6 +283,11 @@ export async function applyChecklistTemplate(formData: FormData) {
   if (items.length === 0) {
     throw new Error("Please keep at least one checklist item.");
   }
+
+  const expandedItems = expandChecklistItemsForPeople(
+    items,
+    existingCase.people
+  );
 
   const shouldReplace = mode === "replace";
   const lastItem = shouldReplace
@@ -155,10 +308,11 @@ export async function applyChecklistTemplate(formData: FormData) {
         ]
       : []),
     prisma.documentChecklistItem.createMany({
-      data: items.map((item, index) => ({
+      data: expandedItems.map((item, index) => ({
         caseId,
+        casePersonId: item.casePersonId,
         label: item.label,
-        description: item.description || null,
+        description: item.description,
         isRequired: item.isRequired,
         sortOrder: startSortOrder + index,
       })),
@@ -178,7 +332,8 @@ export async function applyChecklistTemplate(formData: FormData) {
       success: true,
       newValue: {
         templateKey,
-        itemCount: createResult?.count ?? items.length,
+        itemCount: createResult?.count ?? expandedItems.length,
+        sourceItemCount: items.length,
         mode: shouldReplace ? "replace" : "append",
       },
     },

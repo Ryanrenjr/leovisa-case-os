@@ -13,6 +13,7 @@ import {
   INTAKE_STATUS_OPTIONS,
 } from "../../../../lib/status-options";
 import { PAYMENT_STATUS_OPTIONS } from "../../../../lib/payment-options";
+import CasePeopleFields from "../../../../components/CasePeopleFields";
 
 type Client = {
   id: string;
@@ -272,7 +273,9 @@ export default function NewCaseForm({
                   </select>
                 </div>
 
-                <div className="md:col-span-2">
+                <CasePeopleFields lang={lang} />
+
+                <div className="hidden">
                   <label className="toss-label mb-3 block">
                     {lang === "zh" ? "付款状态" : "Payment Status"}
                   </label>
@@ -343,7 +346,7 @@ export default function NewCaseForm({
                     {lang === "zh" ? "Dependants / 随行申请人" : "Dependants"}
                   </label>
                   <textarea
-                    name="dependants"
+                    name="legacyDependants"
                     rows={3}
                     className="w-full px-4 py-3"
                     placeholder={

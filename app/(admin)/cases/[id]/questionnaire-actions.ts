@@ -7,6 +7,7 @@ import {
   getQuestionnaireTemplate,
   isQuestionnaireTemplate,
 } from "../../../../lib/questionnaires/templates";
+import { scopeQuestionnaireTemplateToPeople } from "../../../../lib/questionnaires/person-scoping";
 
 function buildRedirect(caseId: string) {
   return `/cases/${caseId}?tab=forms#questionnaires-section`;
@@ -23,7 +24,7 @@ export async function generateQuestionnaireLink(formData: FormData) {
   }
 
   const template = getQuestionnaireTemplate(templateKey);
-  const customTemplate = customTemplateText
+  const baseCustomTemplate = customTemplateText
     ? JSON.parse(customTemplateText)
     : template;
 
@@ -31,20 +32,36 @@ export async function generateQuestionnaireLink(formData: FormData) {
     throw new Error("Questionnaire template not found.");
   }
 
-  if (!isQuestionnaireTemplate(customTemplate)) {
+  if (!isQuestionnaireTemplate(baseCustomTemplate)) {
     throw new Error("Questionnaire template is invalid.");
   }
 
-  const customTemplateSnapshot = JSON.parse(JSON.stringify(customTemplate));
-
   const caseItem = await prisma.case.findUnique({
     where: { id: caseId },
-    select: { id: true },
+    select: {
+      id: true,
+      people: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          role: true,
+          relationship: true,
+          fullName: true,
+          sortOrder: true,
+        },
+      },
+    },
   });
 
   if (!caseItem) {
     throw new Error("Case not found.");
   }
+
+  const customTemplate = scopeQuestionnaireTemplateToPeople(
+    baseCustomTemplate,
+    caseItem.people
+  );
+  const customTemplateSnapshot = JSON.parse(JSON.stringify(customTemplate));
 
   const token = crypto.randomBytes(16).toString("hex");
   const expiresAt = new Date();
@@ -73,6 +90,7 @@ export async function generateQuestionnaireLink(formData: FormData) {
         token: link.token,
         templateKey,
         templateTitle: customTemplate.titleZh,
+        applicantCount: caseItem.people.length,
         expiresAt: link.expiresAt?.toISOString(),
       },
     },

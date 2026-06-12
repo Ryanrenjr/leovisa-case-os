@@ -98,6 +98,7 @@ export default function ChecklistSection({
             label: item.label.trim(),
             description: item.description?.trim() || "",
             isRequired: item.isRequired ?? true,
+            scope: item.scope ?? "case",
           }))
           .filter((item) => item.label)
       ),

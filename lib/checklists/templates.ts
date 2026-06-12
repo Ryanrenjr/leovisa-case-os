@@ -2,6 +2,7 @@ export type DocumentChecklistTemplateItem = {
   label: string;
   description?: string;
   isRequired?: boolean;
+  scope?: "case" | "main_applicant" | "dependants" | "per_person" | "shared";
 };
 
 export type DocumentChecklistTemplateSection = {
@@ -29,9 +30,10 @@ export type EditableChecklistTemplateItem = DocumentChecklistTemplateItem & {
 function item(
   label: string,
   description?: string,
-  isRequired = true
+  isRequired = true,
+  scope: DocumentChecklistTemplateItem["scope"] = "case"
 ): DocumentChecklistTemplateItem {
-  return { label, description, isRequired };
+  return { label, description, isRequired, scope };
 }
 
 export const documentChecklistTemplates: DocumentChecklistTemplate[] = [
@@ -234,6 +236,120 @@ export const documentChecklistTemplates: DocumentChecklistTemplate[] = [
     ],
   },
   {
+    key: "naturalisation",
+    titleZh: "英国入籍材料清单",
+    titleEn: "British Citizenship Naturalisation Documents Checklist",
+    descriptionZh:
+      "用于英国 Form AN 入籍申请，覆盖身份、永居/settled status、居住和离境、Life in the UK、英语、推荐人、配偶路线和特殊情况材料。",
+    descriptionEn:
+      "For British citizenship by naturalisation (Form AN), covering identity, ILR/settled status, residence and absences, Life in the UK, English, referees, spouse-route evidence, and special circumstances.",
+    sections: [
+      {
+        id: "identity_status",
+        titleZh: "身份与永久居留状态",
+        titleEn: "Identity and Permanent Status",
+        items: [
+          item("当前护照全本扫描件", "请上传个人信息页、签证页、盖章页；如有多本护照，请上传所有仍持有的护照。", true, "per_person"),
+          item("过去 5 年使用过的旧护照全本扫描件", "用于核对离境记录和申请人是否在 qualifying period 第一天人在英国。", true, "per_person"),
+          item("BRP/BRC 正反面或 eVisa / UKVI 账户证明", "如使用 eVisa，请提供 share code、UKVI 账户截图或能显示 ILR/settled status 的页面。", true, "per_person"),
+          item(
+            "永居/settled status 获批证明",
+            "例如 ILR BRP、Home Office grant letter、eVisa 页面、EUSS settled status 证明、UAN 或 share code。GOV.UK 说明 BRP/BRC 在符合条件时可在卡面过期后继续用于证明身份一段时间，但应以申请时最新规则为准。",
+            true,
+            "per_person"
+          ),
+          item("中国身份证正反面", "如申请人持有中国身份证，请上传。", false, "per_person"),
+          item("更名证明或姓名不一致说明", "如护照、BRP/eVisa、结婚证、学历或其他文件姓名不一致，请提供 deed poll、结婚证、户口本更名页或书面说明。", false, "per_person"),
+        ],
+      },
+      {
+        id: "residence_absences",
+        titleZh: "居住与离境证明",
+        titleEn: "Residence and Absence Evidence",
+        items: [
+          item(
+            "过去 5 年离开英国记录表",
+            "请列明每次离境的国家/地区、离开英国日期、返回英国日期、天数和原因；如以英国公民配偶/民事伴侣身份申请，通常准备近 3 年。",
+            true,
+            "per_person"
+          ),
+          item(
+            "能证明申请人在 qualifying period 第一天人在英国的材料",
+            "例如当天附近的护照入境章、机票/登机牌、GP/NHS 记录、工资单、银行交易、学校/雇主记录或其他带日期的英国记录。5 年路线看申请日前 5 年当天；英国公民配偶/民事伴侣路线看申请日前 3 年当天。",
+            true,
+            "main_applicant"
+          ),
+          item(
+            "近 5 年英国地址证明",
+            "例如 council tax、银行账单、水电煤账单、租约、房贷/land registry、HMRC/NHS/GP/学校/雇主信件。配偶路线通常至少覆盖近 3 年。",
+            true,
+            "per_person"
+          ),
+          item("长期离境或离境天数偏高的解释和证明", "如某次离境接近或超过 6 个月、总离境天数较高，请提供原因说明及工作、学习、医疗、家庭紧急情况等证明。", false, "per_person"),
+        ],
+      },
+      {
+        id: "koll",
+        titleZh: "Life in the UK 与英语",
+        titleEn: "Life in the UK and English Language",
+        items: [
+          item("Life in the UK test pass reference / pass notification", "请上传通过通知或截图，并填写 test reference number。", true, "per_person"),
+          item("英语 B1 或以上考试证书 / reference number", "如使用 SELT，请上传证书或在线结果截图，并提供 reference number。", true, "per_person"),
+          item("英语授课学位证明", "如用学位满足英语要求，请上传学位证、成绩单、ECCTIS/UK ENIC 证明（如适用）和官方翻译。", false, "per_person"),
+          item("KoLL 豁免证明", "如申请人 65 岁以上或因长期身体/精神健康原因申请豁免，请提供相应医疗证明或说明。", false, "per_person"),
+        ],
+      },
+      {
+        id: "referees",
+        titleZh: "推荐人材料",
+        titleEn: "Referee Documents",
+        items: [
+          item(
+            "2 位推荐人的基本信息",
+            "请提供姓名、出生日期、职业、电话、邮箱、近 3 年地址、如何认识申请人和认识多久。推荐人通常需认识成年申请人至少 3 年，且至少 1 位为专业人士。",
+            true,
+            "main_applicant"
+          ),
+          item("推荐人护照信息页", "其中一位推荐人通常应持英国公民护照；请上传可显示姓名、照片和护照号的信息页。", true, "main_applicant"),
+          item("推荐人专业身份或职业证明", "例如公司邮箱签名、执业资格、公司网站介绍、LinkedIn、名片、雇主信或其他能证明职业身份的材料。", true, "main_applicant"),
+          item("推荐人声明/签名页", "如在线流程或顾问要求下载/上传 referee declaration，请由推荐人确认后提供。", false, "main_applicant"),
+        ],
+      },
+      {
+        id: "spouse_route",
+        titleZh: "英国公民配偶/民事伴侣路线（如适用）",
+        titleEn: "British Citizen Spouse or Civil Partner Route, if Applicable",
+        items: [
+          item("结婚证或民事伴侣证书", "非英文文件需提供正规翻译。", false, "shared"),
+          item("配偶/民事伴侣的英国护照或入籍/注册证书", "GOV.UK 明确配偶/民事伴侣路线需要证明对方为英国公民。", false, "shared"),
+          item("配偶/民事伴侣当前地址证明", "如双方不同住，请同时上传申请人和配偶/民事伴侣的现地址证明及原因说明。", false, "shared"),
+          item("过往婚姻/民事伴侣关系结束证明", "如有前婚姻或前民事伴侣关系，请提供离婚判决、解除民事伴侣关系证明或死亡证明及翻译。", false, "shared"),
+        ],
+      },
+      {
+        id: "good_character",
+        titleZh: "品格与特殊情况",
+        titleEn: "Good Character and Special Circumstances",
+        items: [
+          item("犯罪、交通或民事处罚记录说明", "如有犯罪记录、警告、罚款、交通定罪、pending prosecution、civil judgment、破产、HMRC 税务问题等，请提供判决/罚单/结案文件和详细说明。", false, "per_person"),
+          item("拒签、遣返、逾期滞留或移民违规说明", "如有任何国家拒签、英国移民违规、逾期、deception allegation 或 removal/deportation 记录，请提供决定信和解释。", false, "per_person"),
+          item("税务和自雇材料", "如申请人自雇、公司董事或有复杂税务，请上传 SA302、tax year overview、公司账目、P60/P45、工资单或 HMRC 记录。", false, "main_applicant"),
+          item("雇主/学校/专业机构支持信", "用于解释长期离境、future intention、特殊贡献或其他 discretionary 情况。", false, "main_applicant"),
+        ],
+      },
+      {
+        id: "translations_notes",
+        titleZh: "翻译与上传备注",
+        titleEn: "Translations and Upload Notes",
+        items: [
+          item("非英文/威尔士文文件的正规翻译件", "翻译件应包含译者确认、日期、签名和联系方式。"),
+          item("文件命名和扫描质量", "请使用清晰彩色扫描或照片，文件名包含申请人姓名、材料名称和日期，例如 ZhangSan_Passport_2026.pdf。"),
+          item("无需重复上传以往签证申请已提交材料", "GOV.UK 指出此前移民申请中已上传的材料 Home Office 通常已有记录；但如材料是本次资格判断的关键证据，仍建议上传最新版或最清晰版本。", false),
+        ],
+      },
+    ],
+  },
+  {
     key: "visitor_visa",
     titleZh: "Visitor 访问签证材料清单",
     titleEn: "Visitor Visa Documents Checklist",
@@ -317,6 +433,7 @@ export function flattenDocumentChecklistTemplate(
       label: templateItem.label,
       description: templateItem.description,
       isRequired: templateItem.isRequired ?? true,
+      scope: templateItem.scope ?? "case",
     }))
   );
 }

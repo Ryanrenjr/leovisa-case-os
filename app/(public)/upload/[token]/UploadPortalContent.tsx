@@ -24,6 +24,8 @@ type UploadPortalContentProps = {
     id: string;
     label: string;
     description: string | null;
+    personGroup: string;
+    personSortOrder: number;
     isRequired: boolean;
     needsResubmission: boolean;
     resubmissionReason: string | null;
@@ -324,6 +326,43 @@ export default function UploadPortalContent({
       : "Please upload documents against the checklist created by your consultant. Each row should match one checklist item and can include up to 20 files."
     : t.guideIntro;
   const guideItems = checklistMode ? t.checklistGuideItems : t.guideItems;
+  const groupedChecklistItems = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        label: string;
+        sortOrder: number;
+        items: typeof checklistItems;
+      }
+    >();
+
+    for (const item of checklistItems) {
+      const groupLabel = item.personGroup || "Case Documents";
+      const existingGroup = groups.get(groupLabel);
+
+      if (existingGroup) {
+        existingGroup.items.push(item);
+        existingGroup.sortOrder = Math.min(
+          existingGroup.sortOrder,
+          item.personSortOrder
+        );
+      } else {
+        groups.set(groupLabel, {
+          label: groupLabel,
+          sortOrder: item.personSortOrder,
+          items: [item],
+        });
+      }
+    }
+
+    return Array.from(groups.values()).sort((a, b) => {
+      if (a.sortOrder !== b.sortOrder) {
+        return a.sortOrder - b.sortOrder;
+      }
+
+      return a.label.localeCompare(b.label);
+    });
+  }, [checklistItems]);
 
   const clientDisplay =
     [clientEnglishName?.trim(), clientChineseName?.trim()]
@@ -382,6 +421,18 @@ export default function UploadPortalContent({
     return rows.some(
       (row) => row.id !== currentRowId && row.checklistItemId === itemId
     );
+  }
+
+  function getChecklistOptionLabel(item: (typeof checklistItems)[number]) {
+    return `${item.label}${
+      item.isRequired ? (lang === "zh" ? "（必传）" : " (Required)") : ""
+    }${
+      item.needsResubmission
+        ? lang === "zh"
+          ? " - 需重新上传"
+          : " - Resubmission required"
+        : ""
+    }`;
   }
 
   function updateRowFiles(id: number, files: FileList | null) {
@@ -888,7 +939,7 @@ export default function UploadPortalContent({
                                 ? "请选择清单项"
                                 : "Please select a checklist item"}
                             </option>
-                            {checklistItems.map((item) => (
+                            {false && checklistItems.map((item) => (
                               <option
                                 key={item.id}
                                 value={item.id}
@@ -906,6 +957,19 @@ export default function UploadPortalContent({
                                     : " - Resubmission required"
                                   : ""}
                               </option>
+                            ))}
+                            {groupedChecklistItems.map((group) => (
+                              <optgroup key={group.label} label={group.label}>
+                                {group.items.map((item) => (
+                                  <option
+                                    key={item.id}
+                                    value={item.id}
+                                    disabled={isChecklistItemTaken(item.id, row.id)}
+                                  >
+                                    {getChecklistOptionLabel(item)}
+                                  </option>
+                                ))}
+                              </optgroup>
                             ))}
                           </select>
                         ) : (

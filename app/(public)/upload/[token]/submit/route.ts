@@ -13,6 +13,7 @@ type RouteContext = {
 type UploadItem = {
   docType: string;
   checklistItemId: string | null;
+  casePersonId: string | null;
   otherName: string;
   displayName: string | null;
   file: File;
@@ -160,6 +161,7 @@ export async function POST(request: Request, context: RouteContext) {
       uploadItems.push({
         docType: checklistItem.label,
         checklistItemId: checklistItem.id,
+        casePersonId: checklistItem.casePersonId,
         otherName: "",
         displayName: checklistItem.label,
         file,
@@ -184,6 +186,7 @@ export async function POST(request: Request, context: RouteContext) {
     uploadItems.push({
       docType,
       checklistItemId: null,
+      casePersonId: null,
       otherName,
       displayName: docType === "other" ? otherName : null,
       file,
@@ -301,6 +304,7 @@ export async function POST(request: Request, context: RouteContext) {
           submissionId: submission.id,
           docType: item.docType,
           checklistItemId: item.checklistItemId,
+          casePersonId: item.casePersonId,
           displayName: item.displayName,
           originalFilename: item.file.name,
           normalizedFilename: `${uniquePrefix}_${safeOriginalName}`,
@@ -339,6 +343,7 @@ export async function POST(request: Request, context: RouteContext) {
           fileCount: uploadItems.length,
           docTypes: uploadItems.map((item) => item.docType),
           checklistItemIds: uploadItems.map((item) => item.checklistItemId),
+          casePersonIds: uploadItems.map((item) => item.casePersonId),
           otherNames: uploadItems.map((item) => item.otherName || null),
           fileNames: uploadItems.map((item) => item.file.name),
         },

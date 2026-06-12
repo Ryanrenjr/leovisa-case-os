@@ -63,6 +63,26 @@ async function downloadDocumentBuffer(documentItem: {
   return Buffer.from(await response.arrayBuffer());
 }
 
+function getPersonFolderName(documentItem: {
+  casePerson: {
+    role: string;
+    relationship: string | null;
+    fullName: string;
+  } | null;
+}) {
+  if (!documentItem.casePerson) {
+    return "Shared - Unassigned";
+  }
+
+  if (documentItem.casePerson.role === "main_applicant") {
+    return `Main Applicant - ${documentItem.casePerson.fullName}`;
+  }
+
+  return `${documentItem.casePerson.relationship || "Dependant"} - ${
+    documentItem.casePerson.fullName
+  }`;
+}
+
 export async function GET(_request: Request, context: RouteContext) {
   const { id } = await context.params;
 
@@ -85,6 +105,13 @@ export async function GET(_request: Request, context: RouteContext) {
           storageUrl: true,
           archiveFolder: true,
           isFinal: true,
+          casePerson: {
+            select: {
+              role: true,
+              relationship: true,
+              fullName: true,
+            },
+          },
         },
       },
     },
@@ -113,7 +140,9 @@ export async function GET(_request: Request, context: RouteContext) {
       const folderName = documentItem.isFinal
         ? "7.Final"
         : getDocumentArchiveLabel(documentItem.archiveFolder, "0.Unfiled");
-      const zipPath = `${sanitizeZipSegment(folderName)}/${buildZipFilename(
+      const zipPath = `${sanitizeZipSegment(
+        getPersonFolderName(documentItem)
+      )}/${sanitizeZipSegment(folderName)}/${buildZipFilename(
         documentItem.displayName,
         documentItem.originalFilename,
         index

@@ -6,6 +6,11 @@ import {
   buildCaseReferenceBase,
   generateUniqueCaseReference,
 } from "../../../../lib/case-reference";
+import {
+  buildLegacyDependantsText,
+  parseDependantInputs,
+  syncCasePeople,
+} from "../../../../lib/case-people";
 
 function parseOptionalDate(value: string) {
   return value ? new Date(`${value}T00:00:00`) : null;
@@ -32,7 +37,8 @@ export async function createCase(formData: FormData) {
     formData.get("appointmentDate")?.toString().trim() || "";
   const applicationCentre =
     formData.get("applicationCentre")?.toString().trim() || "";
-  const dependants = formData.get("dependants")?.toString().trim() || "";
+  const dependantPeople = parseDependantInputs(formData);
+  const dependants = buildLegacyDependantsText(dependantPeople);
   const notes = formData.get("notes")?.toString().trim() || "";
 
   if (!clientId || !serviceType || !country) {
@@ -43,6 +49,11 @@ export async function createCase(formData: FormData) {
     where: { id: clientId },
     select: {
       clientCode: true,
+      chineseName: true,
+      englishName: true,
+      email: true,
+      phone: true,
+      nationality: true,
     },
   });
 
@@ -92,25 +103,31 @@ export async function createCase(formData: FormData) {
     })
   );
 
-  const caseItem = await prisma.case.create({
-    data: {
-      caseCode,
-      reference,
-      clientId,
-      serviceType,
-      country,
-      assignedConsultantId: assignedConsultantId || null,
-      status,
-      contractStatus,
-      intakeStatus,
-      visaExpiryDate: parseOptionalDate(visaExpiryDate),
-      submissionDate: parseOptionalDate(submissionDate),
-      appointmentDate: parseOptionalDate(appointmentDate),
-      applicationCentre: applicationCentre || null,
-      dependants: dependants || null,
-      paymentStatus,
-      notes: notes || null,
-    },
+  const caseItem = await prisma.$transaction(async (tx) => {
+    const createdCase = await tx.case.create({
+      data: {
+        caseCode,
+        reference,
+        clientId,
+        serviceType,
+        country,
+        assignedConsultantId: assignedConsultantId || null,
+        status,
+        contractStatus,
+        intakeStatus,
+        visaExpiryDate: parseOptionalDate(visaExpiryDate),
+        submissionDate: parseOptionalDate(submissionDate),
+        appointmentDate: parseOptionalDate(appointmentDate),
+        applicationCentre: applicationCentre || null,
+        dependants: dependants || null,
+        paymentStatus,
+        notes: notes || null,
+      },
+    });
+
+    await syncCasePeople(tx, createdCase.id, client, dependantPeople);
+
+    return createdCase;
   });
 
   await prisma.auditLog.create({
@@ -128,6 +145,7 @@ export async function createCase(formData: FormData) {
         country: caseItem.country,
         status: caseItem.status,
         paymentStatus: caseItem.paymentStatus,
+        dependantCount: dependantPeople.length,
       },
     },
   });

@@ -63,6 +63,15 @@ export default async function UploadPortalPage({
           checklistItems: {
             orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
             include: {
+              casePerson: {
+                select: {
+                  id: true,
+                  role: true,
+                  relationship: true,
+                  fullName: true,
+                  sortOrder: true,
+                },
+              },
               documents: {
                 orderBy: { createdAt: "desc" },
                 select: {
@@ -113,6 +122,15 @@ export default async function UploadPortalPage({
         id: item.id,
         label: item.label,
         description: item.description,
+        personGroup:
+          item.casePerson?.role === "main_applicant"
+            ? `Main Applicant - ${item.casePerson.fullName}`
+            : item.casePerson
+            ? `${item.casePerson.relationship || "Dependant"} - ${item.casePerson.fullName}`
+            : item.label.startsWith("Shared / Family")
+            ? "Shared / Family"
+            : "Case Documents",
+        personSortOrder: item.casePerson?.sortOrder ?? 9999,
         isRequired: item.isRequired,
         needsResubmission: Boolean(resubmissionDocument),
         resubmissionReason:

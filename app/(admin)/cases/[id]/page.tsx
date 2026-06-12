@@ -191,12 +191,24 @@ export default async function CaseDetailPage({
     include: {
       client: true,
       assignedConsultant: true,
+      people: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      },
       documents: {
         orderBy: {
           createdAt: "desc",
         },
         include: {
           submission: true,
+          casePerson: {
+            select: {
+              id: true,
+              role: true,
+              relationship: true,
+              fullName: true,
+              sortOrder: true,
+            },
+          },
         },
       },
       contracts: {
@@ -527,6 +539,75 @@ export default async function CaseDetailPage({
           </div>
 
           <div className="mt-8">
+            <p className="toss-label mb-3">
+              {lang === "zh" ? "申请人 / 随行申请人" : "Applicants and Dependants"}
+            </p>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {caseItem.people.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[#dfe3e8] bg-[#fafbfc] p-4 text-sm text-[#8b95a1]">
+                  {lang === "zh"
+                    ? "暂无结构化申请人信息。编辑案件后会自动生成主申请人。"
+                    : "No structured applicant records yet. Editing the case will create the main applicant automatically."}
+                </div>
+              ) : (
+                caseItem.people.map((person) => (
+                  <div
+                    key={person.id}
+                    className="rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-4"
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[15px] font-semibold text-[#191f28]">
+                          {person.fullName}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[#8b95a1]">
+                          {person.role === "main_applicant"
+                            ? lang === "zh"
+                              ? "主申请人"
+                              : "Main Applicant"
+                            : person.relationship || (lang === "zh" ? "随行申请人" : "Dependant")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 text-sm text-[#4e5968] md:grid-cols-2">
+                      <p>
+                        <span className="font-semibold text-[#8b95a1]">
+                          {lang === "zh" ? "生日：" : "DOB: "}
+                        </span>
+                        {formatDisplayDate(person.dateOfBirth)}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-[#8b95a1]">
+                          {lang === "zh" ? "国籍：" : "Nationality: "}
+                        </span>
+                        {person.nationality ?? "-"}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-[#8b95a1]">
+                          {lang === "zh" ? "护照：" : "Passport: "}
+                        </span>
+                        {person.passportNumber ?? "-"}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-[#8b95a1]">
+                          {lang === "zh" ? "联系方式：" : "Contact: "}
+                        </span>
+                        {[person.email, person.phone].filter(Boolean).join(" / ") || "-"}
+                      </p>
+                    </div>
+                    {person.notes ? (
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4e5968]">
+                        {person.notes}
+                      </p>
+                    ) : null}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {caseItem.dependants ? (
+          <div className="mt-8">
             <p className="toss-label mb-2">
               {lang === "zh" ? "Dependants / 随行申请人" : "Dependants"}
             </p>
@@ -534,6 +615,7 @@ export default async function CaseDetailPage({
               {caseItem.dependants ?? "-"}
             </p>
           </div>
+          ) : null}
 
           <div className="mt-8">
             <p className="toss-label mb-2">{lang === "zh" ? "备注" : "Notes"}</p>

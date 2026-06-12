@@ -28,6 +28,13 @@ type DocumentItem = {
   isFinal: boolean;
   finalizedAt: Date | null;
   createdAt: Date;
+  casePerson: {
+    id: string;
+    role: string;
+    relationship: string | null;
+    fullName: string;
+    sortOrder: number;
+  } | null;
   submission: {
     submittedByName: string | null;
   } | null;
@@ -68,6 +75,50 @@ export default function DocumentsSection({
 }: DocumentsSectionProps) {
   const [expanded, setExpanded] = useState(false);
   const [archiveFilter, setArchiveFilter] = useState("all");
+  const [personFilter, setPersonFilter] = useState("all");
+
+  function getPersonLabel(document: DocumentItem) {
+    if (!document.casePerson) {
+      return lang === "zh" ? "共同/未分配" : "Shared / Unassigned";
+    }
+
+    if (document.casePerson.role === "main_applicant") {
+      return `${lang === "zh" ? "主申请人" : "Main Applicant"} - ${
+        document.casePerson.fullName
+      }`;
+    }
+
+    return `${document.casePerson.relationship || (lang === "zh" ? "随行申请人" : "Dependant")} - ${
+      document.casePerson.fullName
+    }`;
+  }
+
+  const personFilterItems = [
+    {
+      key: "all",
+      label: lang === "zh" ? "全部申请人" : "All Applicants",
+      count: documents.length,
+      sortOrder: -1,
+    },
+    ...Array.from(
+      documents.reduce((map, document) => {
+        const key = document.casePerson?.id ?? "shared";
+        const existing = map.get(key);
+        const label = getPersonLabel(document);
+        const sortOrder = document.casePerson?.sortOrder ?? 9999;
+
+        if (existing) {
+          existing.count += 1;
+        } else {
+          map.set(key, { key, label, count: 1, sortOrder });
+        }
+
+        return map;
+      }, new Map<string, { key: string; label: string; count: number; sortOrder: number }>())
+    )
+      .map(([, value]) => value)
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label)),
+  ];
 
   const archiveFilterItems = [
     {
@@ -97,6 +148,15 @@ export default function DocumentsSection({
   ];
   const filteredDocuments = documents.filter((document) => {
     const isFinal = document.isFinal || document.archiveFolder === "final";
+    const matchesPerson =
+      personFilter === "all" ||
+      (personFilter === "shared"
+        ? !document.casePerson
+        : document.casePerson?.id === personFilter);
+
+    if (!matchesPerson) {
+      return false;
+    }
 
     if (archiveFilter === "all") {
       return true;
@@ -223,6 +283,40 @@ export default function DocumentsSection({
                 .join(", ") || (lang === "zh" ? "必传材料已覆盖" : "Required items covered")}
             </p>
           </div>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <p className="toss-label mb-3">
+          {lang === "zh" ? "按申请人筛选" : "Filter by Applicant"}
+        </p>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+          {personFilterItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => {
+                setPersonFilter(item.key);
+                setExpanded(false);
+              }}
+              className={`flex min-h-[56px] items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                personFilter === item.key
+                  ? "border-[#3182f6] bg-[#eff6ff] text-[#1b64da]"
+                  : "border-[#eef1f4] bg-white text-[#4e5968] hover:bg-[#f8fafc]"
+              }`}
+            >
+              <span className="truncate">{item.label}</span>
+              <span
+                className={`ml-3 rounded-full px-2 py-1 text-xs ${
+                  personFilter === item.key
+                    ? "bg-[#dbeafe] text-[#1b64da]"
+                    : "bg-[#f2f4f6] text-[#8b95a1]"
+                }`}
+              >
+                {item.count}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -424,6 +518,15 @@ export default function DocumentsSection({
                     <p className="toss-label mb-2">MIME Type</p>
                     <p className="text-[15px] text-[#4e5968]">
                       {document.mimeType ?? "-"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="toss-label mb-2">
+                      {lang === "zh" ? "归属申请人" : "Belongs To"}
+                    </p>
+                    <p className="text-[15px] font-semibold text-[#4e5968]">
+                      {getPersonLabel(document)}
                     </p>
                   </div>
 

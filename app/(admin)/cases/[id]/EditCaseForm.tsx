@@ -13,6 +13,9 @@ import {
   INTAKE_STATUS_OPTIONS,
 } from "../../../../lib/status-options";
 import { PAYMENT_STATUS_OPTIONS } from "../../../../lib/payment-options";
+import CasePeopleFields, {
+  type CasePersonFormValue,
+} from "../../../../components/CasePeopleFields";
 
 type EditCaseFormProps = {
   caseItem: {
@@ -35,6 +38,7 @@ type EditCaseFormProps = {
     immigrationPortalUrl: string | null;
     immigrationPortalUsername: string | null;
     immigrationPortalPassword: string | null;
+    people: CasePersonFormValue[];
   };
   clients: {
     id: string;
@@ -377,12 +381,14 @@ export default function EditCaseForm({
                 />
               </div>
 
-              <div className="md:col-span-2">
+                <CasePeopleFields initialPeople={caseItem.people} lang={lang} />
+
+                <div className="hidden">
                 <label className="toss-label mb-3 block">
                   {lang === "zh" ? "Dependants / 随行申请人" : "Dependants"}
                 </label>
                 <textarea
-                  name="dependants"
+                  name="legacyDependants"
                   rows={3}
                   defaultValue={caseItem.dependants ?? ""}
                   className="w-full px-4 py-3"
