@@ -10,6 +10,7 @@ import {
   uploadBufferToStorage,
 } from "../../../../../../lib/supabase-admin";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { isCorporateClientCareLetterService } from "../../../../../../lib/contracts/client-care-letter-presets";
 
 type ActionState = {
   error?: string;
@@ -48,19 +49,25 @@ function buildMainApplicantLine({
   return `Name: ${clientName}; Nationality: ${nationality}; DoB. ${dateOfBirth}; Passport No. ${passport}`;
 }
 
-function getSelfApplicationBullet(serviceType: string, applicationLocation: string) {
-  const normalized = serviceType.toLowerCase();
-
-  if (normalized.includes("citizenship") || normalized.includes("naturalisation")) {
-    return "You want to apply for citizenship for yourself;";
-  }
-
-  const applicationName =
-    normalized.includes("visa") || normalized.includes("settlement")
-      ? serviceType
-      : `${serviceType} visa`;
-  const locationSuffix = applicationLocation ? ` ${applicationLocation}` : "";
-  return `You want to apply for ${applicationName} for yourself${locationSuffix};`;
+function fillCorporateCaseSummary({
+  caseSummary,
+  companyName,
+  representative,
+  incorporationDate,
+  companyNumber,
+}: {
+  caseSummary: string;
+  companyName: string;
+  representative: string;
+  incorporationDate: string;
+  companyNumber: string;
+}) {
+  return caseSummary
+    .replaceAll("[COMPANY NAME]", companyName)
+    .replaceAll("[OVERSEAS COMPANY NAME]", companyName)
+    .replaceAll("[REPRESENTATIVE NAME]", representative)
+    .replaceAll("[DATE]", formatDateForLetter(incorporationDate))
+    .replaceAll("[COMPANY NUMBER]", companyNumber);
 }
 
 export async function createClientCareLetterAction(
@@ -80,6 +87,16 @@ export async function createClientCareLetterAction(
   const deposit = formData.get("deposit")?.toString().trim() || "";
   const balance = formData.get("balance")?.toString().trim() || "";
   const caseSummary = formData.get("caseSummary")?.toString().trim() || "";
+  const companyRepresentative =
+    formData.get("companyRepresentative")?.toString().trim() || "";
+  const companyIncorporationDate =
+    formData.get("companyIncorporationDate")?.toString().trim() || "";
+  const companyNumber =
+    formData.get("companyNumber")?.toString().trim() || "";
+  const instructionBullets = (formData.get("instructions")?.toString() || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim().replace(/^[•*-]\s*/, ""))
+    .filter(Boolean);
   const dependantTypes = getFormValues(formData, "dependantType");
   const dependantRelationships = getFormValues(formData, "dependantRelationship");
   const dependantNames = getFormValues(formData, "dependantName");
@@ -87,7 +104,14 @@ export async function createClientCareLetterAction(
   const dependantDatesOfBirth = getFormValues(formData, "dependantDateOfBirth");
   const dependantPassports = getFormValues(formData, "dependantPassport");
 
-  if (!caseId || !date || !dateOfBirth || !passport || !totalFee || !deposit || !balance) {
+  if (
+    !caseId ||
+    !date ||
+    !totalFee ||
+    !deposit ||
+    !balance ||
+    instructionBullets.length === 0
+  ) {
     return { error: "Please complete all required fields." };
   }
 
@@ -111,6 +135,18 @@ export async function createClientCareLetterAction(
     const contractCaseRef =
       caseRefInput || caseItem.reference || caseItem.caseCode;
     const visaType = getServiceTypeLabel(caseItem.serviceType);
+    const isCorporate = isCorporateClientCareLetterService(visaType);
+
+    if (
+      isCorporate &&
+      (!companyRepresentative || !companyIncorporationDate || !companyNumber)
+    ) {
+      return { error: "Please complete all required company fields." };
+    }
+
+    if (!isCorporate && (!dateOfBirth || !passport)) {
+      return { error: "Please complete all required applicant fields." };
+    }
     const nationality = nationalityInput || caseItem.client.nationality || "";
     const dependants = dependantNames
       .map((name, index) => ({
@@ -155,14 +191,14 @@ export async function createClientCareLetterAction(
 
     const fileBuffer = await generateClientCareLetter({
       ClientName: clientName,
+      SignatoryName: isCorporate ? companyRepresentative : clientName,
+      IsCorporate: isCorporate,
       Date: formatDateForLetter(date),
       CaseRef: contractCaseRef,
       VisaType: visaType,
-      InstructionBullets: [
-        getSelfApplicationBullet(visaType, applicationLocation),
-        ...dependantApplicationBullets,
-        applicantDetails,
-      ],
+      InstructionBullets: isCorporate
+        ? instructionBullets
+        : [...instructionBullets, ...dependantApplicationBullets, applicantDetails],
       ApplicationLocation: applicationLocation,
       Nationality: nationality,
       DateOfBirth: dateOfBirth,
@@ -170,7 +206,15 @@ export async function createClientCareLetterAction(
       TotalFee: totalFee,
       Deposit: deposit,
       Balance: balance,
-      CaseSummary: caseSummary,
+      CaseSummary: isCorporate
+        ? fillCorporateCaseSummary({
+            caseSummary,
+            companyName: clientName,
+            representative: companyRepresentative,
+            incorporationDate: companyIncorporationDate,
+            companyNumber,
+          })
+        : caseSummary,
     });
 
     const safeCaseCode = caseItem.caseCode.replace(/[^a-zA-Z0-9._-]/g, "_");

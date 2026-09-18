@@ -2,12 +2,17 @@
 
 import { useActionState, useState } from "react";
 import { createClientCareLetterAction } from "./actions";
+import {
+  getDefaultCaseSummary,
+  getDefaultInstructionBullets,
+} from "../../../../../../lib/contracts/client-care-letter-presets";
 
 type CreateContractFormProps = {
   caseId: string;
   reference: string;
   clientName: string;
   visaType: string;
+  isCorporate: boolean;
   nationality: string;
   applicationLocation: string;
   defaultDate: string;
@@ -39,36 +44,12 @@ function createDependant(): Dependant {
   };
 }
 
-function getDefaultCaseSummary(visaType: string) {
-  const normalized = visaType.toLowerCase();
-
-  if (normalized.includes("skilled worker")) {
-    return [
-      "The company [COMPANY NAME] is a private limited company, which was incorporated in the UK on [DATE] with company number [COMPANY NUMBER]",
-      "[COMPANY NAME] is qualified to provide skilled worker visas, with licence number [LICENCE NUMBER]",
-    ].join("\n");
-  }
-
-  if (normalized.includes("10 year") || normalized.includes("long residence")) {
-    return [
-      "You have been studying in the UK since [DATE].",
-      "Your current visa expires on [DATE].",
-      "Your visas for the last ten years have been consecutive.",
-    ].join("\n");
-  }
-
-  if (normalized.includes("citizenship") || normalized.includes("naturalisation")) {
-    return "Your status is settlement";
-  }
-
-  return "";
-}
-
 export default function CreateContractForm({
   caseId,
   reference,
   clientName,
   visaType,
+  isCorporate,
   nationality,
   applicationLocation,
   defaultDate,
@@ -131,7 +112,9 @@ export default function CreateContractForm({
           </div>
 
           <div>
-            <label className="toss-label mb-3 block">Client Name</label>
+            <label className="toss-label mb-3 block">
+              {isCorporate ? "Company Name" : "Client Name"}
+            </label>
             <input
               type="text"
               value={clientName}
@@ -139,6 +122,45 @@ export default function CreateContractForm({
               className="w-full px-4 py-3 bg-[#f8fafc]"
             />
           </div>
+
+          {isCorporate && (
+            <>
+              <div>
+                <label className="toss-label mb-3 block">
+                  Company Representative
+                </label>
+                <input
+                  type="text"
+                  name="companyRepresentative"
+                  placeholder="Full name of the authorised representative"
+                  className="w-full px-4 py-3"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="toss-label mb-3 block">
+                  Company Incorporation Date
+                </label>
+                <input
+                  type="date"
+                  name="companyIncorporationDate"
+                  className="w-full px-4 py-3"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="toss-label mb-3 block">Company Number</label>
+                <input
+                  type="text"
+                  name="companyNumber"
+                  className="w-full px-4 py-3"
+                  required
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <label className="toss-label mb-3 block">Date</label>
@@ -152,7 +174,9 @@ export default function CreateContractForm({
           </div>
 
           <div>
-            <label className="toss-label mb-3 block">Visa Type</label>
+            <label className="toss-label mb-3 block">
+              {isCorporate ? "Service Type" : "Visa Type"}
+            </label>
             <input
               type="text"
               value={visaType}
@@ -161,7 +185,8 @@ export default function CreateContractForm({
             />
           </div>
 
-          <div>
+          {!isCorporate && (
+            <div>
             <label className="toss-label mb-3 block">Application Location</label>
             <select
               name="applicationLocation"
@@ -171,9 +196,11 @@ export default function CreateContractForm({
               <option value="outside UK">Outside UK</option>
               <option value="inside UK">Inside UK</option>
             </select>
-          </div>
+            </div>
+          )}
 
-          <div>
+          {!isCorporate && (
+            <div>
             <label className="toss-label mb-3 block">Nationality</label>
             <input
               type="text"
@@ -181,9 +208,11 @@ export default function CreateContractForm({
               defaultValue={nationality}
               className="w-full px-4 py-3"
             />
-          </div>
+            </div>
+          )}
 
-          <div>
+          {!isCorporate && (
+            <div>
             <label className="toss-label mb-3 block">Date of Birth</label>
             <input
               type="text"
@@ -192,9 +221,11 @@ export default function CreateContractForm({
               className="w-full px-4 py-3"
               required
             />
-          </div>
+            </div>
+          )}
 
-          <div>
+          {!isCorporate && (
+            <div>
             <label className="toss-label mb-3 block">Passport Number</label>
             <input
               type="text"
@@ -202,7 +233,8 @@ export default function CreateContractForm({
               className="w-full px-4 py-3"
               required
             />
-          </div>
+            </div>
+          )}
 
           <div>
             <label className="toss-label mb-3 block">Total Fee (£)</label>
@@ -236,7 +268,8 @@ export default function CreateContractForm({
         </div>
       </div>
 
-      <div className="toss-soft-card p-6">
+      {!isCorporate && (
+        <div className="toss-soft-card p-6">
         <div className="mb-4 flex items-center justify-between gap-4">
           <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[#191f28]">
             Dependants
@@ -376,6 +409,21 @@ export default function CreateContractForm({
             ))}
           </div>
         )}
+        </div>
+      )}
+
+      <div className="toss-soft-card p-6">
+        <h2 className="mb-4 text-[22px] font-bold tracking-[-0.02em] text-[#191f28]">
+          Instructions
+        </h2>
+        <textarea
+          name="instructions"
+          rows={5}
+          className="w-full px-4 py-3"
+          defaultValue={getDefaultInstructionBullets(visaType).join("\n")}
+          placeholder="Enter one instruction per line..."
+          required
+        />
       </div>
 
       <div className="toss-soft-card p-6">

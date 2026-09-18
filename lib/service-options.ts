@@ -15,6 +15,8 @@ const SERVICE_TYPE_LABEL_ALIASES: Record<string, string> = {
   "Skilled Worker to Settlement": "Skilled Worker Route to Settlement",
   "Spouse to Settlement": "Spouse Route to Settlement",
   Naturalisation: "British Citizenship / Naturalisation",
+  "Sponsor License (General)": "Sponsor Licence (General)",
+  "Sponsor License (Global Movement)": "Sponsor Licence (Global Movement)",
 };
 
 export function getServiceTypeLabel(serviceType: string) {
@@ -188,6 +190,12 @@ export const SERVICE_OPTIONS: ServiceOption[] = [
   },
   {
     businessLine: "uk_toc",
+    label: "Discretionary Leave",
+    value: "Discretionary Leave",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
     label: "Settlement",
     value: "Settlement",
     country: "UK",
@@ -241,15 +249,29 @@ export const SERVICE_OPTIONS: ServiceOption[] = [
   // UK To B
   {
     businessLine: "uk_tob",
-    label: "Sponsor License (General)",
-    value: "Sponsor License (General)",
+    label: "Sponsor Licence (General)",
+    value: "Sponsor Licence (General)",
     country: "UK",
   },
   {
     businessLine: "uk_tob",
-    label: "Sponsor License (Global Movement)",
+    label: "Sponsor Licence (General)",
+    value: "Sponsor License (General)",
+    country: "UK",
+    isLegacy: true,
+  },
+  {
+    businessLine: "uk_tob",
+    label: "Sponsor Licence (Global Movement)",
+    value: "Sponsor Licence (Global Movement)",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_tob",
+    label: "Sponsor Licence (Global Movement)",
     value: "Sponsor License (Global Movement)",
     country: "UK",
+    isLegacy: true,
   },
   {
     businessLine: "uk_tob",
