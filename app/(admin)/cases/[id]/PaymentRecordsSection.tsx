@@ -5,6 +5,9 @@ import { formatDateTime } from "../../../../lib/format-date";
 import {
   PAYMENT_RECORD_STATUS_OPTIONS,
   getPaymentRecordStatusLabel,
+  getPaymentStatusLabel,
+  getPaymentStatusTone,
+  getReceivedPaymentTotals,
 } from "../../../../lib/payment-options";
 
 type PaymentRecord = {
@@ -21,6 +24,7 @@ type PaymentRecord = {
 
 type PaymentRecordsSectionProps = {
   caseId: string;
+  paymentStatus: string;
   paymentRecords: PaymentRecord[];
   onCreateAction: (formData: FormData) => void;
   onDeleteAction: (formData: FormData) => void;
@@ -50,14 +54,13 @@ function formatDate(value: Date | null) {
 
 export default function PaymentRecordsSection({
   caseId,
+  paymentStatus,
   paymentRecords,
   onCreateAction,
   onDeleteAction,
   lang,
 }: PaymentRecordsSectionProps) {
-  const totalReceived = paymentRecords
-    .filter((record) => record.status === "received")
-    .reduce((sum, record) => sum + Number(record.amount), 0);
+  const receivedTotals = getReceivedPaymentTotals(paymentRecords);
 
   return (
     <div id="payment-records-section" className="toss-card mb-8 p-8">
@@ -67,7 +70,15 @@ export default function PaymentRecordsSection({
             {lang === "zh" ? "付款记录" : "Payment Records"}
           </h2>
           <p className="mt-2 text-sm font-medium text-[#8b95a1]">
-            {lang === "zh" ? "记录首款、尾款、退款或待确认收款。" : "Track deposits, balances, refunds, and pending payments."}
+            {lang === "zh"
+              ? "每笔填写本次金额；保存后，所选付款状态将同步更新概览。"
+              : "Enter the amount for this transaction. Saving also updates the overview payment status."}
+          </p>
+          <p className="mt-3 text-sm text-[#4e5968]">
+            {lang === "zh" ? "当前付款状态：" : "Current payment status: "}
+            <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getPaymentStatusTone(paymentStatus)}`}>
+              {getPaymentStatusLabel(paymentStatus, lang)}
+            </span>
           </p>
         </div>
 
@@ -76,7 +87,9 @@ export default function PaymentRecordsSection({
             {lang === "zh" ? "已确认收款" : "Received"}
           </p>
           <p className="mt-1 text-[22px] font-extrabold text-[#16794c]">
-            {formatMoney(String(totalReceived), "GBP")}
+            {receivedTotals.length > 0
+              ? receivedTotals.map((total) => formatMoney(String(total.amount), total.currency)).join(" · ")
+              : formatMoney("0", "GBP")}
           </p>
         </div>
       </div>
@@ -132,7 +145,8 @@ export default function PaymentRecordsSection({
             <label className="toss-label mb-2 block">
               {lang === "zh" ? "状态" : "Status"}
             </label>
-            <select name="status" defaultValue="received" className="w-full px-4 py-3">
+            <select name="status" defaultValue="" required className="w-full px-4 py-3">
+              <option value="" disabled>{lang === "zh" ? "请选择付款状态" : "Select payment status"}</option>
               {PAYMENT_RECORD_STATUS_OPTIONS.map((item) => (
                 <option key={item.value} value={item.value}>
                   {lang === "zh" ? item.zh : item.en}
@@ -198,8 +212,8 @@ export default function PaymentRecordsSection({
                     label={lang === "zh" ? "删除" : "Delete"}
                     confirmMessage={
                       lang === "zh"
-                        ? "确认删除这条付款记录吗？"
-                        : "Delete this payment record?"
+                        ? "确认删除这条付款记录吗？删除最新状态记录时，概览付款状态将回退到上一条记录；之后手动修改的状态会保留。"
+                        : "Delete this payment record? Deleting the latest status record restores the previous status. Later manual status changes are preserved."
                     }
                     className="toss-danger-button px-4 py-2 text-sm font-semibold"
                   />

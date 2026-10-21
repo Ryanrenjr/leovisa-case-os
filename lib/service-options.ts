@@ -144,6 +144,12 @@ export const SERVICE_OPTIONS: ServiceOption[] = [
   },
   {
     businessLine: "uk_toc",
+    label: "Dependent",
+    value: "Dependent",
+    country: "UK",
+  },
+  {
+    businessLine: "uk_toc",
     label: "Student Visa",
     value: "Student Visa",
     country: "UK",

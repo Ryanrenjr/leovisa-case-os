@@ -6,17 +6,10 @@ import { prisma } from "../../lib/prisma";
 import { getLangFromCookie, messages } from "../../lib/i18n";
 import { getServiceTypeLabel } from "../../lib/service-options";
 import DashboardProgressTable from "./DashboardProgressTable";
-
-const ACTIVE_CASE_STATUSES = [
-  "new",
-  "intake_pending",
-  "documents_collecting",
-  "documents_received",
-  "under_review",
-  "contract_pending",
-  "contract_sent",
-  "signed",
-];
+import { getSubmissionReminder } from "../../lib/submission-reminder";
+import { DASHBOARD_TABS, getDashboardGroups, hasUsableDocument, isActiveCase, needsPayment } from "../../lib/dashboard-groups";
+import type { DashboardTab } from "../../lib/dashboard-groups";
+import { getReceivedPaymentTotals } from "../../lib/payment-options";
 
 function formatDate(value: Date | string | null | undefined) {
   if (!value) {
@@ -24,6 +17,7 @@ function formatDate(value: Date | string | null | undefined) {
   }
 
   return new Date(value).toLocaleDateString("en-GB", {
+    timeZone: "Europe/London",
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -52,7 +46,12 @@ function sumMoney(values: string[]) {
   }, 0);
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view } = await searchParams;
+  const selectedTab: DashboardTab = DASHBOARD_TABS.includes(view as DashboardTab)
+    ? view as DashboardTab : "priority";
   const cookieStore = await cookies();
   const lang = getLangFromCookie(cookieStore.get("lang")?.value);
   const t = messages[lang];
@@ -118,19 +117,18 @@ export default async function Home() {
   ]);
 
   const casesCount = cases.length;
-  const activeCases = cases.filter((item) =>
-    ACTIVE_CASE_STATUSES.includes(item.status)
-  );
+  const activeCases = cases.filter((item) => isActiveCase(item.status));
 
+  const now = new Date();
   const progressRows = cases.map((caseItem) => {
     const requiredChecklistItems = caseItem.checklistItems.filter(
       (item) => item.isRequired
     );
     const missingRequired = requiredChecklistItems.filter(
-      (item) => item.documents.length === 0
+      (item) => !hasUsableDocument(item.documents)
     ).length;
     const uploadedChecklistItems = caseItem.checklistItems.filter(
-      (item) => item.documents.length > 0
+      (item) => hasUsableDocument(item.documents)
     ).length;
     const pendingReview = caseItem.documents.filter(
       (document) => document.reviewStatus === "uploaded"
@@ -147,12 +145,11 @@ export default async function Home() {
     const invoiceAmount = sumMoney(
       caseItem.invoices.map((invoice) => invoice.total.toString())
     );
-    const receivedPaymentAmount = sumMoney(
-      caseItem.paymentRecords
-        .filter((record) => record.status === "received")
-        .map((record) => record.amount.toString())
+    const receivedPaymentTotals = getReceivedPaymentTotals(
+      caseItem.paymentRecords.map((record) => ({ ...record, amount: record.amount.toString() }))
     );
     const risks: string[] = [];
+    const submissionReminder = getSubmissionReminder(caseItem.submissionDate, caseItem.status, now);
 
     if (missingRequired > 0) {
       risks.push(
@@ -178,14 +175,12 @@ export default async function Home() {
       risks.push(lang === "zh" ? "申请表未提交" : "Form not submitted");
     }
 
-    if (caseItem.status !== "completed" && caseItem.invoices.length === 0) {
+    if (caseItem.invoices.length === 0) {
       risks.push(lang === "zh" ? "未生成 Invoice" : "No invoice");
     }
 
     if (
-      caseItem.status !== "completed" &&
-      caseItem.paymentStatus !== "paid" &&
-      caseItem.paymentStatus !== "waived"
+      needsPayment(caseItem.paymentStatus)
     ) {
       risks.push(lang === "zh" ? "付款未完成" : "Payment incomplete");
     }
@@ -208,6 +203,7 @@ export default async function Home() {
       openedAt: formatDate(caseItem.createdAt),
       visaExpiry: formatDate(caseItem.visaExpiryDate),
       submissionDate: formatDate(caseItem.submissionDate),
+      submissionReminder,
       appointmentDate: formatDate(caseItem.appointmentDate),
       applicationCentre: caseItem.applicationCentre ?? "-",
       documents: {
@@ -233,31 +229,29 @@ export default async function Home() {
       payments: {
         status: caseItem.paymentStatus,
         totalReceived:
-          receivedPaymentAmount > 0
-            ? formatMoney(String(receivedPaymentAmount))
-            : "-",
+          receivedPaymentTotals.map((total) => new Intl.NumberFormat("en-GB", {
+            style: "currency", currency: total.currency,
+          }).format(total.amount)).join(" · ") || "-",
         records: caseItem.paymentRecords.length,
       },
-      risks,
+      risks: isActiveCase(caseItem.status) ? risks : [],
       notes: caseItem.notes ?? "",
     };
   });
 
   const casesInProgressCount = activeCases.length;
-  const missingRequiredCaseCount = progressRows.filter(
-    (row) => row.documents.missingRequired > 0
+  const documentCaseCount = progressRows.filter(
+    (row) => getDashboardGroups(row).documents
   ).length;
   const pendingReviewCaseCount = progressRows.filter(
-    (row) => row.documents.pendingReview > 0
+    (row) => isActiveCase(row.status) && row.documents.pendingReview > 0
   ).length;
   const noInvoiceCaseCount = progressRows.filter(
-    (row) => row.invoices.total === 0 && row.status !== "completed"
+    (row) => isActiveCase(row.status) && row.invoices.total === 0
   ).length;
-  const riskCaseCount = progressRows.filter((row) => row.risks.length > 0).length;
+  const riskCaseCount = progressRows.filter((row) => getDashboardGroups(row).priority).length;
   const financeRiskCaseCount = progressRows.filter(
-    (row) =>
-      row.invoices.total === 0 ||
-      (row.payments.status !== "paid" && row.payments.status !== "waived")
+    (row) => getDashboardGroups(row).finance
   ).length;
 
   return (
@@ -292,7 +286,7 @@ export default async function Home() {
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-          <Link href="/cases" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <Link href="/?view=active#case-workspace" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">{t.dashboard.casesInProgress}</p>
             <h2 className="toss-stat-number">{casesInProgressCount}</h2>
             <p className="mt-2 text-xs text-[#8b95a1]">
@@ -300,28 +294,28 @@ export default async function Home() {
             </p>
           </Link>
 
-          <Link href="/cases" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <Link href="/?view=priority#case-workspace" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">
               {lang === "zh" ? "重点提醒" : "Priority Alerts"}
             </p>
             <h2 className="toss-stat-number">{riskCaseCount}</h2>
             <p className="mt-2 text-xs text-[#8b95a1]">
-              {lang === "zh" ? "需要优先查看" : "Need review"}
+              {lang === "zh" ? "未来 7 天内递签（含今天）" : "Submission within 7 days, including today"}
             </p>
           </Link>
 
-          <Link href="/cases" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <Link href="/?view=documents#case-workspace" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">
               {lang === "zh" ? "材料交付" : "Document Delivery"}
             </p>
-            <h2 className="toss-stat-number">{missingRequiredCaseCount}</h2>
+            <h2 className="toss-stat-number">{documentCaseCount}</h2>
             <p className="mt-2 text-xs text-[#8b95a1]">
               {pendingReviewCaseCount}{" "}
               {lang === "zh" ? "案待审核" : "with review queue"}
             </p>
           </Link>
 
-          <Link href="/cases" className="toss-card block p-6 hover:-translate-y-[1px]">
+          <Link href="/?view=finance#case-workspace" className="toss-card block p-6 hover:-translate-y-[1px]">
             <p className="toss-label mb-3">
               {lang === "zh" ? "收款开票" : "Finance"}
             </p>
@@ -333,7 +327,7 @@ export default async function Home() {
           </Link>
         </div>
 
-        <DashboardProgressTable rows={progressRows} lang={lang} />
+        <DashboardProgressTable key={selectedTab} rows={progressRows} lang={lang} initialTab={selectedTab} />
       </div>
     </main>
   );

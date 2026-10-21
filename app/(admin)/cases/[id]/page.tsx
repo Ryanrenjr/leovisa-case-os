@@ -34,6 +34,8 @@ import ChecklistSummaryDialog from "./ChecklistSummaryDialog";
 import CasePageSectionsController from "./CasePageSectionsController";
 import ScrollTopButton from "../../../../components/ScrollTopButton";
 import StatusBadge from "../../../../components/StatusBadge";
+import SubmissionReminderBadge from "../../../../components/SubmissionReminderBadge";
+import { getSubmissionReminder } from "../../../../lib/submission-reminder";
 import ConfirmSubmitButton from "../../../../components/ConfirmSubmitButton";
 import { deleteSubmission } from "./submission-actions";
 import { deleteContract, sendContractForSignature } from "./contract-actions";
@@ -76,6 +78,7 @@ function formatDisplayDate(value: Date | null) {
   }
 
   return new Date(value).toLocaleDateString("en-GB", {
+    timeZone: "Europe/London",
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -342,6 +345,7 @@ export default async function CaseDetailPage({
   const clientInstructionItems = [
     ...new Set([...resubmissionChecklistLabels, ...missingChecklistLabels]),
   ];
+  const submissionReminder = getSubmissionReminder(caseItem.submissionDate, caseItem.status);
 
   return (
     <main className="toss-page">
@@ -445,6 +449,17 @@ export default async function CaseDetailPage({
               </form>
             </div>
           </div>
+
+          {submissionReminder ? (
+            <div className="mb-6 rounded-2xl border border-[#eef1f4] p-4">
+              <SubmissionReminderBadge reminder={submissionReminder} lang={lang} />
+              <p className="mt-2 text-sm text-[#4e5968]">
+                {lang === "zh"
+                  ? `递交日期：${formatDisplayDate(caseItem.submissionDate)}。请确认材料和递签准备已完成。`
+                  : `Submission date: ${formatDisplayDate(caseItem.submissionDate)}. Please confirm documents and submission preparations are complete.`}
+              </p>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 gap-5 text-sm md:grid-cols-2">
             <div>
@@ -872,6 +887,7 @@ export default async function CaseDetailPage({
 
         <PaymentRecordsSection
           caseId={caseItem.id}
+          paymentStatus={caseItem.paymentStatus}
           paymentRecords={paymentRecords}
           onCreateAction={createPaymentRecord}
           onDeleteAction={deletePaymentRecord}

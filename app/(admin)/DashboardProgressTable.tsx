@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import StatusBadge from "../../components/StatusBadge";
+import SubmissionReminderBadge from "../../components/SubmissionReminderBadge";
+import type { SubmissionReminder } from "../../lib/submission-reminder";
+import { getDashboardGroups } from "../../lib/dashboard-groups";
+import type { DashboardTab } from "../../lib/dashboard-groups";
 import {
   getPaymentStatusLabel,
   getPaymentStatusTone,
@@ -22,6 +26,7 @@ type ProgressRow = {
   openedAt: string;
   visaExpiry: string;
   submissionDate: string;
+  submissionReminder: SubmissionReminder | null;
   appointmentDate: string;
   applicationCentre: string;
   documents: {
@@ -56,12 +61,14 @@ type ProgressRow = {
 type DashboardProgressTableProps = {
   rows: ProgressRow[];
   lang: "en" | "zh";
+  initialTab: DashboardTab;
 };
 
 const PAGE_SIZE = 5;
 
 const tabs = [
   { id: "priority", zh: "重点提醒", en: "Priority" },
+  { id: "active", zh: "进行中", en: "In Progress" },
   { id: "documents", zh: "材料交付", en: "Documents" },
   { id: "finance", zh: "收款开票", en: "Finance" },
   { id: "timeline", zh: "时间节点", en: "Timeline" },
@@ -107,36 +114,30 @@ function getPrimaryLine(row: ProgressRow, lang: "en" | "zh") {
     return lang === "zh" ? "已完成" : "Completed";
   }
 
-  return lang === "zh" ? "暂无高优先级提醒" : "No high priority alert";
+  if (row.status === "archived" || row.status === "cancelled") {
+    return lang === "zh" ? "已结束，无待办提醒" : "Closed, no pending alerts";
+  }
+
+  return lang === "zh" ? "暂无待办事项" : "No pending tasks";
 }
 
 export default function DashboardProgressTable({
   rows,
   lang,
+  initialTab,
 }: DashboardProgressTableProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("priority");
+  const activeTab: TabId = initialTab;
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const tabCounts = useMemo(
     () => ({
-      priority: rows.filter((row) => row.risks.length > 0).length,
-      documents: rows.filter(
-        (row) =>
-          row.documents.missingRequired > 0 || row.documents.pendingReview > 0
-      ).length,
-      finance: rows.filter(
-        (row) =>
-          row.invoices.total === 0 ||
-          (row.payments.status !== "paid" && row.payments.status !== "waived")
-      ).length,
-      timeline: rows.filter(
-        (row) =>
-          row.visaExpiry !== "-" ||
-          row.submissionDate !== "-" ||
-          row.appointmentDate !== "-"
-      ).length,
+      priority: rows.filter((row) => getDashboardGroups(row).priority).length,
+      active: rows.filter((row) => getDashboardGroups(row).active).length,
+      documents: rows.filter((row) => getDashboardGroups(row).documents).length,
+      finance: rows.filter((row) => getDashboardGroups(row).finance).length,
+      timeline: rows.filter((row) => getDashboardGroups(row).timeline).length,
       all: rows.length,
     }),
     [rows]
@@ -145,7 +146,7 @@ export default function DashboardProgressTable({
   const visibleRows = useMemo(() => {
     const keyword = query.trim().toLowerCase();
 
-    return rows.filter((row) => {
+    const filteredRows = rows.filter((row) => {
       const matchesQuery =
         !keyword ||
         [
@@ -165,31 +166,15 @@ export default function DashboardProgressTable({
         return false;
       }
 
-      if (activeTab === "priority") {
-        return row.risks.length > 0;
-      }
-
-      if (activeTab === "documents") {
-        return row.documents.missingRequired > 0 || row.documents.pendingReview > 0;
-      }
-
-      if (activeTab === "finance") {
-        return (
-          row.invoices.total === 0 ||
-          (row.payments.status !== "paid" && row.payments.status !== "waived")
-        );
-      }
-
-      if (activeTab === "timeline") {
-        return (
-          row.visaExpiry !== "-" ||
-          row.submissionDate !== "-" ||
-          row.appointmentDate !== "-"
-        );
-      }
-
-      return true;
+      return getDashboardGroups(row)[activeTab];
     });
+
+    // Keep imminent submissions visible ahead of other alerts and newer cases.
+    return [...filteredRows].sort(
+      (a, b) =>
+        (a.submissionReminder?.daysRemaining ?? 8) -
+        (b.submissionReminder?.daysRemaining ?? 8)
+    );
   }, [activeTab, query, rows]);
 
   const pageCount = Math.max(1, Math.ceil(visibleRows.length / PAGE_SIZE));
@@ -205,7 +190,7 @@ export default function DashboardProgressTable({
   }
 
   return (
-    <section className="toss-card p-6">
+    <section id="case-workspace" className="toss-card scroll-mt-6 p-6">
       <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <h2 className="text-[26px] font-bold tracking-[-0.02em] text-[#191f28]">
@@ -220,6 +205,7 @@ export default function DashboardProgressTable({
 
         <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-[420px]">
           <input
+            aria-label={lang === "zh" ? "搜索案件" : "Search cases"}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
@@ -240,13 +226,10 @@ export default function DashboardProgressTable({
           const selected = activeTab === tab.id;
 
           return (
-            <button
+            <Link
               key={tab.id}
-              type="button"
-              onClick={() => {
-                setActiveTab(tab.id);
-                resetList();
-              }}
+              href={`/?view=${tab.id}#case-workspace`}
+              aria-current={selected ? "page" : undefined}
               className={`flex min-h-[46px] shrink-0 items-center gap-3 rounded-2xl px-4 py-2 text-sm font-bold transition ${
                 selected
                   ? "bg-[#3182f6] text-white shadow-[0_8px_20px_rgba(49,130,246,0.20)]"
@@ -261,10 +244,18 @@ export default function DashboardProgressTable({
               >
                 {tabCounts[tab.id]}
               </span>
-            </button>
+            </Link>
           );
         })}
       </div>
+
+      {activeTab === "priority" ? (
+        <p className="mb-4 text-sm text-[#6b7684]">
+          {lang === "zh"
+            ? "仅显示今天至未来 7 天内递签的进行中案件，按递签日期从近到远排列。"
+            : "Only active cases due for submission today or within 7 days, earliest first."}
+        </p>
+      ) : null}
 
       <div className="space-y-3">
         {pageRows.map((row) => {
@@ -285,6 +276,9 @@ export default function DashboardProgressTable({
                       {row.reference}
                     </Link>
                     <StatusBadge value={row.status} lang={lang} />
+                    {row.submissionReminder ? (
+                      <SubmissionReminderBadge reminder={row.submissionReminder} lang={lang} />
+                    ) : null}
                   </div>
                   <p className="mt-2 text-sm font-semibold text-[#191f28]">
                     {shortName(row)}
@@ -441,7 +435,9 @@ export default function DashboardProgressTable({
 
         {visibleRows.length === 0 ? (
           <div className="rounded-2xl border border-[#eef1f4] bg-[#fafbfc] p-8 text-center text-sm font-semibold text-[#8b95a1]">
-            {lang === "zh" ? "没有符合条件的案件。" : "No matching cases."}
+            {activeTab === "priority" && !query.trim()
+              ? lang === "zh" ? "未来 7 天内暂无待递签案件。" : "No submissions due within 7 days."
+              : lang === "zh" ? "没有符合条件的案件。" : "No matching cases."}
           </div>
         ) : null}
       </div>

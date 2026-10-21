@@ -8,7 +8,9 @@ export const PAYMENT_STATUS_OPTIONS = [
   { value: "waived", zh: "免收", en: "Waived" },
 ] as const;
 
-export const PAYMENT_RECORD_STATUS_OPTIONS = [
+export const PAYMENT_RECORD_STATUS_OPTIONS = PAYMENT_STATUS_OPTIONS;
+
+const LEGACY_PAYMENT_RECORD_STATUS_OPTIONS = [
   { value: "received", zh: "已收款", en: "Received" },
   { value: "pending", zh: "待确认", en: "Pending" },
   { value: "refunded", zh: "已退款", en: "Refunded" },
@@ -21,10 +23,51 @@ export function getPaymentStatusLabel(value: string, lang: "en" | "zh") {
 }
 
 export function getPaymentRecordStatusLabel(value: string, lang: "en" | "zh") {
-  const option = PAYMENT_RECORD_STATUS_OPTIONS.find(
+  const option = [...PAYMENT_RECORD_STATUS_OPTIONS, ...LEGACY_PAYMENT_RECORD_STATUS_OPTIONS].find(
     (item) => item.value === value
   );
   return option ? option[lang] : value || "-";
+}
+
+export function isPaymentStatus(value: string) {
+  return PAYMENT_STATUS_OPTIONS.some((option) => option.value === value);
+}
+
+export function getReceivedPaymentTotals(records: {
+  amount: string;
+  currency: string;
+  status: string;
+}[]) {
+  const centsByCurrency = new Map<string, number>();
+  for (const record of records) {
+    if (!["received", "deposit_paid", "partially_paid", "paid", "overpaid"].includes(record.status)) {
+      continue;
+    }
+    const amount = Number(record.amount);
+    if (!Number.isFinite(amount)) continue;
+    const currency = record.currency.toUpperCase() || "GBP";
+    centsByCurrency.set(currency, (centsByCurrency.get(currency) || 0) + Math.round(amount * 100));
+  }
+  return Array.from(centsByCurrency, ([currency, cents]) => ({ currency, amount: cents / 100 }));
+}
+
+export function getPaymentStatusAfterDeletion(
+  currentStatus: string,
+  deletedRecordId: string,
+  records: { id: string; status: string; createdAt: Date }[]
+) {
+  const newestFirst = [...records].sort((a, b) =>
+    b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id)
+  );
+  const latest = newestFirst.find((record) => isPaymentStatus(record.status));
+  // Preserve a later manual overview change or a newer payment record.
+  if (latest?.id !== deletedRecordId || currentStatus !== latest.status) {
+    return currentStatus;
+  }
+  const remaining = newestFirst.filter((record) => record.id !== deletedRecordId);
+  return remaining.find((record) => isPaymentStatus(record.status))?.status
+    // Legacy receipts don't tell us whether the full invoice has been paid.
+    ?? (remaining.some((record) => record.status === "received") ? "partially_paid" : "unpaid");
 }
 
 export function getPaymentStatusTone(value: string) {

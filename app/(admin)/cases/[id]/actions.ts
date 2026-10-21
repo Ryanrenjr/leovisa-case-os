@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "../../../../lib/prisma";
 import { normalizeReference } from "../../../../lib/case-reference";
+import { getAdminSessionUserId } from "../../../../lib/auth";
+import { getPaymentStatusAfterDeletion, isPaymentStatus } from "../../../../lib/payment-options";
 import { removeStorageFiles } from "../../../../lib/supabase-admin";
 import {
   buildLegacyDependantsText,
@@ -443,54 +445,69 @@ export async function deleteCase(formData: FormData) {
   redirect("/cases");
 }
 
+async function requirePaymentActor() {
+  const id = await getAdminSessionUserId();
+  if (!id) redirect("/login");
+  const user = await prisma.adminUser.findUnique({
+    where: { id }, select: { id: true, isActive: true },
+  });
+  if (!user?.isActive) redirect("/login");
+  return user.id;
+}
+
 export async function createPaymentRecord(formData: FormData) {
+  const actorId = await requirePaymentActor();
   const caseId = formData.get("caseId")?.toString().trim() || "";
   const label = formData.get("label")?.toString().trim() || "";
   const amountInput = formData.get("amount")?.toString().trim() || "";
-  const currency = formData.get("currency")?.toString().trim() || "GBP";
+  const currency = (formData.get("currency")?.toString().trim() || "GBP").toUpperCase();
   const paymentDate = formData.get("paymentDate")?.toString().trim() || "";
   const method = formData.get("method")?.toString().trim() || "";
-  const status = formData.get("status")?.toString().trim() || "received";
+  const status = formData.get("status")?.toString().trim() || "";
   const notes = formData.get("notes")?.toString().trim() || "";
 
   const amount = Number(amountInput);
 
-  if (!caseId || !Number.isFinite(amount) || amount < 0) {
+  if (!caseId || !/^\d+(\.\d{1,2})?$/.test(amountInput) || !Number.isFinite(amount) || amount < 0) {
     throw new Error("Case ID and a valid payment amount are required.");
   }
 
-  const paymentRecord = await prisma.casePaymentRecord.create({
-    data: {
-      caseId,
-      label: label || null,
-      amount,
-      currency,
-      paymentDate: parseOptionalDate(paymentDate),
-      method: method || null,
-      status,
-      notes: notes || null,
-    },
-  });
+  if (!isPaymentStatus(status) || !/^[A-Z]{3}$/.test(currency)) {
+    throw new Error("A valid payment status and three-letter currency code are required.");
+  }
+  const parsedPaymentDate = parseOptionalDate(paymentDate);
+  if (parsedPaymentDate && Number.isNaN(parsedPaymentDate.getTime())) {
+    throw new Error("A valid payment date is required.");
+  }
 
-  await prisma.auditLog.create({
-    data: {
-      caseId,
-      relatedEntityType: "payment_record",
-      relatedEntityId: paymentRecord.id,
-      actionType: "create_payment_record",
-      actorType: "user",
-      success: true,
-      newValue: {
-        label: paymentRecord.label,
-        amount: paymentRecord.amount.toString(),
-        currency: paymentRecord.currency,
-        paymentDate: paymentRecord.paymentDate,
-        method: paymentRecord.method,
-        status: paymentRecord.status,
-        notes: paymentRecord.notes,
+  await prisma.$transaction(async (tx) => {
+    // Serialize payment mutations for this case, including deletion rollback.
+    const [caseItem] = await tx.$queryRaw<{ paymentStatus: string }[]>`
+      SELECT "paymentStatus" FROM "Case" WHERE "id" = ${caseId} FOR UPDATE
+    `;
+    if (!caseItem) throw new Error("Case not found.");
+    const paymentRecord = await tx.casePaymentRecord.create({
+      data: {
+        caseId, label: label || null, amount, currency,
+        paymentDate: parsedPaymentDate, method: method || null, status, notes: notes || null,
+        createdAt: new Date(),
       },
-    },
-  });
+    });
+    await tx.case.update({ where: { id: caseId }, data: { paymentStatus: status } });
+    await tx.auditLog.create({
+      data: {
+        caseId, relatedEntityType: "payment_record", relatedEntityId: paymentRecord.id,
+        actionType: "create_payment_record", actorType: "user", actorId, success: true,
+        oldValue: { paymentStatus: caseItem.paymentStatus },
+        newValue: {
+          label: paymentRecord.label, amount: paymentRecord.amount.toString(),
+          currency: paymentRecord.currency, paymentDate: paymentRecord.paymentDate,
+          method: paymentRecord.method, status: paymentRecord.status, notes: paymentRecord.notes,
+          paymentStatus: status,
+        },
+      },
+    });
+  }, { timeout: 15000 });
 
   revalidatePath(`/cases/${caseId}`);
   revalidatePath("/");
@@ -498,6 +515,7 @@ export async function createPaymentRecord(formData: FormData) {
 }
 
 export async function deletePaymentRecord(formData: FormData) {
+  const actorId = await requirePaymentActor();
   const caseId = formData.get("caseId")?.toString().trim() || "";
   const paymentRecordId =
     formData.get("paymentRecordId")?.toString().trim() || "";
@@ -506,37 +524,33 @@ export async function deletePaymentRecord(formData: FormData) {
     throw new Error("Case ID and payment record ID are required.");
   }
 
-  const existingRecord = await prisma.casePaymentRecord.findUnique({
-    where: { id: paymentRecordId },
-  });
-
-  if (!existingRecord || existingRecord.caseId !== caseId) {
-    throw new Error("Payment record not found.");
-  }
-
-  await prisma.casePaymentRecord.delete({
-    where: { id: paymentRecordId },
-  });
-
-  await prisma.auditLog.create({
-    data: {
-      caseId,
-      relatedEntityType: "payment_record",
-      relatedEntityId: paymentRecordId,
-      actionType: "delete_payment_record",
-      actorType: "user",
-      success: true,
-      oldValue: {
-        label: existingRecord.label,
-        amount: existingRecord.amount.toString(),
-        currency: existingRecord.currency,
-        paymentDate: existingRecord.paymentDate,
-        method: existingRecord.method,
-        status: existingRecord.status,
-        notes: existingRecord.notes,
+  await prisma.$transaction(async (tx) => {
+    const [caseItem] = await tx.$queryRaw<{ paymentStatus: string }[]>`
+      SELECT "paymentStatus" FROM "Case" WHERE "id" = ${caseId} FOR UPDATE
+    `;
+    if (!caseItem) throw new Error("Case not found.");
+    const records = await tx.casePaymentRecord.findMany({ where: { caseId } });
+    const existingRecord = records.find((record) => record.id === paymentRecordId);
+    if (!existingRecord) throw new Error("Payment record not found.");
+    const paymentStatus = getPaymentStatusAfterDeletion(caseItem.paymentStatus, paymentRecordId, records);
+    await tx.casePaymentRecord.delete({ where: { id: paymentRecordId } });
+    if (paymentStatus !== caseItem.paymentStatus) {
+      await tx.case.update({ where: { id: caseId }, data: { paymentStatus } });
+    }
+    await tx.auditLog.create({
+      data: {
+        caseId, relatedEntityType: "payment_record", relatedEntityId: paymentRecordId,
+        actionType: "delete_payment_record", actorType: "user", actorId, success: true,
+        oldValue: {
+          label: existingRecord.label, amount: existingRecord.amount.toString(),
+          currency: existingRecord.currency, paymentDate: existingRecord.paymentDate,
+          method: existingRecord.method, status: existingRecord.status, notes: existingRecord.notes,
+          paymentStatus: caseItem.paymentStatus,
+        },
+        newValue: { paymentStatus },
       },
-    },
-  });
+    });
+  }, { timeout: 15000 });
 
   revalidatePath(`/cases/${caseId}`);
   revalidatePath("/");
